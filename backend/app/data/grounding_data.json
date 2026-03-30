@@ -1,0 +1,140 @@
+{
+  "_meta": {
+    "description": "Country-level demographic grounding data for persona generation. Add new countries by adding a new top-level key. Run scripts/fetch_world_bank.py to refresh World Bank figures.",
+    "last_updated": "2026-03-31",
+    "sources": {
+      "world_bank": "https://data.worldbank.org",
+      "datareportal": "https://datareportal.com",
+      "ilo": "https://ilostat.ilo.org",
+      "psa": "https://psa.gov.ph"
+    }
+  },
+  "philippines": {
+    "_sources": [
+      "World Bank Philippines 2024",
+      "DataReportal Digital Philippines 2024 (We Are Social / Meltwater)",
+      "Philippine Statistics Authority (PSA) 2023",
+      "ILO Philippines Labour Market 2023"
+    ],
+    "population": 115843670,
+    "median_age": 25.7,
+    "gdp_per_capita_usd": 3985,
+    "currency": "PHP",
+    "languages": [
+      "Filipino",
+      "English"
+    ],
+    "religion": "Predominantly Roman Catholic (79%)",
+    "urban_population_pct": 0.555,
+    "income_distribution": {
+      "description": "Approximate share of households per income band (PSA 2023)",
+      "low": 0.18,
+      "lower_middle": 0.35,
+      "middle": 0.3,
+      "upper_middle": 0.12,
+      "high": 0.05
+    },
+    "age_distribution": {
+      "0_14": 0.279,
+      "15_64": 0.666,
+      "65_plus": 0.055
+    },
+    "gender_split": {
+      "male": 0.503,
+      "female": 0.497
+    },
+    "employment": {
+      "services_pct": 0.57,
+      "agriculture_pct": 0.24,
+      "industry_pct": 0.19,
+      "unemployment_rate": 0.022,
+      "underemployment_rate": 0.142,
+      "top_occupations": [
+        "Retail and trade workers",
+        "Agricultural laborers",
+        "Elementary occupations (domestic workers, laborers)",
+        "Service and sales workers",
+        "OFW remittance-supported households",
+        "BPO / call center agents",
+        "Jeepney / tricycle drivers",
+        "Teachers and education workers",
+        "Healthcare workers (nurses, midwives)"
+      ]
+    },
+    "education": {
+      "literacy_rate": 0.985,
+      "tertiary_enrollment_pct": 0.36
+    },
+    "digital": {
+      "internet_penetration_pct": 0.838,
+      "social_media_users_pct": 0.85,
+      "mobile_connections_per_person": 1.18,
+      "avg_daily_internet_hours": 8.52,
+      "avg_daily_social_media_hours": 3.73,
+      "top_platforms_ranked": [
+        "Facebook (highest penetration in Southeast Asia \u2014 96% of social users)",
+        "TikTok (2nd highest usage in SEA)",
+        "YouTube",
+        "Instagram",
+        "Twitter/X",
+        "Viber (dominant messaging app)"
+      ],
+      "ecommerce_users_pct": 0.58,
+      "top_ecommerce_platforms": [
+        "Shopee",
+        "Lazada",
+        "TikTok Shop"
+      ]
+    },
+    "consumer_behavior": {
+      "remittance_dependent_households_pct": 0.22,
+      "notes": [
+        "Strong collectivist culture \u2014 family and community influence purchase decisions heavily",
+        "Brand loyalty is high once trust is established",
+        "Value-consciousness: price sensitivity balanced with aspiration for branded goods",
+        "Malls remain dominant social and retail spaces in urban areas",
+        "Sari-sari (neighborhood convenience) stores serve 60%+ of FMCG distribution",
+        "Load (prepaid mobile credit) is a significant micro-economy",
+        "Debt culture: informal lending (5-6 loans) common in lower-income households",
+        "OFW (Overseas Filipino Worker) economy shapes ~22% of household consumption"
+      ]
+    },
+    "regional_notes": {
+      "NCR_Metro_Manila": "Highest income, most urbanized, highest social media usage, cosmopolitan consumer base, 13M+ population",
+      "Cebu_Visayas": "Second economic hub, English-dominant, growing BPO sector, distinct Visayan cultural identity",
+      "Davao_Mindanao": "Fastest-growing region, agri-business base, younger demographic, distinct Muslim minority in western Mindanao",
+      "Luzon_provincial": "Predominantly agricultural, strong OFW remittance economy, high religious observance"
+    }
+  },
+  "_template": {
+    "_comment": "Copy this template when adding a new country. All fields optional except _sources.",
+    "_sources": [],
+    "population": null,
+    "median_age": null,
+    "gdp_per_capita_usd": null,
+    "currency": null,
+    "languages": [],
+    "urban_population_pct": null,
+    "income_distribution": {
+      "low": null,
+      "lower_middle": null,
+      "middle": null,
+      "upper_middle": null,
+      "high": null
+    },
+    "age_distribution": {},
+    "gender_split": {},
+    "employment": {
+      "top_occupations": []
+    },
+    "education": {},
+    "digital": {
+      "top_platforms_ranked": [],
+      "top_ecommerce_platforms": []
+    },
+    "consumer_behavior": {
+      "notes": []
+    },
+    "regional_notes": {}
+  }
+}

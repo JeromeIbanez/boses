@@ -22,6 +22,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.models.persona import Persona
 from app.models.persona_group import PersonaGroup
+from app.services.grounding import format_grounding_context
 from app.services.library_matcher import find_library_matches, save_persona_to_library
 
 logger = logging.getLogger(__name__)
@@ -50,24 +51,30 @@ class SyntheticPersonaSource(PersonaDataSource):
         self.client = client
 
     def fetch(self, group: PersonaGroup) -> list[dict]:
-        skeletons = self._pass1_skeletons(group)
-        profiles = self._pass2_expand(group, skeletons)
+        # Load real-world grounding data for this location (empty string if not found)
+        grounding_context, grounding_sources = format_grounding_context(group.location or "")
+
+        skeletons = self._pass1_skeletons(group, grounding_context)
+        profiles = self._pass2_expand(group, skeletons, grounding_context, grounding_sources)
         return profiles
 
-    def _pass1_skeletons(self, group: PersonaGroup) -> list[dict]:
+    def _pass1_skeletons(self, group: PersonaGroup, grounding_context: str) -> list[dict]:
         """
-        Pass 1: generate diverse skeleton stubs to anchor diversity
-        before full expansion.
+        Pass 1: generate diverse skeleton stubs anchored to real demographic data.
         """
         system = (
             "You are a senior market research strategist. "
             "Your job is to define a diverse cast of consumer archetypes "
             "that span the realistic range of a target demographic — "
             "not averages, but distinct individuals with different outlooks, "
-            "life stages, and relationships with money and brands."
+            "life stages, and relationships with money and brands. "
+            "When real demographic statistics are provided, treat them as hard facts "
+            "and ensure your archetypes reflect the actual distribution of the population."
         )
 
-        user = f"""Create {group.persona_count} distinct consumer archetypes for this demographic:
+        grounding_block = f"\n{grounding_context}\n" if grounding_context else ""
+
+        user = f"""{grounding_block}Create {group.persona_count} distinct consumer archetypes for this demographic:
 
 - Age range: {group.age_min}–{group.age_max}
 - Gender: {group.gender}
@@ -79,7 +86,8 @@ class SyntheticPersonaSource(PersonaDataSource):
 Rules:
 - Each archetype must be meaningfully different (vary life stage, optimism, tech-savviness, brand relationship, financial mindset)
 - Avoid averaging — include edge cases (the skeptic, the aspirational striver, the pragmatist, etc.)
-- Ground them culturally in {group.location}
+- Ground them culturally and statistically in {group.location} using the data above
+- Income levels and digital behaviors must reflect the real distribution shown above
 
 Return a JSON array of {group.persona_count} objects, each with:
 {{
@@ -106,23 +114,38 @@ Return a JSON array of {group.persona_count} objects, each with:
             return next(iter(raw.values()))
         return raw
 
-    def _pass2_expand(self, group: PersonaGroup, skeletons: list[dict]) -> list[dict]:
+    def _pass2_expand(
+        self,
+        group: PersonaGroup,
+        skeletons: list[dict],
+        grounding_context: str,
+        grounding_sources: list[str],
+    ) -> list[dict]:
         """
-        Pass 2: expand each skeleton into a full profile with source citations.
-        Each call is individual so GPT gives full attention per persona.
+        Pass 2: expand each skeleton into a full profile grounded in real stats.
         """
         profiles = []
         for skeleton in skeletons:
             system = (
                 "You are a behavioral researcher and cultural anthropologist. "
                 "Expand a consumer archetype into a richly detailed, realistic individual. "
-                "Draw on published consumer research, cultural studies, and market data. "
-                "Cite the specific sources (reports, studies, datasets) you are drawing from — "
-                "be honest about what real-world research informs each field. "
+                "When real demographic statistics are provided, treat them as ground truth — "
+                "your persona's behaviors, habits, and attitudes must be consistent with "
+                "the actual data for this market. "
                 "Return only valid JSON."
             )
 
-            user = f"""Expand this archetype into a full consumer profile:
+            grounding_block = f"\n{grounding_context}\n" if grounding_context else ""
+
+            # Merge real sources with instruction to add any additional ones
+            sources_instruction = (
+                "Include these verified sources in data_source_references (you may add others):\n"
+                + "\n".join(f'  - "{s}"' for s in grounding_sources)
+            ) if grounding_sources else (
+                "List the specific reports or studies that informed each field."
+            )
+
+            user = f"""{grounding_block}Expand this archetype into a full consumer profile:
 
 Archetype: {skeleton.get('archetype_label')} — {skeleton.get('one_line_bio')}
 Name: {skeleton.get('full_name')}, Age: {skeleton.get('age')}, Gender: {skeleton.get('gender')}
@@ -146,14 +169,12 @@ Return a single JSON object with these exact fields:
   "pain_points": "...",
   "media_consumption": "...",
   "purchase_behavior": "...",
-  "day_in_the_life": "A 2–3 sentence narrative of a typical day for this person, grounded in their cultural context.",
-  "data_source_references": [
-    "Name of report or study this profile draws from (e.g. GWI Southeast Asia Q3 2024)",
-    "..."
-  ]
+  "day_in_the_life": "A 2–3 sentence narrative of a typical day, grounded in the real cultural and economic context of {group.location}.",
+  "data_source_references": ["..."]
 }}
 
-Be specific. Avoid generic statements. Ground cultural details in {group.location}."""
+{sources_instruction}
+Be specific. Every detail must be consistent with the demographic data above."""
 
             response = self.client.chat.completions.create(
                 model=settings.OPENAI_MODEL,
@@ -167,6 +188,12 @@ Be specific. Avoid generic statements. Ground cultural details in {group.locatio
             raw = json.loads(response.choices[0].message.content or "{}")
             if isinstance(raw, dict) and "full_name" not in raw:
                 raw = next(iter(raw.values()))
+
+            # Ensure grounding sources are always present in the references
+            existing_refs = raw.get("data_source_references") or []
+            merged_refs = list(dict.fromkeys(grounding_sources + existing_refs))  # deduplicate, preserve order
+            raw["data_source_references"] = merged_refs
+
             profiles.append(raw)
 
         return profiles

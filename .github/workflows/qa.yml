@@ -22,7 +22,7 @@ jobs:
       - name: Checkout Boses
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
       - name: Checkout QA agent
         uses: actions/checkout@v4
@@ -41,13 +41,10 @@ jobs:
       - name: Install Playwright browsers
         run: playwright install --with-deps chromium
 
-      - name: Fetch all branches
-        run: git fetch origin main staging
-
       - name: Get git diff
         id: diff
         run: |
-          DIFF=$(git diff origin/${{ env.PRODUCTION_BRANCH }}...HEAD 2>/dev/null || echo "")
+          DIFF=$(git diff HEAD~1 HEAD 2>/dev/null || echo "")
           echo "diff<<EOF" >> $GITHUB_OUTPUT
           echo "$DIFF" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT

@@ -9,5 +9,15 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "app/uploads"
     OPENAI_MODEL: str = "gpt-4o"
 
+    @property
+    def database_url_psycopg(self) -> str:
+        # Render provides postgres:// or postgresql:// — normalize to psycopg v3 scheme
+        url = self.DATABASE_URL
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return url
+
 
 settings = Settings()

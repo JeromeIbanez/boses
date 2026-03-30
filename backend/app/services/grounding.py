@@ -45,32 +45,49 @@ _LOCATION_MAP: dict[str, str] = {
     "visayas": "philippines",
     "luzon": "philippines",
 
-    # Indonesia (ready to add data)
+    # Indonesia
     "indonesia": "indonesia",
     "jakarta": "indonesia",
     "bali": "indonesia",
     "surabaya": "indonesia",
     "bandung": "indonesia",
+    "medan": "indonesia",
+    "semarang": "indonesia",
+    "jogja": "indonesia",
+    "yogyakarta": "indonesia",
+    "jabodetabek": "indonesia",
 
     # Singapore
     "singapore": "singapore",
     "sg": "singapore",
+    "orchard": "singapore",
+    "jurong": "singapore",
+    "woodlands": "singapore",
 
     # Malaysia
     "malaysia": "malaysia",
     "kuala lumpur": "malaysia",
     "kl": "malaysia",
     "penang": "malaysia",
+    "johor": "malaysia",
+    "my": "malaysia",
 
     # Vietnam
     "vietnam": "vietnam",
     "viet nam": "vietnam",
     "ho chi minh": "vietnam",
+    "saigon": "vietnam",
     "hanoi": "vietnam",
+    "da nang": "vietnam",
+    "hoi an": "vietnam",
 
     # Thailand
     "thailand": "thailand",
     "bangkok": "thailand",
+    "chiang mai": "thailand",
+    "phuket": "thailand",
+    "pattaya": "thailand",
+    "isan": "thailand",
 
     # United States
     "united states": "usa",

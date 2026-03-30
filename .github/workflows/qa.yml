@@ -1,0 +1,23 @@
+name: QA
+
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  qa:
+    uses: JeromeIbanez/temujin-qa-agent/.github/workflows/qa-pipeline.yml@main
+    with:
+      app_name: Boses
+      staging_url: https://staging.temujintechnologies.com
+      staging_api_url: https://api-staging.temujintechnologies.com
+      production_url: https://app.temujintechnologies.com
+      notify_email: jeromeibanez95@gmail.com
+      repo: JeromeIbanez/boses
+      staging_branch: staging
+      production_branch: main
+    secrets:
+      openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+      gmail_user: ${{ secrets.GMAIL_USER }}
+      gmail_app_password: ${{ secrets.GMAIL_APP_PASSWORD }}
+      gh_token: ${{ secrets.GH_TOKEN }}

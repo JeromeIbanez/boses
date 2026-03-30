@@ -2,12 +2,12 @@ databases:
   - name: boses-db-prod
     databaseName: boses_prod
     user: boses
-    plan: starter
+    plan: free
 
   - name: boses-db-staging
     databaseName: boses_staging
     user: boses
-    plan: starter
+    plan: free
 
 services:
   # ── Production Backend ──────────────────────────────────────────────────
@@ -17,7 +17,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     rootDir: backend
     branch: main
-    plan: starter
+    plan: free
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -39,7 +39,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     rootDir: backend
     branch: staging
-    plan: starter
+    plan: free
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -61,7 +61,7 @@ services:
     dockerfilePath: ./frontend/Dockerfile
     rootDir: frontend
     branch: main
-    plan: starter
+    plan: free
     envVars:
       - key: NEXT_PUBLIC_API_URL
         value: https://api.temujintechnologies.com
@@ -75,7 +75,7 @@ services:
     dockerfilePath: ./frontend/Dockerfile
     rootDir: frontend
     branch: staging
-    plan: starter
+    plan: free
     envVars:
       - key: NEXT_PUBLIC_API_URL
         value: https://api-staging.temujintechnologies.com

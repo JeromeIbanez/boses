@@ -1,0 +1,83 @@
+databases:
+  - name: boses-db-prod
+    databaseName: boses_prod
+    user: boses
+    plan: starter
+
+  - name: boses-db-staging
+    databaseName: boses_staging
+    user: boses
+    plan: starter
+
+services:
+  # ── Production Backend ──────────────────────────────────────────────────
+  - type: web
+    name: boses-backend-prod
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    rootDir: backend
+    branch: main
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: boses-db-prod
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o
+      - key: UPLOAD_DIR
+        value: /tmp/uploads
+    domains:
+      - api.temujintechnologies.com
+
+  # ── Staging Backend ─────────────────────────────────────────────────────
+  - type: web
+    name: boses-backend-staging
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    rootDir: backend
+    branch: staging
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: boses-db-staging
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o
+      - key: UPLOAD_DIR
+        value: /tmp/uploads
+    domains:
+      - api-staging.temujintechnologies.com
+
+  # ── Production Frontend ─────────────────────────────────────────────────
+  - type: web
+    name: boses-frontend-prod
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    rootDir: frontend
+    branch: main
+    plan: starter
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://api.temujintechnologies.com
+    domains:
+      - app.temujintechnologies.com
+
+  # ── Staging Frontend ────────────────────────────────────────────────────
+  - type: web
+    name: boses-frontend-staging
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    rootDir: frontend
+    branch: staging
+    plan: starter
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://api-staging.temujintechnologies.com
+    domains:
+      - staging.temujintechnologies.com

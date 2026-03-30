@@ -1,0 +1,106 @@
+"use client";
+
+import { useParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, User } from "lucide-react";
+import { getPersonaGroup, getPersonas } from "@/lib/api";
+import Badge from "@/components/ui/Badge";
+import Card from "@/components/ui/Card";
+import PageHeader from "@/components/layout/PageHeader";
+import Spinner from "@/components/ui/Spinner";
+
+export default function PersonaGroupPage() {
+  const { projectId, groupId } = useParams<{ projectId: string; groupId: string }>();
+  const router = useRouter();
+
+  const { data: group } = useQuery({
+    queryKey: ["persona-group", groupId],
+    queryFn: () => getPersonaGroup(projectId, groupId),
+    refetchInterval: (q) => {
+      const status = q.state.data?.generation_status;
+      return status === "generating" ? 2000 : false;
+    },
+  });
+
+  const { data: personas, isLoading } = useQuery({
+    queryKey: ["personas", groupId],
+    queryFn: () => getPersonas(projectId, groupId),
+    enabled: group?.generation_status === "complete",
+    refetchInterval: group?.generation_status === "generating" ? 3000 : false,
+  });
+
+  if (!group) return null;
+
+  return (
+    <div className="px-8 py-8">
+      <button
+        onClick={() => router.push(`/projects/${projectId}`)}
+        className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-700 mb-5 transition-colors"
+      >
+        <ArrowLeft size={13} /> Back to Project
+      </button>
+
+      <PageHeader title={group.name} description={`${group.age_min}–${group.age_max} yrs · ${group.gender} · ${group.occupation} · ${group.location}`} />
+
+      {/* Demographic summary */}
+      <div className="flex flex-wrap gap-2 mb-7">
+        <Badge variant="default">Income: {group.income_level}</Badge>
+        <Badge variant="default">{group.persona_count} personas</Badge>
+        {group.generation_status !== "complete" && (
+          <Badge variant={group.generation_status === "generating" ? "warning" : group.generation_status === "failed" ? "error" : "pending"}>
+            {group.generation_status === "generating" && <Spinner className="mr-1 h-3 w-3" />}
+            {group.generation_status}
+          </Badge>
+        )}
+      </div>
+
+      {group.generation_status === "generating" && (
+        <div className="flex items-center gap-3 text-sm text-zinc-500 mb-8 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
+          <Spinner className="border-amber-400 border-t-amber-700" />
+          Generating {group.persona_count} personas with AI… this takes about 15–30 seconds.
+        </div>
+      )}
+
+      {isLoading && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5].map(i => <div key={i} className="h-48 bg-zinc-100 rounded-lg animate-pulse" />)}</div>}
+
+      {personas && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {personas.map((p) => (
+            <Card key={p.id}>
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
+                  {p.full_name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-zinc-900">{p.full_name}</h3>
+                  <p className="text-xs text-zinc-400">{p.age} · {p.occupation}</p>
+                </div>
+              </div>
+
+              {p.personality_traits && p.personality_traits.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {p.personality_traits.slice(0, 3).map((t) => (
+                    <Badge key={t} variant="default">{t}</Badge>
+                  ))}
+                </div>
+              )}
+
+              {p.values_and_motivations && (
+                <p className="text-xs text-zinc-500 line-clamp-2 mb-1">
+                  <span className="font-medium text-zinc-700">Motivated by: </span>
+                  {p.values_and_motivations}
+                </p>
+              )}
+              {p.pain_points && (
+                <p className="text-xs text-zinc-500 line-clamp-2">
+                  <span className="font-medium text-zinc-700">Pain points: </span>
+                  {p.pain_points}
+                </p>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

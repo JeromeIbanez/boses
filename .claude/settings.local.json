@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m venv venv)",
+      "Bash(source venv/bin/activate)",
+      "Bash(pip install:*)",
+      "Bash(alembic init:*)",
+      "Bash(python3 -m venv venv)",
+      "Bash(pip3.13)",
+      "Bash(/opt/homebrew/opt/python@3.12/bin/python3.12 -m venv venv)",
+      "Bash(python -c \"from app.main import app; print\\(''imports OK''\\)\")",
+      "Bash(pip show:*)",
+      "Bash(OPENAI_API_KEY=test python -c \"from app.main import app; print\\(''imports OK''\\)\")",
+      "Bash(OPENAI_API_KEY=test alembic revision --autogenerate -m \"initial_schema\")",
+      "Bash(docker compose:*)",
+      "Read(//Applications/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(brew services:*)",
+      "Bash(brew install:*)",
+      "Bash(OPENAI_API_KEY=test alembic upgrade head)",
+      "Bash(npx create-next-app@latest frontend --typescript --tailwind --app --no-src-dir --no-import-alias --yes)",
+      "Bash(sudo chmod:*)",
+      "Bash(npm config:*)",
+      "Bash(npx create-next-app@latest /Users/jeromeibanez/Desktop/Boses/frontend --typescript --tailwind --app --no-src-dir --no-import-alias --yes)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(OPENAI_API_KEY=test timeout 5 uvicorn app.main:app --host 0.0.0.0 --port 8000)",
+      "Bash(source /Users/jeromeibanez/Desktop/Boses/backend/venv/bin/activate)",
+      "Bash(npm list:*)",
+      "Bash(node /tmp/create_brief2.js)",
+      "Bash(PYTHONPATH=. python -c \":*)",
+      "Bash(PYTHONPATH=. python -c \"from app.services.persona_generator import generate_personas; from app.services.simulation_engine import run_simulation; print\\(''imports OK''\\)\")",
+      "Bash(python -c \"from app.config import settings; print\\(''Key starts with:'', settings.OPENAI_API_KEY[:10]\\)\")",
+      "Bash(echo $OPENAI_API_KEY)",
+      "Bash(python -c \":*)",
+      "Bash(ps eww:*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(pkill -f \"uvicorn app.main:app\")"
+    ]
+  }
+}

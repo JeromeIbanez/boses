@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/projects", icon: FolderOpen },
-  { label: "Library", href: "/library", icon: BookMarked },
+  { label: "Personas", href: "/library", icon: BookMarked },
 ];
 
 export default function Sidebar() {

@@ -215,7 +215,7 @@ export default function LibraryPage() {
   return (
     <div className="px-8 py-8">
       <PageHeader
-        title="Persona Library"
+        title="Personas"
         description="Persistent personas built across all projects. Reused automatically when demographics match."
       />
 

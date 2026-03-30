@@ -203,7 +203,7 @@ _SOURCES: dict[str, type[PersonaDataSource]] = {
 # ---------------------------------------------------------------------------
 
 def generate_personas(group_id: str) -> None:
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    client = OpenAI(api_key=settings.openai_api_key)
     db = SessionLocal()
     try:
         group = db.get(PersonaGroup, group_id)

@@ -23,7 +23,7 @@ class ParsePromptRequest(BaseModel):
 def parse_prompt(project_id: str, body: ParsePromptRequest):
     """Parse a natural language demographic description into structured persona group fields."""
     try:
-        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        client = OpenAI(api_key=settings.openai_api_key)
         response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[

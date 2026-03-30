@@ -5,7 +5,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     DATABASE_URL: str = "postgresql+psycopg://boses:boses_secret@localhost:5432/boses"
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: str = ""
+
+    @property
+    def openai_api_key(self) -> str:
+        return self.OPENAI_API_KEY.strip()
     UPLOAD_DIR: str = "app/uploads"
     OPENAI_MODEL: str = "gpt-4o"
 

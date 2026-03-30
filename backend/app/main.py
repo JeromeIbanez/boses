@@ -40,7 +40,7 @@ def health():
 def debug_openai():
     import httpx
     from openai import OpenAI
-    key = settings.OPENAI_API_KEY
+    key = settings.openai_api_key
 
     # Test 1: raw httpx GET to api.openai.com root
     try:

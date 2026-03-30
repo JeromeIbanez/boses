@@ -34,5 +34,8 @@ class Persona(Base):
     raw_profile_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+    library_persona_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("library_personas.id"), nullable=True)
+
     persona_group: Mapped["PersonaGroup"] = relationship(back_populates="personas")
     simulation_results: Mapped[list["SimulationResult"]] = relationship(back_populates="persona")
+    library_link: Mapped["PersonaLibraryLink | None"] = relationship(back_populates="persona", uselist=False)

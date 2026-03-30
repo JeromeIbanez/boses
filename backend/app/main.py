@@ -91,10 +91,11 @@ def debug_openai():
 
 
 # Routers registered after models are defined
-from app.routers import projects, persona_groups, personas, briefings, simulations  # noqa: E402
+from app.routers import projects, persona_groups, personas, briefings, simulations, library  # noqa: E402
 
 app.include_router(projects.router, prefix="/api/v1")
 app.include_router(persona_groups.router, prefix="/api/v1")
 app.include_router(personas.router, prefix="/api/v1")
 app.include_router(briefings.router, prefix="/api/v1")
 app.include_router(simulations.router, prefix="/api/v1")
+app.include_router(library.router, prefix="/api/v1")

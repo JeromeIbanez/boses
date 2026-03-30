@@ -1,5 +1,7 @@
 import type {
   Briefing,
+  LibraryPersona,
+  LibraryPersonaListResponse,
   Persona,
   PersonaGroup,
   Project,
@@ -89,3 +91,27 @@ export const createSimulation = (
   });
 export const getSimulationResults = (projectId: string, simId: string) =>
   request<SimulationResult[]>(`/projects/${projectId}/simulations/${simId}/results`);
+
+// Library
+export const getLibraryPersonas = (params?: {
+  location?: string;
+  gender?: string;
+  income_level?: string;
+  age_min?: number;
+  age_max?: number;
+  occupation?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  const query = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== "") query.set(k, String(v));
+    });
+  }
+  const qs = query.toString();
+  return request<LibraryPersonaListResponse>(`/library/personas${qs ? `?${qs}` : ""}`);
+};
+
+export const getLibraryPersona = (id: string) =>
+  request<LibraryPersona>(`/library/personas/${id}`);

@@ -36,6 +36,28 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/debug/openai")
+def debug_openai():
+    import httpx
+    key = settings.OPENAI_API_KEY
+    proxy_vars = {k: v for k, v in os.environ.items() if "proxy" in k.lower() or "PROXY" in k}
+    try:
+        r = httpx.get("https://api.openai.com", timeout=5)
+        reachable = True
+        status = r.status_code
+    except Exception as e:
+        reachable = False
+        status = str(e)
+    return {
+        "key_set": bool(key),
+        "key_prefix": key[:10] + "..." if key else None,
+        "httpx_version": httpx.__version__,
+        "openai_reachable": reachable,
+        "openai_status": status,
+        "proxy_vars": proxy_vars,
+    }
+
+
 # Routers registered after models are defined
 from app.routers import projects, persona_groups, personas, briefings, simulations  # noqa: E402
 

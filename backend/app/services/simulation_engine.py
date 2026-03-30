@@ -97,7 +97,7 @@ def _parse_aggregate_response(text: str) -> dict:
 
 
 def run_simulation(simulation_id: str) -> None:
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    client = OpenAI(api_key=settings.openai_api_key)
     db = SessionLocal()
     try:
         simulation = db.get(Simulation, simulation_id)

@@ -22,7 +22,7 @@ jobs:
       - name: Checkout Boses
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 1
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Checkout QA agent
@@ -30,6 +30,7 @@ jobs:
         with:
           repository: JeromeIbanez/temujin-qa-agent
           path: .qa-agent
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,14 +42,6 @@ jobs:
 
       - name: Install Playwright browsers
         run: playwright install --with-deps chromium
-
-      - name: Get git diff
-        id: diff
-        run: |
-          DIFF=$(git diff HEAD~1 HEAD 2>/dev/null || echo "")
-          echo "diff<<EOF" >> $GITHUB_OUTPUT
-          echo "$DIFF" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Wait for staging to be ready
         run: |
@@ -78,7 +71,7 @@ jobs:
           STAGING_BRANCH: ${{ env.STAGING_BRANCH }}
           PRODUCTION_BRANCH: ${{ env.PRODUCTION_BRANCH }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-          GIT_DIFF: ${{ steps.diff.outputs.diff }}
+          COMMIT_SHA: ${{ github.sha }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}

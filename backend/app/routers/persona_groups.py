@@ -21,44 +21,44 @@ class ParsePromptRequest(BaseModel):
 
 @router.post("/parse-prompt")
 def parse_prompt(project_id: str, body: ParsePromptRequest):
-    """
-    Parse a natural language demographic description into structured persona group fields.
-    e.g. "Metro Manila moms, 28-40, middle income, health-conscious"
-    """
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
-    response = client.chat.completions.create(
-        model=settings.OPENAI_MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a market research assistant. Extract structured demographic fields "
-                    "from a natural language description. Return valid JSON only."
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Extract demographic fields from this description:\n\"{body.prompt}\"\n\n"
-                    "Return a JSON object with these fields (use sensible defaults if not mentioned):\n"
-                    "{\n"
-                    '  "name": "short descriptive group name",\n'
-                    '  "age_min": <integer, default 18>,\n'
-                    '  "age_max": <integer, default 45>,\n'
-                    '  "gender": "All" | "Female" | "Male" | "Non-binary",\n'
-                    '  "location": "city/region, country",\n'
-                    '  "occupation": "occupation or type of work",\n'
-                    '  "income_level": "Low" | "Middle" | "Upper-middle" | "High",\n'
-                    '  "psychographic_notes": "any lifestyle, values, or behavioral notes",\n'
-                    '  "persona_count": <integer between 3 and 10, default 5>\n'
-                    "}"
-                ),
-            },
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.2,
-    )
-    return json.loads(response.choices[0].message.content)
+    """Parse a natural language demographic description into structured persona group fields."""
+    try:
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a market research assistant. Extract structured demographic fields "
+                        "from a natural language description. Return valid JSON only."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Extract demographic fields from this description:\n\"{body.prompt}\"\n\n"
+                        "Return a JSON object with these exact fields (use sensible defaults if not mentioned):\n"
+                        "{\n"
+                        '  "name": "short descriptive group name",\n'
+                        '  "age_min": <integer, default 18>,\n'
+                        '  "age_max": <integer, default 45>,\n'
+                        '  "gender": "All" or "Female" or "Male" or "Non-binary",\n'
+                        '  "location": "city/region, country",\n'
+                        '  "occupation": "occupation or type of work",\n'
+                        '  "income_level": "Low" or "Middle" or "Upper-middle" or "High",\n'
+                        '  "psychographic_notes": "any lifestyle, values, or behavioral notes",\n'
+                        '  "persona_count": <integer between 3 and 10, default 5>\n'
+                        "}"
+                    ),
+                },
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.2,
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def _get_project_or_404(project_id: str, db: Session) -> Project:

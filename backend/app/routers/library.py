@@ -4,6 +4,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import CurrentUser, get_current_user
 from app.database import get_db
 from app.models.library_persona import LibraryPersona, PersonaLibraryLink
 from app.models.persona import Persona
@@ -29,6 +30,7 @@ def list_library_personas(
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
+    _current_user: CurrentUser = Depends(get_current_user),
 ):
     query = db.query(LibraryPersona).filter(LibraryPersona.is_retired == False)  # noqa: E712
 
@@ -52,7 +54,11 @@ def list_library_personas(
 
 
 @router.get("/personas/{library_persona_id}", response_model=LibraryPersonaResponse)
-def get_library_persona(library_persona_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_library_persona(
+    library_persona_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _current_user: CurrentUser = Depends(get_current_user),
+):
     lp = db.get(LibraryPersona, library_persona_id)
     if not lp or lp.is_retired:
         raise HTTPException(status_code=404, detail="Library persona not found")
@@ -60,7 +66,11 @@ def get_library_persona(library_persona_id: uuid.UUID, db: Session = Depends(get
 
 
 @router.get("/personas/{library_persona_id}/projects", response_model=list[LibraryPersonaProjectEntry])
-def get_library_persona_projects(library_persona_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_library_persona_projects(
+    library_persona_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _current_user: CurrentUser = Depends(get_current_user),
+):
     lp = db.get(LibraryPersona, library_persona_id)
     if not lp:
         raise HTTPException(status_code=404, detail="Library persona not found")
@@ -94,7 +104,11 @@ def get_library_persona_projects(library_persona_id: uuid.UUID, db: Session = De
 
 
 @router.post("/personas/{library_persona_id}/retire", response_model=LibraryPersonaResponse)
-def retire_library_persona(library_persona_id: uuid.UUID, db: Session = Depends(get_db)):
+def retire_library_persona(
+    library_persona_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _current_user: CurrentUser = Depends(get_current_user),
+):
     lp = db.get(LibraryPersona, library_persona_id)
     if not lp:
         raise HTTPException(status_code=404, detail="Library persona not found")

@@ -2,8 +2,10 @@ import re
 import secrets
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
+
+from app.limiter import limiter
 
 from app.auth.cookies import clear_auth_cookies, set_auth_cookies
 from app.auth.dependencies import CurrentUser, get_current_user
@@ -54,7 +56,8 @@ def _build_auth_response(response: Response, user: User) -> AuthResponse:
 # ---------------------------------------------------------------------------
 
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def signup(body: SignupRequest, response: Response, db: Session = Depends(get_db)):
+@limiter.limit("10/hour")
+def signup(request: Request, body: SignupRequest, response: Response, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email.lower()).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -100,7 +103,8 @@ def signup(body: SignupRequest, response: Response, db: Session = Depends(get_db
 # ---------------------------------------------------------------------------
 
 @router.post("/login", response_model=AuthResponse)
-def login(body: LoginRequest, response: Response, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def login(request: Request, body: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email.lower()).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -197,7 +201,8 @@ def refresh(
 # ---------------------------------------------------------------------------
 
 @router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
-def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/hour")
+def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email.lower()).first()
     # Always return 204 — don't leak whether email exists
     if not user:

@@ -2,10 +2,11 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getPersonaGroup, getPersonas } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
+import LibraryBadge from "@/components/ui/LibraryBadge";
 import PageHeader from "@/components/layout/PageHeader";
 import Spinner from "@/components/ui/Spinner";
 
@@ -71,8 +72,11 @@ export default function PersonaGroupPage() {
                 <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
                   {p.full_name.charAt(0)}
                 </div>
-                <div>
-                  <h3 className="text-sm font-medium text-zinc-900">{p.full_name}</h3>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-medium text-zinc-900">{p.full_name}</h3>
+                    {p.library_persona_id && <LibraryBadge />}
+                  </div>
                   <p className="text-xs text-zinc-400">{p.age} · {p.occupation}</p>
                 </div>
               </div>

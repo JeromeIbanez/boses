@@ -21,6 +21,10 @@ class PersonaResponse(BaseModel):
     pain_points: Optional[str]
     media_consumption: Optional[str]
     purchase_behavior: Optional[str]
+    day_in_the_life: Optional[str]
+    data_source: Optional[str]
+    data_source_references: Optional[list[str]]
+    library_persona_id: Optional[uuid.UUID]
     created_at: datetime
 
     model_config = {"from_attributes": True}

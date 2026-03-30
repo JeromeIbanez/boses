@@ -40,7 +40,44 @@ export interface Persona {
   pain_points: string | null;
   media_consumption: string | null;
   purchase_behavior: string | null;
+  day_in_the_life: string | null;
+  data_source: string | null;
+  data_source_references: string[] | null;
+  library_persona_id: string | null;
   created_at: string;
+}
+
+export interface LibraryPersona {
+  id: string;
+  full_name: string;
+  age: number;
+  gender: string;
+  location: string;
+  occupation: string;
+  income_level: string;
+  educational_background: string | null;
+  family_situation: string | null;
+  background: string | null;
+  personality_traits: string[] | null;
+  goals: string | null;
+  pain_points: string | null;
+  tech_savviness: string | null;
+  media_consumption: string | null;
+  spending_habits: string | null;
+  day_in_the_life: string | null;
+  data_source: string;
+  data_source_references: string[] | null;
+  simulation_count: number;
+  is_retired: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LibraryPersonaListResponse {
+  items: LibraryPersona[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export interface Briefing {

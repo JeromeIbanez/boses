@@ -106,6 +106,397 @@
       "Luzon_provincial": "Predominantly agricultural, strong OFW remittance economy, high religious observance"
     }
   },
+  "indonesia": {
+    "_sources": [
+      "World Bank Indonesia 2024",
+      "DataReportal Digital Indonesia 2024 (We Are Social / Meltwater)",
+      "Badan Pusat Statistik (BPS) Indonesia 2023",
+      "ILO Indonesia Labour Market 2023"
+    ],
+    "population": 283487931,
+    "median_age": 30.2,
+    "gdp_per_capita_usd": 4925,
+    "currency": "IDR",
+    "languages": [
+      "Bahasa Indonesia",
+      "Javanese",
+      "Sundanese"
+    ],
+    "religion": "Predominantly Muslim (87%)",
+    "urban_population_pct": 0.588,
+    "income_distribution": {
+      "description": "Approximate share of households per income band (BPS 2023)",
+      "low": 0.2,
+      "lower_middle": 0.38,
+      "middle": 0.28,
+      "upper_middle": 0.1,
+      "high": 0.04
+    },
+    "age_distribution": {
+      "0_14": 0.246,
+      "15_64": 0.681,
+      "65_plus": 0.073
+    },
+    "gender_split": {
+      "male": 0.504,
+      "female": 0.496
+    },
+    "employment": {
+      "services_pct": 0.48,
+      "agriculture_pct": 0.29,
+      "industry_pct": 0.23,
+      "top_occupations": [
+        "Agricultural workers and smallholders",
+        "Informal traders and street vendors (PKL)",
+        "Factory and manufacturing workers",
+        "Ojek (motorcycle taxi) and Gojek/Grab drivers",
+        "Domestic helpers and household staff",
+        "Government civil servants (PNS)",
+        "Teachers and education workers",
+        "Retail and warung (small shop) owners",
+        "Construction laborers"
+      ],
+      "unemployment_rate": 0.032
+    },
+    "education": {
+      "literacy_rate": 0.96,
+      "tertiary_enrollment_pct": 0.36
+    },
+    "digital": {
+      "internet_penetration_pct": 0.728,
+      "social_media_users_pct": 0.68,
+      "mobile_connections_per_person": 1.35,
+      "avg_daily_internet_hours": 7.42,
+      "avg_daily_social_media_hours": 3.18,
+      "top_platforms_ranked": [
+        "YouTube (most-used platform \u2014 90%+ of internet users)",
+        "WhatsApp (dominant messaging app)",
+        "Instagram (high aspirational/lifestyle usage)",
+        "Facebook",
+        "TikTok (fastest growing, dominant with Gen Z)",
+        "Twitter/X (Indonesia is one of the largest Twitter markets globally)"
+      ],
+      "ecommerce_users_pct": 0.65,
+      "top_ecommerce_platforms": [
+        "Shopee",
+        "Tokopedia",
+        "Lazada",
+        "TikTok Shop"
+      ]
+    },
+    "consumer_behavior": {
+      "notes": [
+        "Strong Islamic influence on purchasing \u2014 halal certification is a key trust signal",
+        "Collectivist culture with strong family and community ties, especially in Java",
+        "Price sensitivity is high; promotions, cashback, and flash sales drive purchase decisions heavily",
+        "Warung (small neighborhood shops) remain the dominant FMCG channel outside major cities",
+        "Mobile-first market \u2014 most internet access is via smartphone",
+        "GoTo (Gojek/Tokopedia) and Grab ecosystems deeply embedded in urban daily life",
+        "Aspirational consumption is strong among urban middle class \u2014 branded goods signal status",
+        "Ramadan is the single most important shopping and marketing season of the year",
+        "Rural-urban divide is significant \u2014 behavior varies greatly between Java and outer islands"
+      ]
+    },
+    "regional_notes": {
+      "Jakarta_Jabodetabek": "Largest metro, highest income, most digitally connected, cosmopolitan and trend-setting, 30M+ people in greater area",
+      "Java": "Most populous island (60% of national population), economic heartland, Javanese cultural norms dominant",
+      "Bali": "Tourism economy, significant expat and foreign worker population, more liberal cultural norms, high-income tourism sector",
+      "Surabaya_East_Java": "Second city, manufacturing and trade hub, strong Javanese-Madurese identity",
+      "Outer_Islands_Sumatra_Kalimantan": "Natural resource economies, younger demographic, lower digital penetration, distinct ethnic identities"
+    }
+  },
+  "singapore": {
+    "_sources": [
+      "World Bank Singapore 2024",
+      "DataReportal Digital Singapore 2024 (We Are Social / Meltwater)",
+      "Singapore Department of Statistics 2023",
+      "MOM (Ministry of Manpower) Singapore Labour Force Survey 2023"
+    ],
+    "population": 6036860,
+    "median_age": 42.1,
+    "gdp_per_capita_usd": 90674,
+    "currency": "SGD",
+    "languages": [
+      "English",
+      "Mandarin",
+      "Malay",
+      "Tamil"
+    ],
+    "religion": "Buddhist (31%), Christian (19%), Muslim (15%), Taoist (9%), Hindu (5%)",
+    "urban_population_pct": 1.0,
+    "income_distribution": {
+      "description": "Approximate share of resident households by income band (SingStat 2023)",
+      "low": 0.05,
+      "lower_middle": 0.15,
+      "middle": 0.35,
+      "upper_middle": 0.3,
+      "high": 0.15
+    },
+    "age_distribution": {
+      "0_14": 0.117,
+      "15_64": 0.747,
+      "65_plus": 0.137
+    },
+    "gender_split": {
+      "male": 0.495,
+      "female": 0.505
+    },
+    "employment": {
+      "services_pct": 0.85,
+      "industry_pct": 0.15,
+      "agriculture_pct": 0.0,
+      "top_occupations": [
+        "Finance and banking professionals",
+        "Technology and software engineers",
+        "Healthcare professionals",
+        "Legal and compliance professionals",
+        "Retail and F&B service workers",
+        "Government and public sector workers",
+        "Logistics and supply chain managers",
+        "Marketing and communications professionals",
+        "Construction workers (largely foreign workforce)"
+      ],
+      "unemployment_rate": 0.028
+    },
+    "education": {
+      "literacy_rate": 0.977,
+      "tertiary_enrollment_pct": 0.91
+    },
+    "digital": {
+      "internet_penetration_pct": 0.944,
+      "social_media_users_pct": 0.84,
+      "mobile_connections_per_person": 1.6,
+      "avg_daily_internet_hours": 6.71,
+      "avg_daily_social_media_hours": 2.15,
+      "top_platforms_ranked": [
+        "WhatsApp (near-universal \u2014 dominant messaging platform)",
+        "YouTube",
+        "Facebook (older demographics)",
+        "Instagram (millennials and professionals)",
+        "LinkedIn (highest professional usage rate in SEA)",
+        "TikTok (growing, especially Gen Z)"
+      ],
+      "ecommerce_users_pct": 0.81,
+      "top_ecommerce_platforms": [
+        "Shopee",
+        "Lazada",
+        "Amazon",
+        "Qoo10",
+        "Zalora"
+      ]
+    },
+    "consumer_behavior": {
+      "notes": [
+        "Highly educated, discerning consumers who research purchases thoroughly before buying",
+        "Strong preference for convenience and quality over price \u2014 time is valued highly",
+        "Multicultural society: Chinese, Malay, Indian, and expat communities have distinct preferences",
+        "Kiasu culture (fear of losing out) drives competitive consumption and FOMO-driven purchases",
+        "Health and wellness spending is among the highest in Asia",
+        "Sustainability and ethical consumption growing, especially among younger demographics",
+        "Hawker culture is central to daily life and food identity",
+        "High brand consciousness \u2014 global luxury and premium brands perform strongly",
+        "Cashless-first society \u2014 PayNow, GrabPay, PayLah widely used",
+        "Large expat population (~30% of residents) creates demand for international products"
+      ]
+    },
+    "regional_notes": {
+      "Central_Region_CBD": "Financial and commercial hub, highest income density, professional workforce, heavy expat concentration",
+      "East_Region": "Residential heartland for middle-class families, Changi Airport proximity, multicultural mix",
+      "West_Region": "Industrial and tech corridor (one-north, Jurong), younger working population, HDB estates",
+      "North_Region": "More suburban, Malay and mixed communities, older HDB towns like Woodlands and Yishun"
+    }
+  },
+  "vietnam": {
+    "_sources": [
+      "World Bank Vietnam 2024",
+      "DataReportal Digital Vietnam 2024 (We Are Social / Meltwater)",
+      "General Statistics Office of Vietnam (GSO) 2023",
+      "ILO Vietnam Labour Market 2023"
+    ],
+    "population": 100987686,
+    "median_age": 32.5,
+    "gdp_per_capita_usd": 4717,
+    "currency": "VND",
+    "languages": [
+      "Vietnamese"
+    ],
+    "religion": "Secular/non-religious majority; Buddhist (7.4%), Catholic (6.6%)",
+    "urban_population_pct": 0.385,
+    "income_distribution": {
+      "description": "Approximate share of households per income band (GSO 2023)",
+      "low": 0.15,
+      "lower_middle": 0.4,
+      "middle": 0.32,
+      "upper_middle": 0.1,
+      "high": 0.03
+    },
+    "age_distribution": {
+      "0_14": 0.232,
+      "15_64": 0.677,
+      "65_plus": 0.09
+    },
+    "gender_split": {
+      "male": 0.499,
+      "female": 0.501
+    },
+    "employment": {
+      "services_pct": 0.4,
+      "agriculture_pct": 0.28,
+      "industry_pct": 0.32,
+      "top_occupations": [
+        "Factory and manufacturing workers (electronics, garments, footwear)",
+        "Agricultural workers and rice farmers",
+        "Street food vendors and small restaurant owners",
+        "Motorbike taxi drivers (xe om) and Grab drivers",
+        "Retail shop workers and market traders",
+        "Construction workers",
+        "Government civil servants",
+        "Teachers and university lecturers",
+        "IT and software engineers (fast-growing sector)"
+      ],
+      "unemployment_rate": 0.015
+    },
+    "education": {
+      "literacy_rate": 0.961,
+      "tertiary_enrollment_pct": 0.29
+    },
+    "digital": {
+      "internet_penetration_pct": 0.842,
+      "social_media_users_pct": 0.73,
+      "mobile_connections_per_person": 1.41,
+      "avg_daily_internet_hours": 6.23,
+      "avg_daily_social_media_hours": 2.53,
+      "top_platforms_ranked": [
+        "Facebook (dominant social platform \u2014 93% of social media users)",
+        "YouTube (very high usage for entertainment and education)",
+        "Zalo (Vietnam-specific super-app, dominant for messaging and payments)",
+        "TikTok (fastest growing, huge Gen Z penetration)",
+        "Instagram (urban youth and lifestyle)",
+        "Messenger"
+      ],
+      "ecommerce_users_pct": 0.62,
+      "top_ecommerce_platforms": [
+        "Shopee",
+        "Lazada",
+        "Tiki (local)",
+        "Sendo (local)",
+        "TikTok Shop"
+      ]
+    },
+    "consumer_behavior": {
+      "notes": [
+        "Rapid economic growth mindset \u2014 aspiration and self-improvement are core cultural drivers",
+        "Strong family values; multi-generational households common, family approval influences purchases",
+        "Zalo is essential for business and personal communication \u2014 WhatsApp equivalent but local",
+        "Price comparison is habitual \u2014 consumers regularly shop across platforms for best deals",
+        "Street food culture is deeply embedded \u2014 eating out cheaply is a daily norm",
+        "Motorbike is the primary mode of transport, shaping logistics and delivery expectations",
+        "Tet (Lunar New Year) is the dominant shopping and gifting season",
+        "Northern (Hanoi) and Southern (Ho Chi Minh City) consumers have distinct cultural styles",
+        "Growing middle class is driving demand for international brands, especially South Korean (K-beauty, Samsung)",
+        "Cash remains common outside major cities despite rapid digital payment growth (MoMo, ZaloPay)"
+      ]
+    },
+    "regional_notes": {
+      "Ho_Chi_Minh_City_Saigon": "Economic capital, more entrepreneurial and open culture, higher income, cosmopolitan, strong startup ecosystem",
+      "Hanoi": "Political capital, more conservative and traditional northern culture, strong civil service presence, high education levels",
+      "Da_Nang": "Fastest-growing coastal city, tourism and tech hub, younger workforce, beach lifestyle",
+      "Mekong_Delta": "Agricultural heartland, rice farming economy, lower incomes, strong rural traditions"
+    }
+  },
+  "thailand": {
+    "_sources": [
+      "World Bank Thailand 2024",
+      "DataReportal Digital Thailand 2024 (We Are Social / Meltwater)",
+      "National Statistical Office of Thailand (NSO) 2023",
+      "ILO Thailand Labour Market 2023"
+    ],
+    "population": 71668011,
+    "median_age": 40.1,
+    "gdp_per_capita_usd": 7347,
+    "currency": "THB",
+    "languages": [
+      "Thai"
+    ],
+    "religion": "Predominantly Buddhist (93%)",
+    "urban_population_pct": 0.619,
+    "income_distribution": {
+      "description": "Approximate share of households per income band (NSO 2023)",
+      "low": 0.12,
+      "lower_middle": 0.32,
+      "middle": 0.35,
+      "upper_middle": 0.15,
+      "high": 0.06
+    },
+    "age_distribution": {},
+    "gender_split": {
+      "male": 0.488,
+      "female": 0.512
+    },
+    "employment": {
+      "services_pct": 0.52,
+      "agriculture_pct": 0.31,
+      "industry_pct": 0.17,
+      "top_occupations": [
+        "Agricultural workers and rice farmers",
+        "Tourism and hospitality workers",
+        "Factory and manufacturing workers (automotive, electronics)",
+        "Street food vendors and market traders (talad)",
+        "Retail and 7-Eleven / convenience store staff",
+        "Motorbike taxi drivers and Grab/Bolt drivers",
+        "Construction workers",
+        "Government civil servants",
+        "Healthcare professionals (medical tourism sector)"
+      ],
+      "unemployment_rate": 0.008
+    },
+    "education": {
+      "literacy_rate": 0.911,
+      "tertiary_enrollment_pct": 0.49
+    },
+    "digital": {
+      "internet_penetration_pct": 0.909,
+      "social_media_users_pct": 0.81,
+      "mobile_connections_per_person": 1.53,
+      "avg_daily_internet_hours": 7.45,
+      "avg_daily_social_media_hours": 2.55,
+      "top_platforms_ranked": [
+        "YouTube (most-used platform by time spent)",
+        "Facebook (dominant social network, especially 30+)",
+        "LINE (essential messaging app \u2014 near-universal in Thailand)",
+        "TikTok (dominant with Gen Z and millennials)",
+        "Instagram (urban lifestyle and aspirational content)",
+        "Twitter/X (strong political and pop culture discourse)"
+      ],
+      "ecommerce_users_pct": 0.72,
+      "top_ecommerce_platforms": [
+        "Shopee",
+        "Lazada",
+        "TikTok Shop",
+        "Central Online (local)"
+      ]
+    },
+    "consumer_behavior": {
+      "notes": [
+        "Buddhist values influence consumer mindset \u2014 mindfulness, moderation, and merit-making (tam bun) shape spending",
+        "LINE is the primary communication channel for business, customer service, and personal use \u2014 not WhatsApp",
+        "Sanuk (fun) culture: entertainment, food, and leisure are high-priority spending categories",
+        "Face (saving and giving face) is a core social dynamic \u2014 status goods and gifting are significant",
+        "Medical tourism is a major industry; health consciousness and wellness spending is high",
+        "K-pop and Korean culture have massive influence on beauty, fashion, and food trends (hallyu effect)",
+        "7-Eleven and convenience store culture is deeply embedded \u2014 Thailand has one of the highest 7-Eleven densities in the world",
+        "Songkran (Thai New Year, April) and year-end are the two peak shopping seasons",
+        "Tourism economy creates a dual market: local consumers and high-spending international visitors",
+        "Strong royal and nationalist sentiment influences brand communication norms"
+      ]
+    },
+    "regional_notes": {
+      "Bangkok_Greater_Metro": "Primary economic and cultural hub, 17M+ in metro area, highest income, most digitally advanced, cosmopolitan",
+      "Chiang_Mai_North": "Cultural capital of the north, large expat and digital nomad community, cooler climate lifestyle, distinct Lanna identity",
+      "Phuket_Samui_South": "Tourism-dominated economy, seasonal income patterns, significant foreign investment, beach lifestyle",
+      "Northeast_Isan": "Largest region by population, predominantly agricultural, lowest incomes, distinct Lao-influenced culture, high rural-urban migration to Bangkok"
+    }
+  },
   "_template": {
     "_comment": "Copy this template when adding a new country. All fields optional except _sources.",
     "_sources": [],

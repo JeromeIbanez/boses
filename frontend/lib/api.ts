@@ -30,6 +30,15 @@ export const deleteProject = (id: string) =>
   request<void>(`/projects/${id}`, { method: "DELETE" });
 
 // Persona Groups
+export const parsePersonaPrompt = (projectId: string, prompt: string) =>
+  request<{
+    name: string; age_min: number; age_max: number; gender: string;
+    location: string; occupation: string; income_level: string;
+    psychographic_notes: string; persona_count: number;
+  }>(`/projects/${projectId}/persona-groups/parse-prompt`, {
+    method: "POST",
+    body: JSON.stringify({ prompt }),
+  });
 export const getPersonaGroups = (projectId: string) =>
   request<PersonaGroup[]>(`/projects/${projectId}/persona-groups`);
 export const getPersonaGroup = (projectId: string, groupId: string) =>

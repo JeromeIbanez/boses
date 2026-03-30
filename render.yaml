@@ -14,7 +14,7 @@ services:
   - type: web
     name: boses-backend-prod
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
+    dockerfilePath: ./Dockerfile
     rootDir: backend
     branch: main
     plan: free
@@ -36,7 +36,7 @@ services:
   - type: web
     name: boses-backend-staging
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
+    dockerfilePath: ./Dockerfile
     rootDir: backend
     branch: staging
     plan: free
@@ -58,7 +58,7 @@ services:
   - type: web
     name: boses-frontend-prod
     runtime: docker
-    dockerfilePath: ./frontend/Dockerfile
+    dockerfilePath: ./Dockerfile
     rootDir: frontend
     branch: main
     plan: free
@@ -72,7 +72,7 @@ services:
   - type: web
     name: boses-frontend-staging
     runtime: docker
-    dockerfilePath: ./frontend/Dockerfile
+    dockerfilePath: ./Dockerfile
     rootDir: frontend
     branch: staging
     plan: free

@@ -11,7 +11,7 @@ env:
   STAGING_API_URL: https://api-staging.temujintechnologies.com
   PRODUCTION_URL: https://app.temujintechnologies.com
   NOTIFY_EMAIL: jeromeibanez95@gmail.com
-  GITHUB_REPO: JeromeIbanez/boses
+  TARGET_REPO: JeromeIbanez/boses
   STAGING_BRANCH: staging
   PRODUCTION_BRANCH: main
 
@@ -40,6 +40,9 @@ jobs:
 
       - name: Install Playwright browsers
         run: playwright install --with-deps chromium
+
+      - name: Fetch all branches
+        run: git fetch origin main staging
 
       - name: Get git diff
         id: diff
@@ -73,7 +76,7 @@ jobs:
           PRODUCTION_URL: ${{ env.PRODUCTION_URL }}
           NOTIFY_EMAIL: ${{ env.NOTIFY_EMAIL }}
           APP_NAME: ${{ env.APP_NAME }}
-          GITHUB_REPO: ${{ env.GITHUB_REPO }}
+          GITHUB_REPO: ${{ env.TARGET_REPO }}
           STAGING_BRANCH: ${{ env.STAGING_BRANCH }}
           PRODUCTION_BRANCH: ${{ env.PRODUCTION_BRANCH }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}

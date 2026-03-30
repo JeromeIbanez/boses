@@ -1,0 +1,79 @@
+name: QA
+
+on:
+  push:
+    branches: [staging]
+
+# ── Config ───────────────────────────────────────────────────────────────────
+env:
+  APP_NAME: Boses
+  STAGING_URL: https://staging.temujintechnologies.com
+  STAGING_API_URL: https://api-staging.temujintechnologies.com
+  PRODUCTION_URL: https://app.temujintechnologies.com
+  NOTIFY_EMAIL: jeromeibanez95@gmail.com
+  TARGET_REPO: JeromeIbanez/boses
+  STAGING_BRANCH: staging
+  PRODUCTION_BRANCH: main
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Boses
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Checkout QA agent
+        uses: actions/checkout@v4
+        with:
+          repository: JeromeIbanez/temujin-qa-agent
+          path: .qa-agent
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r .qa-agent/requirements.txt
+
+      - name: Install Playwright browsers
+        run: playwright install --with-deps chromium
+
+      - name: Wait for staging to be ready
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" ${{ env.STAGING_URL }} || echo "000")
+            if [ "$STATUS" = "200" ]; then echo "Staging is ready." && exit 0; fi
+            echo "Attempt $i: got $STATUS, retrying in 15s..."
+            sleep 15
+          done
+          echo "Staging did not become ready." && exit 1
+
+      - name: Run Playwright e2e tests
+        continue-on-error: true
+        run: |
+          if [ -d "tests/e2e" ]; then
+            pytest tests/e2e/ --base-url=${{ env.STAGING_URL }} -v || true
+          fi
+
+      - name: Run QA orchestrator
+        env:
+          STAGING_URL: ${{ env.STAGING_URL }}
+          STAGING_API_URL: ${{ env.STAGING_API_URL }}
+          PRODUCTION_URL: ${{ env.PRODUCTION_URL }}
+          NOTIFY_EMAIL: ${{ env.NOTIFY_EMAIL }}
+          APP_NAME: ${{ env.APP_NAME }}
+          GITHUB_REPO: ${{ env.TARGET_REPO }}
+          STAGING_BRANCH: ${{ env.STAGING_BRANCH }}
+          PRODUCTION_BRANCH: ${{ env.PRODUCTION_BRANCH }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMIT_SHA: ${{ github.sha }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: python .qa-agent/scripts/orchestrate.py

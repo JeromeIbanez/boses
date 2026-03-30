@@ -3,17 +3,16 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Plus, Users, Sparkles } from "lucide-react";
-import { getPersonaGroups, createPersonaGroup, generatePersonas } from "@/lib/api";
+import { Plus, Users, Sparkles, ArrowRight, RotateCcw } from "lucide-react";
+import { getPersonaGroups, createPersonaGroup, generatePersonas, parsePersonaPrompt } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
-import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
+import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
-import type { PersonaGroup } from "@/types";
 
 interface Props { projectId: string }
 
@@ -24,19 +23,43 @@ const statusVariant = {
   failed: "error" as const,
 };
 
+type Step = "prompt" | "review";
+
+const emptyForm = {
+  name: "", age_min: "18", age_max: "45", gender: "All",
+  location: "", occupation: "", income_level: "Middle",
+  psychographic_notes: "", persona_count: "5",
+};
+
 export default function PersonasTab({ projectId }: Props) {
   const router = useRouter();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "", description: "", age_min: "25", age_max: "45",
-    gender: "All", location: "", occupation: "", income_level: "Middle",
-    psychographic_notes: "", persona_count: "5",
-  });
+  const [step, setStep] = useState<Step>("prompt");
+  const [prompt, setPrompt] = useState("");
+  const [form, setForm] = useState(emptyForm);
 
   const { data: groups, isLoading } = useQuery({
     queryKey: ["persona-groups", projectId],
     queryFn: () => getPersonaGroups(projectId),
+  });
+
+  const parse = useMutation({
+    mutationFn: () => parsePersonaPrompt(projectId, prompt),
+    onSuccess: (data) => {
+      setForm({
+        name: data.name || "",
+        age_min: String(data.age_min || 18),
+        age_max: String(data.age_max || 45),
+        gender: data.gender || "All",
+        location: data.location || "",
+        occupation: data.occupation || "",
+        income_level: data.income_level || "Middle",
+        psychographic_notes: data.psychographic_notes || "",
+        persona_count: String(data.persona_count || 5),
+      });
+      setStep("review");
+    },
   });
 
   const create = useMutation({
@@ -46,7 +69,13 @@ export default function PersonasTab({ projectId }: Props) {
       age_max: Number(form.age_max),
       persona_count: Number(form.persona_count),
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["persona-groups", projectId] }); setOpen(false); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["persona-groups", projectId] });
+      setOpen(false);
+      setStep("prompt");
+      setPrompt("");
+      setForm(emptyForm);
+    },
   });
 
   const generate = useMutation({
@@ -54,8 +83,16 @@ export default function PersonasTab({ projectId }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["persona-groups", projectId] }),
   });
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setForm(f => ({ ...f, [k]: e.target.value }));
+  const set = (k: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const handleClose = () => {
+    setOpen(false);
+    setStep("prompt");
+    setPrompt("");
+    setForm(emptyForm);
+  };
 
   return (
     <>
@@ -98,31 +135,64 @@ export default function PersonasTab({ projectId }: Props) {
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="New Persona Group" width="max-w-xl">
-        <div className="space-y-4">
-          <Input label="Group name" placeholder='e.g. "Metro Manila Mothers"' value={form.name} onChange={set("name")} />
-          <Input label="Description (optional)" placeholder="Brief description of this demographic" value={form.description} onChange={set("description")} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Min age" type="number" value={form.age_min} onChange={set("age_min")} />
-            <Input label="Max age" type="number" value={form.age_max} onChange={set("age_max")} />
+      <Modal open={open} onClose={handleClose} title="New Persona Group" width="max-w-xl">
+        {step === "prompt" ? (
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-500">
+              Describe your target demographic in plain language. Be as specific or broad as you like.
+            </p>
+            <Textarea
+              label="Who is your target audience?"
+              placeholder={`e.g. "Metro Manila mothers aged 28–40, middle income, health-conscious working professionals who use TikTok and value family time"`}
+              rows={4}
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              autoFocus
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+              <Button
+                onClick={() => parse.mutate()}
+                disabled={!prompt.trim() || parse.isPending}
+              >
+                {parse.isPending ? "Analyzing…" : <><ArrowRight size={14} /> Continue</>}
+              </Button>
+            </div>
           </div>
-          <Select label="Gender" value={form.gender} onChange={set("gender")}>
-            <option>All</option><option>Female</option><option>Male</option><option>Non-binary</option>
-          </Select>
-          <Input label="Location" placeholder="e.g. Metro Manila, Philippines" value={form.location} onChange={set("location")} />
-          <Input label="Occupation" placeholder="e.g. Call center agent" value={form.occupation} onChange={set("occupation")} />
-          <Select label="Income level" value={form.income_level} onChange={set("income_level")}>
-            <option>Low</option><option>Middle</option><option>Upper-middle</option><option>High</option>
-          </Select>
-          <Textarea label="Psychographic notes (optional)" placeholder="Values, lifestyle, pain points, media habits..." rows={3} value={form.psychographic_notes} onChange={set("psychographic_notes")} />
-          <Input label="Number of personas to generate" type="number" min={1} max={10} value={form.persona_count} onChange={set("persona_count")} />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={() => create.mutate()} disabled={!form.name || !form.location || !form.occupation || create.isPending}>
-              {create.isPending ? "Creating…" : "Create Group"}
-            </Button>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-zinc-500">Review and adjust the extracted details.</p>
+              <button
+                onClick={() => setStep("prompt")}
+                className="text-xs text-zinc-400 hover:text-zinc-600 flex items-center gap-1"
+              >
+                <RotateCcw size={12} /> Edit prompt
+              </button>
+            </div>
+            <Input label="Group name" value={form.name} onChange={set("name")} />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Min age" type="number" value={form.age_min} onChange={set("age_min")} />
+              <Input label="Max age" type="number" value={form.age_max} onChange={set("age_max")} />
+            </div>
+            <Select label="Gender" value={form.gender} onChange={set("gender")}>
+              <option>All</option><option>Female</option><option>Male</option><option>Non-binary</option>
+            </Select>
+            <Input label="Location" value={form.location} onChange={set("location")} />
+            <Input label="Occupation" value={form.occupation} onChange={set("occupation")} />
+            <Select label="Income level" value={form.income_level} onChange={set("income_level")}>
+              <option>Low</option><option>Middle</option><option>Upper-middle</option><option>High</option>
+            </Select>
+            <Textarea label="Psychographic notes" rows={2} value={form.psychographic_notes} onChange={set("psychographic_notes")} />
+            <Input label="Number of personas" type="number" min={1} max={10} value={form.persona_count} onChange={set("persona_count")} />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+              <Button onClick={() => create.mutate()} disabled={!form.name || create.isPending}>
+                {create.isPending ? "Creating…" : "Create Group"}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
     </>
   );

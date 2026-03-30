@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from openai import OpenAI
 
+from app.auth.dependencies import CurrentUser, get_current_user
 from app.config import settings
 from app.database import get_db
 from app.models.persona_group import PersonaGroup
@@ -19,9 +20,21 @@ class ParsePromptRequest(BaseModel):
     prompt: str
 
 
+def _get_project_or_404(project_id: str, db: Session, company_id) -> Project:
+    project = db.get(Project, project_id)
+    if not project or project.company_id != company_id:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project
+
+
 @router.post("/parse-prompt")
-def parse_prompt(project_id: str, body: ParsePromptRequest):
-    """Parse a natural language demographic description into structured persona group fields."""
+def parse_prompt(
+    project_id: str,
+    body: ParsePromptRequest,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
     try:
         client = OpenAI(api_key=settings.openai_api_key)
         response = client.chat.completions.create(
@@ -61,16 +74,13 @@ def parse_prompt(project_id: str, body: ParsePromptRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def _get_project_or_404(project_id: str, db: Session) -> Project:
-    project = db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
-
-
 @router.get("", response_model=list[PersonaGroupResponse])
-def list_persona_groups(project_id: str, db: Session = Depends(get_db)):
-    _get_project_or_404(project_id, db)
+def list_persona_groups(
+    project_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
     return db.execute(
         select(PersonaGroup)
         .where(PersonaGroup.project_id == project_id)
@@ -79,8 +89,13 @@ def list_persona_groups(project_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=PersonaGroupResponse, status_code=201)
-def create_persona_group(project_id: str, body: PersonaGroupCreate, db: Session = Depends(get_db)):
-    _get_project_or_404(project_id, db)
+def create_persona_group(
+    project_id: str,
+    body: PersonaGroupCreate,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
     group = PersonaGroup(project_id=project_id, **body.model_dump())
     db.add(group)
     db.commit()
@@ -89,7 +104,13 @@ def create_persona_group(project_id: str, body: PersonaGroupCreate, db: Session 
 
 
 @router.get("/{group_id}", response_model=PersonaGroupResponse)
-def get_persona_group(project_id: str, group_id: str, db: Session = Depends(get_db)):
+def get_persona_group(
+    project_id: str,
+    group_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
     group = db.get(PersonaGroup, group_id)
     if not group or str(group.project_id) != project_id:
         raise HTTPException(status_code=404, detail="Persona group not found")
@@ -97,7 +118,14 @@ def get_persona_group(project_id: str, group_id: str, db: Session = Depends(get_
 
 
 @router.patch("/{group_id}", response_model=PersonaGroupResponse)
-def update_persona_group(project_id: str, group_id: str, body: PersonaGroupUpdate, db: Session = Depends(get_db)):
+def update_persona_group(
+    project_id: str,
+    group_id: str,
+    body: PersonaGroupUpdate,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
     group = db.get(PersonaGroup, group_id)
     if not group or str(group.project_id) != project_id:
         raise HTTPException(status_code=404, detail="Persona group not found")
@@ -109,7 +137,13 @@ def update_persona_group(project_id: str, group_id: str, body: PersonaGroupUpdat
 
 
 @router.delete("/{group_id}", status_code=204)
-def delete_persona_group(project_id: str, group_id: str, db: Session = Depends(get_db)):
+def delete_persona_group(
+    project_id: str,
+    group_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
     group = db.get(PersonaGroup, group_id)
     if not group or str(group.project_id) != project_id:
         raise HTTPException(status_code=404, detail="Persona group not found")
@@ -123,13 +157,13 @@ def generate_group_personas(
     group_id: str,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
+    _get_project_or_404(project_id, db, current_user.company_id)
     group = db.get(PersonaGroup, group_id)
     if not group or str(group.project_id) != project_id:
         raise HTTPException(status_code=404, detail="Persona group not found")
-
     group.generation_status = "generating"
     db.commit()
-
     background_tasks.add_task(generate_personas, group_id=str(group_id))
     return {"status": "generating", "persona_count": group.persona_count}

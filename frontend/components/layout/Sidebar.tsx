@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen } from "lucide-react";
+import { LayoutDashboard, FolderOpen, BookMarked } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/projects", icon: FolderOpen },
+  { label: "Library", href: "/library", icon: BookMarked },
 ];
 
 export default function Sidebar() {

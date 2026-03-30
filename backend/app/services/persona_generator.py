@@ -22,6 +22,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.models.persona import Persona
 from app.models.persona_group import PersonaGroup
+from app.services.library_matcher import find_library_matches, save_persona_to_library
 
 logger = logging.getLogger(__name__)
 
@@ -218,34 +219,84 @@ def generate_personas(group_id: str) -> None:
         else:
             source = source_class()
 
-        profiles = source.fetch(group)
+        # --- Step 1: try to fill from library first ---
+        library_matches = find_library_matches(db, group, limit=group.persona_count * 2)
+        used_library_ids: set = set()
+        personas_created = 0
 
-        for profile in profiles:
+        for lib_persona, match_score in library_matches:
+            if personas_created >= group.persona_count:
+                break
+            if lib_persona.id in used_library_ids:
+                continue
+
             persona = Persona(
                 persona_group_id=group_id,
-                full_name=profile.get("full_name", "Unknown"),
-                age=int(profile.get("age", group.age_min)),
-                gender=profile.get("gender", group.gender),
-                location=profile.get("location", group.location),
-                occupation=profile.get("occupation", group.occupation),
-                income_level=profile.get("income_level", group.income_level),
-                educational_background=profile.get("educational_background"),
-                family_situation=profile.get("family_situation"),
-                personality_traits=profile.get("personality_traits"),
-                values_and_motivations=profile.get("values_and_motivations"),
-                pain_points=profile.get("pain_points"),
-                media_consumption=profile.get("media_consumption"),
-                purchase_behavior=profile.get("purchase_behavior"),
-                day_in_the_life=profile.get("day_in_the_life"),
-                data_source=source_key,
-                data_source_references=profile.get("data_source_references"),
-                raw_profile_json=profile,
+                full_name=lib_persona.full_name,
+                age=lib_persona.age,
+                gender=lib_persona.gender,
+                location=lib_persona.location,
+                occupation=lib_persona.occupation,
+                income_level=lib_persona.income_level,
+                educational_background=lib_persona.educational_background,
+                family_situation=lib_persona.family_situation,
+                personality_traits=lib_persona.personality_traits,
+                values_and_motivations=None,
+                pain_points=lib_persona.pain_points,
+                media_consumption=lib_persona.media_consumption,
+                purchase_behavior=lib_persona.spending_habits,
+                day_in_the_life=lib_persona.day_in_the_life,
+                data_source=lib_persona.data_source,
+                data_source_references=lib_persona.data_source_references,
+                raw_profile_json=None,
             )
             db.add(persona)
+            db.flush()  # get persona.id
+            save_persona_to_library(db, persona, match_score=match_score, existing_library_id=lib_persona.id)
+            used_library_ids.add(lib_persona.id)
+            personas_created += 1
+
+        logger.info(f"Filled {personas_created} persona(s) from library for group {group_id}")
+
+        # --- Step 2: generate remaining synthetically ---
+        remaining = group.persona_count - personas_created
+        if remaining > 0:
+            # Temporarily override persona_count without mutating the DB row
+            group.persona_count = remaining
+            profiles = source.fetch(group)
+            group.persona_count = group.persona_count + personas_created  # restore
+
+            for profile in profiles:
+                persona = Persona(
+                    persona_group_id=group_id,
+                    full_name=profile.get("full_name", "Unknown"),
+                    age=int(profile.get("age", group.age_min or 25)),
+                    gender=profile.get("gender", group.gender),
+                    location=profile.get("location", group.location),
+                    occupation=profile.get("occupation", group.occupation),
+                    income_level=profile.get("income_level", group.income_level),
+                    educational_background=profile.get("educational_background"),
+                    family_situation=profile.get("family_situation"),
+                    personality_traits=profile.get("personality_traits"),
+                    values_and_motivations=profile.get("values_and_motivations"),
+                    pain_points=profile.get("pain_points"),
+                    media_consumption=profile.get("media_consumption"),
+                    purchase_behavior=profile.get("purchase_behavior"),
+                    day_in_the_life=profile.get("day_in_the_life"),
+                    data_source=source_key,
+                    data_source_references=profile.get("data_source_references"),
+                    raw_profile_json=profile,
+                )
+                db.add(persona)
+                db.flush()
+                save_persona_to_library(db, persona)
+                personas_created += 1
+
+            logger.info(f"Generated {remaining} new persona(s) synthetically for group {group_id}")
 
         group.generation_status = "complete"
         db.commit()
-        logger.info(f"Generated {len(profiles)} personas for group {group_id} via source={source_key}")
+        logger.info(f"Total {personas_created} personas for group {group_id} (source={source_key})")
 
     except Exception as e:
         logger.error(f"Persona generation failed for group {group_id}: {e}")

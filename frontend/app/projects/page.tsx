@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Plus, FolderOpen } from "lucide-react";
-import { getProjects, createProject } from "@/lib/api";
+import { Plus, FolderOpen, Trash2 } from "lucide-react";
+import { getProjects, createProject, deleteProject } from "@/lib/api";
 import PageHeader from "@/components/layout/PageHeader";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -35,6 +35,11 @@ export default function ProjectsPage() {
       setDescription("");
       router.push(`/projects/${project.id}`);
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteProject(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["projects"] }),
   });
 
   return (
@@ -74,13 +79,24 @@ export default function ProjectsPage() {
                 <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
                   <FolderOpen size={15} className="text-zinc-500" strokeWidth={1.5} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <h3 className="text-sm font-medium text-zinc-900 truncate">{p.name}</h3>
                   {p.description && (
                     <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{p.description}</p>
                   )}
                   <p className="text-xs text-zinc-300 mt-3">{formatDate(p.created_at)}</p>
                 </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete "${p.name}"? This cannot be undone.`)) {
+                      deleteMutation.mutate(p.id);
+                    }
+                  }}
+                  className="p-1.5 rounded-md text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             </Card>
           ))}

@@ -64,7 +64,7 @@ services:
     plan: free
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: https://api.temujintechnologies.com
+        value: https://api.temujintechnologies.com/api/v1
     domains:
       - app.temujintechnologies.com
 
@@ -78,6 +78,6 @@ services:
     plan: free
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: https://api-staging.temujintechnologies.com
+        value: https://api-staging.temujintechnologies.com/api/v1
     domains:
       - staging.temujintechnologies.com

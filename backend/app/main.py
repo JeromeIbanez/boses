@@ -39,22 +39,36 @@ def health():
 @app.get("/debug/openai")
 def debug_openai():
     import httpx
+    from openai import OpenAI
     key = settings.OPENAI_API_KEY
-    proxy_vars = {k: v for k, v in os.environ.items() if "proxy" in k.lower() or "PROXY" in k}
+
+    # Test 1: raw httpx connectivity
     try:
         r = httpx.get("https://api.openai.com", timeout=5)
         reachable = True
-        status = r.status_code
+        http_status = r.status_code
     except Exception as e:
         reachable = False
-        status = str(e)
+        http_status = str(e)
+
+    # Test 2: actual OpenAI SDK call
+    try:
+        client = OpenAI(api_key=key)
+        models = client.models.list()
+        sdk_ok = True
+        sdk_error = None
+    except Exception as e:
+        sdk_ok = False
+        sdk_error = str(e)
+
     return {
         "key_set": bool(key),
-        "key_prefix": key[:10] + "..." if key else None,
+        "key_prefix": key[:12] + "..." if key else None,
         "httpx_version": httpx.__version__,
         "openai_reachable": reachable,
-        "openai_status": status,
-        "proxy_vars": proxy_vars,
+        "http_status": http_status,
+        "sdk_ok": sdk_ok,
+        "sdk_error": sdk_error,
     }
 
 

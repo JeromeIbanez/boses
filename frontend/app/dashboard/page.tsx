@@ -1,21 +1,43 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Plus, FolderOpen } from "lucide-react";
-import { getProjects } from "@/lib/api";
+import { getProjects, createProject } from "@/lib/api";
 import PageHeader from "@/components/layout/PageHeader";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import Modal from "@/components/ui/Modal";
+import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
 import EmptyState from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/utils";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+
   const { data: projects, isLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: getProjects,
   });
+
+  const mutation = useMutation({
+    mutationFn: () => createProject({ name, description: description || undefined }),
+    onSuccess: (project) => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      setOpen(false);
+      setName("");
+      setDescription("");
+      router.push(`/projects/${project.id}`);
+    },
+  });
+
+  const hasProjects = !isLoading && !!projects?.length;
 
   return (
     <div className="px-8 py-8">
@@ -23,9 +45,11 @@ export default function DashboardPage() {
         title="Dashboard"
         description="Your active simulation projects"
         action={
-          <Button onClick={() => router.push("/projects")}>
-            <Plus size={14} /> New Project
-          </Button>
+          hasProjects ? (
+            <Button onClick={() => setOpen(true)}>
+              <Plus size={14} /> New Project
+            </Button>
+          ) : undefined
         }
       />
 
@@ -41,7 +65,7 @@ export default function DashboardPage() {
           title="No projects yet"
           description="Create your first project to start running market simulations."
           action={
-            <Button onClick={() => router.push("/projects")}>
+            <Button onClick={() => setOpen(true)}>
               <Plus size={14} /> Create Project
             </Button>
           }
@@ -66,6 +90,33 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+
+      <Modal open={open} onClose={() => setOpen(false)} title="New Project">
+        <div className="space-y-4">
+          <Input
+            label="Project name"
+            placeholder="e.g. Q2 Product Launch — Philippines"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Textarea
+            label="Description (optional)"
+            placeholder="What are you trying to learn from this simulation?"
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => mutation.mutate()}
+              disabled={!name.trim() || mutation.isPending}
+            >
+              {mutation.isPending ? "Creating…" : "Create Project"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

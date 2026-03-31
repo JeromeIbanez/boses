@@ -117,25 +117,29 @@ def run_simulation(simulation_id: str) -> None:
 
         briefing_text = simulation.briefing.extracted_text or ""
         individual_results = []
+        failed_personas = []
+        sim_ref = simulation_id[:8]
 
-        for persona in personas:
-            traits = ", ".join(persona.personality_traits or [])
-            system_prompt = (
-                f"You are {persona.full_name}, a {persona.age}-year-old {persona.gender} from {persona.location}. "
-                f"You work as {persona.occupation} and earn a {persona.income_level} income. "
-                f"Background: {persona.educational_background or 'Not specified'}. "
-                f"Family: {persona.family_situation or 'Not specified'}. "
-                f"Personality: {traits or 'Not specified'}. "
-                f"What drives you: {persona.values_and_motivations or 'Not specified'}. "
-                f"Your frustrations: {persona.pain_points or 'Not specified'}. "
-                f"Media habits: {persona.media_consumption or 'Not specified'}. "
-                f"Purchase behavior: {persona.purchase_behavior or 'Not specified'}. "
-                "You are participating in a market research exercise. Respond ONLY as this person would — "
-                "in their authentic voice, with their real concerns, skepticism, or enthusiasm. "
-                "Do not break character."
-            )
+        for i, persona in enumerate(personas, 1):
+            logger.info(f"[sim:{sim_ref}] Persona {i}/{len(personas)}: {persona.full_name}")
+            try:
+                traits = ", ".join(persona.personality_traits or [])
+                system_prompt = (
+                    f"You are {persona.full_name}, a {persona.age}-year-old {persona.gender} from {persona.location}. "
+                    f"You work as {persona.occupation} and earn a {persona.income_level} income. "
+                    f"Background: {persona.educational_background or 'Not specified'}. "
+                    f"Family: {persona.family_situation or 'Not specified'}. "
+                    f"Personality: {traits or 'Not specified'}. "
+                    f"What drives you: {persona.values_and_motivations or 'Not specified'}. "
+                    f"Your frustrations: {persona.pain_points or 'Not specified'}. "
+                    f"Media habits: {persona.media_consumption or 'Not specified'}. "
+                    f"Purchase behavior: {persona.purchase_behavior or 'Not specified'}. "
+                    "You are participating in a market research exercise. Respond ONLY as this person would — "
+                    "in their authentic voice, with their real concerns, skepticism, or enthusiasm. "
+                    "Do not break character."
+                )
 
-            user_prompt = f"""Here is a product/campaign briefing:
+                user_prompt = f"""Here is a product/campaign briefing:
 
 ---
 {briefing_text}
@@ -150,31 +154,43 @@ Please respond in character. Structure your response EXACTLY as:
 4. NOTABLE QUOTE: One sentence that best captures your opinion
 5. KEY THEMES: 3 comma-separated themes that came up for you"""
 
-            response = client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0.9,
-            )
+                response = client.chat.completions.create(
+                    model=settings.OPENAI_MODEL,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=0.9,
+                )
 
-            raw_text = response.choices[0].message.content or ""
-            parsed = _parse_individual_response(raw_text)
+                raw_text = response.choices[0].message.content or ""
+                parsed = _parse_individual_response(raw_text)
 
-            result = SimulationResult(
-                simulation_id=simulation_id,
-                persona_id=persona.id,
-                result_type="individual",
-                sentiment=parsed["sentiment"],
-                sentiment_score=SENTIMENT_SCORES.get(parsed["sentiment"], 0.0),
-                reaction_text=parsed["reaction"] + (" " + parsed["reasoning"]).rstrip(),
-                key_themes=parsed["key_themes"] or None,
-                notable_quote=parsed["notable_quote"] or None,
+                result = SimulationResult(
+                    simulation_id=simulation_id,
+                    persona_id=persona.id,
+                    result_type="individual",
+                    sentiment=parsed["sentiment"],
+                    sentiment_score=SENTIMENT_SCORES.get(parsed["sentiment"], 0.0),
+                    reaction_text=parsed["reaction"] + (" " + parsed["reasoning"]).rstrip(),
+                    key_themes=parsed["key_themes"] or None,
+                    notable_quote=parsed["notable_quote"] or None,
+                )
+                db.add(result)
+                db.flush()
+                individual_results.append((persona, parsed))
+                logger.info(f"[sim:{sim_ref}] ✓ {persona.full_name} ({parsed['sentiment']})")
+            except Exception as persona_err:
+                logger.error(f"[sim:{sim_ref}] ✗ {persona.full_name} failed: {persona_err}")
+                failed_personas.append(persona.full_name)
+
+        if not individual_results:
+            raise RuntimeError(f"All {len(personas)} persona(s) failed to respond.")
+        if failed_personas:
+            simulation.error_message = (
+                f"{len(failed_personas)} of {len(personas)} persona(s) failed: "
+                + ", ".join(failed_personas)
             )
-            db.add(result)
-            db.flush()
-            individual_results.append((persona, parsed))
 
         # Aggregate summary
         group = simulation.persona_group
@@ -226,10 +242,10 @@ Be specific. Reference actual responses. Be direct about what worked and what di
         simulation.status = "complete"
         simulation.completed_at = datetime.utcnow()
         db.commit()
-        logger.info(f"Simulation {simulation_id} completed successfully")
+        logger.info(f"[sim:{sim_ref}] Simulation complete ({len(individual_results)}/{len(personas)} personas)")
 
     except Exception as e:
-        logger.error(f"Simulation {simulation_id} failed: {e}")
+        logger.error(f"[sim:{simulation_id[:8]}] Simulation failed: {e}")
         try:
             simulation = db.get(Simulation, simulation_id)
             if simulation:

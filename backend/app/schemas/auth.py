@@ -2,19 +2,19 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class SignupRequest(BaseModel):
     email: EmailStr
-    password: str
-    full_name: Optional[str] = None
-    company_name: str
+    password: str = Field(min_length=8, max_length=72)
+    full_name: Optional[str] = Field(default=None, max_length=200)
+    company_name: str = Field(min_length=1, max_length=200)
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1, max_length=72)
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -23,7 +23,7 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     token: str
-    new_password: str
+    new_password: str = Field(min_length=8, max_length=72)
 
 
 class CompanyResponse(BaseModel):

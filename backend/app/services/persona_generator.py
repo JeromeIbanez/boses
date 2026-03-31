@@ -24,6 +24,7 @@ from app.models.persona import Persona
 from app.models.persona_group import PersonaGroup
 from app.services.grounding import format_grounding_context
 from app.services.library_matcher import find_library_matches, save_persona_to_library
+from app.services.reddit_grounding import fetch_reddit_signals
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,14 @@ class SyntheticPersonaSource(PersonaDataSource):
     def fetch(self, group: PersonaGroup) -> list[dict]:
         # Load real-world grounding data for this location (empty string if not found)
         grounding_context, grounding_sources = format_grounding_context(group.location or "")
+
+        # Append Reddit social signals if credentials are configured
+        reddit_context = fetch_reddit_signals(
+            group.location or "",
+            group.psychographic_notes or "",
+        )
+        if reddit_context:
+            grounding_context = grounding_context + "\n" + reddit_context
 
         skeletons = self._pass1_skeletons(group, grounding_context)
         profiles = self._pass2_expand(group, skeletons, grounding_context, grounding_sources)

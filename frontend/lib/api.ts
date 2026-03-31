@@ -69,6 +69,7 @@ export const getBriefing = (projectId: string, briefingId: string) =>
 export const uploadBriefing = (projectId: string, formData: FormData) =>
   fetch(`${BASE}/projects/${projectId}/briefings`, {
     method: "POST",
+    credentials: "include",
     body: formData,
   }).then((r) => {
     if (!r.ok) throw new Error("Upload failed");

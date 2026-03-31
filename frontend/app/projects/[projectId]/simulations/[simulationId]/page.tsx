@@ -143,7 +143,13 @@ export default function SimulationResultsPage() {
         </div>
         {simulation && (
           <p className="text-sm text-zinc-500">
-            {formatDate(simulation.created_at)} · {simulation.prompt_question}
+            {formatDate(simulation.created_at)}
+            {" · "}
+            <code className="text-xs bg-zinc-100 text-zinc-500 px-1.5 py-0.5 rounded font-mono">
+              #{String(simulation.id).slice(0, 8)}
+            </code>
+            {" · "}
+            {simulation.prompt_question}
           </p>
         )}
       </div>
@@ -162,6 +168,13 @@ export default function SimulationResultsPage() {
         <Card className="border-red-200 bg-red-50">
           <p className="text-sm font-medium text-red-700 mb-1">Simulation failed</p>
           {simulation?.error_message && <p className="text-xs text-red-600">{simulation.error_message}</p>}
+        </Card>
+      )}
+
+      {/* Partial failure warning */}
+      {simulation?.status === "complete" && simulation?.error_message && (
+        <Card className="border-amber-200 bg-amber-50 mb-2">
+          <p className="text-xs text-amber-700">⚠ Partial results — {simulation.error_message}</p>
         </Card>
       )}
 

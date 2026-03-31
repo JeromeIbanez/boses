@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen, BookMarked } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, FolderOpen, BookMarked, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -13,6 +14,13 @@ const nav = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
+  };
 
   return (
     <aside className="w-56 shrink-0 border-r border-zinc-200 bg-white flex flex-col h-screen sticky top-0">
@@ -37,8 +45,20 @@ export default function Sidebar() {
           </Link>
         ))}
       </nav>
-      <div className="px-5 py-4 border-t border-zinc-200">
-        <p className="text-xs text-zinc-400">v0.1.0 MVP</p>
+      <div className="px-4 py-4 border-t border-zinc-200 space-y-2">
+        {user && (
+          <div className="px-1">
+            <p className="text-xs font-medium text-zinc-700 truncate">{user.full_name || user.email}</p>
+            <p className="text-xs text-zinc-400 truncate">{user.company.name}</p>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-colors"
+        >
+          <LogOut size={13} strokeWidth={1.8} />
+          Sign out
+        </button>
       </div>
     </aside>
   );

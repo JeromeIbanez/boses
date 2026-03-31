@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Sidebar from "@/components/layout/Sidebar";
 import Providers from "@/components/Providers";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "Boses — Market Simulation",
@@ -11,12 +11,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex h-screen overflow-hidden bg-zinc-50">
+      <body className="bg-zinc-50">
         <Providers>
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto">
-            {children}
-          </main>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Plus, Play, ChevronRight } from "lucide-react";
-import { getSimulations, createSimulation, getPersonaGroups, getBriefings } from "@/lib/api";
+import { Plus, Play, ChevronRight, Trash2 } from "lucide-react";
+import { getSimulations, createSimulation, getPersonaGroups, getBriefings, deleteSimulation } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
@@ -49,6 +49,11 @@ export default function SimulationsTab({ projectId }: Props) {
     enabled: open,
   });
 
+  const deleteSim = useMutation({
+    mutationFn: (simId: string) => deleteSimulation(projectId, simId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["simulations", projectId] }),
+  });
+
   const run = useMutation({
     mutationFn: () => createSimulation(projectId, {
       persona_group_id: groupId,
@@ -88,7 +93,19 @@ export default function SimulationsTab({ projectId }: Props) {
                   </div>
                   <p className="text-sm text-zinc-700 truncate">{s.prompt_question}</p>
                 </div>
-                <ChevronRight size={16} className="text-zinc-300 ml-3 shrink-0" />
+                <div className="flex items-center gap-1 ml-3 shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm("Delete this simulation and all its results?")) deleteSim.mutate(s.id);
+                    }}
+                    className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
+                    title="Delete simulation"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                  <ChevronRight size={16} className="text-zinc-300" />
+                </div>
               </div>
             </Card>
           ))}

@@ -64,13 +64,13 @@ def create_simulation(
         if not body.prompt_question or not body.prompt_question.strip():
             raise HTTPException(status_code=422, detail="prompt_question is required for concept tests")
 
-    if body.simulation_type in ("idi_ai",):
-        if not body.idi_script_text or not body.idi_script_text.strip():
-            raise HTTPException(status_code=422, detail="idi_script_text is required for AI-assisted IDI")
-
     if body.simulation_type == "idi_manual":
         if not body.idi_persona_id:
             raise HTTPException(status_code=422, detail="idi_persona_id is required for manual IDI")
+
+    # For idi_ai with inline script, validate it's non-empty.
+    # File-upload mode sends no script here — the background task is triggered by the upload endpoint instead.
+    idi_ai_ready = body.simulation_type == "idi_ai" and bool(body.idi_script_text and body.idi_script_text.strip())
 
     initial_status = "active" if body.simulation_type == "idi_manual" else "pending"
 
@@ -88,7 +88,9 @@ def create_simulation(
     db.commit()
     db.refresh(simulation)
 
-    if body.simulation_type != "idi_manual":
+    # Schedule background task now only if we already have the script (text mode).
+    # File-upload mode: task is scheduled after the script file is processed.
+    if body.simulation_type == "concept_test" or idi_ai_ready:
         background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
 
     return simulation
@@ -145,6 +147,7 @@ def get_simulation_results(
 async def upload_idi_script(
     project_id: str,
     simulation_id: str,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
@@ -184,6 +187,11 @@ async def upload_idi_script(
     simulation.idi_script_text = script_text
     db.commit()
     db.refresh(simulation)
+
+    # If this is an idi_ai simulation waiting on its script, kick off the background task now
+    if simulation.simulation_type == "idi_ai" and simulation.status == "pending":
+        background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
+
     return simulation
 
 

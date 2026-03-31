@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
-import { getMe, login as apiLogin, logout as apiLogout, AuthUser } from "@/lib/auth";
+import { getMe, login as apiLogin, logout as apiLogout, refreshToken, AuthUser } from "@/lib/auth";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -22,9 +22,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await getMe();
       setUser(data.user);
     } catch {
-      // Clear stale cookies so middleware doesn't redirect-loop back to /dashboard
-      await apiLogout().catch(() => {});
-      setUser(null);
+      // Access token expired — try refresh token before logging out
+      try {
+        const data = await refreshToken();
+        setUser(data.user);
+      } catch {
+        // Refresh token also invalid — clear stale cookies and force re-login
+        await apiLogout().catch(() => {});
+        setUser(null);
+      }
     }
   }, []);
 

@@ -11,3 +11,7 @@ python-multipart==0.0.12
 pdfminer.six==20231228
 Pillow==10.4.0
 python-dotenv==1.0.1
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
+slowapi==0.1.9

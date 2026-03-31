@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
+from app.auth.dependencies import CurrentUser, get_current_user
 from app.database import get_db
 from app.models.simulation import Simulation
 from app.models.simulation_result import SimulationResult
@@ -12,16 +13,20 @@ from app.services.simulation_engine import run_simulation
 router = APIRouter(prefix="/projects/{project_id}/simulations", tags=["simulations"])
 
 
-def _get_project_or_404(project_id: str, db: Session) -> Project:
+def _get_project_or_404(project_id: str, db: Session, company_id) -> Project:
     project = db.get(Project, project_id)
-    if not project:
+    if not project or project.company_id != company_id:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
 
 
 @router.get("", response_model=list[SimulationResponse])
-def list_simulations(project_id: str, db: Session = Depends(get_db)):
-    _get_project_or_404(project_id, db)
+def list_simulations(
+    project_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
     return db.execute(
         select(Simulation)
         .where(Simulation.project_id == project_id)
@@ -35,9 +40,9 @@ def create_simulation(
     body: SimulationCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
-    _get_project_or_404(project_id, db)
-
+    _get_project_or_404(project_id, db, current_user.company_id)
     simulation = Simulation(
         project_id=project_id,
         persona_group_id=body.persona_group_id,
@@ -48,13 +53,18 @@ def create_simulation(
     db.add(simulation)
     db.commit()
     db.refresh(simulation)
-
     background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
     return simulation
 
 
 @router.get("/{simulation_id}", response_model=SimulationResponse)
-def get_simulation(project_id: str, simulation_id: str, db: Session = Depends(get_db)):
+def get_simulation(
+    project_id: str,
+    simulation_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
     simulation = db.get(Simulation, simulation_id)
     if not simulation or str(simulation.project_id) != project_id:
         raise HTTPException(status_code=404, detail="Simulation not found")
@@ -62,7 +72,13 @@ def get_simulation(project_id: str, simulation_id: str, db: Session = Depends(ge
 
 
 @router.get("/{simulation_id}/results", response_model=list[SimulationResultResponse])
-def get_simulation_results(project_id: str, simulation_id: str, db: Session = Depends(get_db)):
+def get_simulation_results(
+    project_id: str,
+    simulation_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
     simulation = db.get(Simulation, simulation_id)
     if not simulation or str(simulation.project_id) != project_id:
         raise HTTPException(status_code=404, detail="Simulation not found")

@@ -103,10 +103,20 @@ def get_simulation(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
+    from datetime import datetime, timedelta
     _get_project_or_404(project_id, db, current_user.company_id)
     simulation = db.get(Simulation, simulation_id)
     if not simulation or str(simulation.project_id) != project_id:
         raise HTTPException(status_code=404, detail="Simulation not found")
+
+    # If stuck in running/pending for >20 minutes, mark as failed
+    if simulation.status in ("running", "pending", "generating_report"):
+        age = datetime.utcnow() - simulation.created_at
+        if age > timedelta(minutes=20):
+            simulation.status = "failed"
+            simulation.error_message = "Simulation timed out — the background task may have been interrupted. Please try again."
+            db.commit()
+
     return simulation
 
 

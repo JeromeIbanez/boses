@@ -34,5 +34,10 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"
 
+    @property
+    def use_secure_cookies(self) -> bool:
+        """True for any deployed environment (staging or production) — not local dev."""
+        return self.ENVIRONMENT in ("production", "staging")
+
 
 settings = Settings()

@@ -31,6 +31,25 @@ export default function IDIChatPage() {
 
   const send = useMutation({
     mutationFn: (content: string) => sendIDIMessage(projectId, simulationId, content),
+    onMutate: async (content: string) => {
+      await qc.cancelQueries({ queryKey: ["idi-messages", simulationId] });
+      const previous = qc.getQueryData(["idi-messages", simulationId]);
+      qc.setQueryData(["idi-messages", simulationId], (old: typeof messages) => [
+        ...(old ?? []),
+        {
+          id: `optimistic-${Date.now()}`,
+          simulation_id: simulationId,
+          persona_id: null,
+          role: "user" as const,
+          content,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+      return { previous };
+    },
+    onError: (_err, _content, context) => {
+      qc.setQueryData(["idi-messages", simulationId], context?.previous);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["idi-messages", simulationId] });
     },

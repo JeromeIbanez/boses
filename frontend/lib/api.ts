@@ -56,10 +56,14 @@ export const generatePersonas = (projectId: string, groupId: string) =>
     `/projects/${projectId}/persona-groups/${groupId}/generate`,
     { method: "POST" }
   );
+export const deletePersonaGroup = (projectId: string, groupId: string) =>
+  request<void>(`/projects/${projectId}/persona-groups/${groupId}`, { method: "DELETE" });
 
 // Personas
 export const getPersonas = (projectId: string, groupId: string) =>
   request<Persona[]>(`/projects/${projectId}/persona-groups/${groupId}/personas`);
+export const deletePersona = (projectId: string, groupId: string, personaId: string) =>
+  request<void>(`/projects/${projectId}/persona-groups/${groupId}/personas/${personaId}`, { method: "DELETE" });
 
 // Briefings
 export const getBriefings = (projectId: string) =>
@@ -93,6 +97,8 @@ export const createSimulation = (
   });
 export const getSimulationResults = (projectId: string, simId: string) =>
   request<SimulationResult[]>(`/projects/${projectId}/simulations/${simId}/results`);
+export const deleteSimulation = (projectId: string, simId: string) =>
+  request<void>(`/projects/${projectId}/simulations/${simId}`, { method: "DELETE" });
 
 // Library
 export const getLibraryPersonas = (params?: {

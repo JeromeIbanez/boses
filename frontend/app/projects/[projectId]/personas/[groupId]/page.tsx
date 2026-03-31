@@ -1,9 +1,9 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
-import { getPersonaGroup, getPersonas } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import { getPersonaGroup, getPersonas, deletePersona } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import LibraryBadge from "@/components/ui/LibraryBadge";
@@ -13,6 +13,12 @@ import Spinner from "@/components/ui/Spinner";
 export default function PersonaGroupPage() {
   const { projectId, groupId } = useParams<{ projectId: string; groupId: string }>();
   const router = useRouter();
+  const qc = useQueryClient();
+
+  const remove = useMutation({
+    mutationFn: (personaId: string) => deletePersona(projectId, groupId, personaId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
+  });
 
   const { data: group } = useQuery({
     queryKey: ["persona-group", groupId],
@@ -79,6 +85,15 @@ export default function PersonaGroupPage() {
                   </div>
                   <p className="text-xs text-zinc-400">{p.age} · {p.occupation}</p>
                 </div>
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete ${p.full_name}?`)) remove.mutate(p.id);
+                  }}
+                  className="p-1 text-zinc-300 hover:text-red-500 transition-colors shrink-0"
+                  title="Delete persona"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
 
               {p.personality_traits && p.personality_traits.length > 0 && (

@@ -59,7 +59,7 @@ def _build_auth_response(response: Response, user: User) -> AuthResponse:
 @limiter.limit("10/hour")
 def signup(request: Request, body: SignupRequest, response: Response, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email.lower()).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="An account with that email already exists. Try signing in instead.")
 
     if len(body.password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
@@ -106,11 +106,12 @@ def signup(request: Request, body: SignupRequest, response: Response, db: Sessio
 @limiter.limit("20/minute")
 def login(request: Request, body: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email.lower()).first()
-    if not user or not verify_password(body.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
+    if not user:
+        raise HTTPException(status_code=401, detail="No account found with that email address")
+    if not verify_password(body.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Incorrect password")
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is deactivated")
+        raise HTTPException(status_code=403, detail="This account has been deactivated. Please contact support.")
 
     raw_refresh, refresh_hash = create_refresh_token()
     rt = RefreshToken(
@@ -227,7 +228,7 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
         or not user.password_reset_token_expiry
         or user.password_reset_token_expiry < datetime.utcnow()
     ):
-        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired. Please request a new one.")
 
     if len(body.new_password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")

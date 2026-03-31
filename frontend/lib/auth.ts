@@ -1,15 +1,38 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...init?.headers },
-    ...init,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || "Request failed");
+/** Pydantic 422 returns detail as an array; other errors return it as a string. */
+function extractDetail(detail: unknown): string {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    // e.g. { loc: ["body", "password"], msg: "String should have at least 8 characters" }
+    const first = detail[0];
+    const field = Array.isArray(first?.loc) ? first.loc[first.loc.length - 1] : null;
+    const msg: string = first?.msg ?? "Validation error";
+    return field && field !== "body" ? `${field}: ${msg}` : msg;
   }
+  return "Something went wrong. Please try again.";
+}
+
+async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...init?.headers },
+      ...init,
+    });
+  } catch {
+    throw new Error("Unable to connect. Please check your internet connection.");
+  }
+
+  if (!res.ok) {
+    if (res.status === 429) {
+      throw new Error("Too many attempts. Please wait a moment and try again.");
+    }
+    const body = await res.json().catch(() => ({}));
+    throw new Error(extractDetail(body.detail));
+  }
+
   if (res.status === 204) return undefined as T;
   return res.json();
 }

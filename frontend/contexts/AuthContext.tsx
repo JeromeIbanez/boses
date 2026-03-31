@@ -22,6 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await getMe();
       setUser(data.user);
     } catch {
+      // Clear stale cookies so middleware doesn't redirect-loop back to /dashboard
+      await apiLogout().catch(() => {});
       setUser(null);
     }
   }, []);

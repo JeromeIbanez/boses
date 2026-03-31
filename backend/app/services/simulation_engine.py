@@ -97,6 +97,23 @@ def _parse_aggregate_response(text: str) -> dict:
 
 
 def run_simulation(simulation_id: str) -> None:
+    from app.services.idi_engine import run_idi_ai  # local import avoids circular dependency
+
+    # Route to the appropriate engine based on simulation type
+    _db = SessionLocal()
+    try:
+        _sim = _db.get(Simulation, simulation_id)
+        sim_type = _sim.simulation_type if _sim else "concept_test"
+    finally:
+        _db.close()
+
+    if sim_type == "idi_ai":
+        run_idi_ai(simulation_id)
+        return
+    if sim_type == "idi_manual":
+        return  # manual sessions are driven by the chat endpoint
+
+    # concept_test path
     client = OpenAI(api_key=settings.openai_api_key)
     db = SessionLocal()
     try:

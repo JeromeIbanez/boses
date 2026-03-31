@@ -29,6 +29,10 @@ class SimulationResult(Base):
     top_themes: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
     recommendations: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # IDI result fields
+    transcript: Mapped[str | None] = mapped_column(Text, nullable=True)
+    report_sections: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     simulation: Mapped["Simulation"] = relationship(back_populates="results")

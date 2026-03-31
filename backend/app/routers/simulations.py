@@ -71,6 +71,21 @@ def get_simulation(
     return simulation
 
 
+@router.delete("/{simulation_id}", status_code=204)
+def delete_simulation(
+    project_id: str,
+    simulation_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
+    simulation = db.get(Simulation, simulation_id)
+    if not simulation or str(simulation.project_id) != project_id:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    db.delete(simulation)
+    db.commit()
+
+
 @router.get("/{simulation_id}/results", response_model=list[SimulationResultResponse])
 def get_simulation_results(
     project_id: str,

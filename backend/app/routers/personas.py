@@ -37,6 +37,20 @@ def list_personas(
     ).scalars().all()
 
 
+@router.delete("", status_code=204)
+def delete_all_personas(
+    project_id: str,
+    group_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_group_or_404(project_id, group_id, db, current_user.company_id)
+    db.execute(
+        Persona.__table__.delete().where(Persona.persona_group_id == group_id)
+    )
+    db.commit()
+
+
 @router.delete("/{persona_id}", status_code=204)
 def delete_persona(
     project_id: str,

@@ -65,6 +65,8 @@ export const getPersonas = (projectId: string, groupId: string) =>
   request<Persona[]>(`/projects/${projectId}/persona-groups/${groupId}/personas`);
 export const deletePersona = (projectId: string, groupId: string, personaId: string) =>
   request<void>(`/projects/${projectId}/persona-groups/${groupId}/personas/${personaId}`, { method: "DELETE" });
+export const deleteAllPersonas = (projectId: string, groupId: string) =>
+  request<void>(`/projects/${projectId}/persona-groups/${groupId}/personas`, { method: "DELETE" });
 
 // Briefings
 export const getBriefings = (projectId: string) =>

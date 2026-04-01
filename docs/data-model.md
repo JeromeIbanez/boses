@@ -338,8 +338,8 @@ erDiagram
 |---|---|---|---|
 | id | UUID | No | PK |
 | project_id | UUID | No | FK → projects.id |
-| persona_group_id | UUID | No | FK → persona_groups.id |
-| briefing_id | UUID | Yes | FK → briefings.id |
+| persona_group_id | UUID | No | FK → persona_groups.id, CASCADE |
+| briefing_id | UUID | Yes | FK → briefings.id, SET NULL |
 | prompt_question | Text | Yes | |
 | simulation_type | String(50) | No | concept_test / idi_ai / idi_manual |
 | idi_script_text | Text | Yes | Parsed from uploaded .txt/.docx |
@@ -355,7 +355,7 @@ erDiagram
 |---|---|---|---|
 | id | UUID | No | PK |
 | simulation_id | UUID | No | FK → simulations.id |
-| persona_id | UUID | Yes | FK → personas.id; null for aggregate rows |
+| persona_id | UUID | Yes | FK → personas.id, SET NULL; null for aggregate rows |
 | result_type | String(50) | No | individual / aggregate / idi_individual / idi_aggregate |
 | sentiment | String(50) | Yes | positive / neutral / negative |
 | sentiment_score | Float | Yes | -1.0 to 1.0 |

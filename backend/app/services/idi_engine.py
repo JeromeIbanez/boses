@@ -68,10 +68,6 @@ def _parse_questions(script_text: str) -> list[str]:
 
 def _format_transcript(questions: list[str], answers: list[str]) -> str:
     parts = []
-    for q, a in zip(questions, answers):
-        parts.append(f"INTERVIEWER: {q}\n{answers[questions.index(q)]}")
-    # Use zip index-safe version
-    parts = []
     for i, (q, a) in enumerate(zip(questions, answers)):
         parts.append(f"INTERVIEWER: {q}\nRESPONDENT: {a}")
     return "\n\n".join(parts)

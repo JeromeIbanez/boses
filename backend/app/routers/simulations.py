@@ -5,7 +5,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, BackgroundTasks, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, BackgroundTasks, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 

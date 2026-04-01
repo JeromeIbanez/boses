@@ -58,11 +58,6 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/sentry-debug")
-def sentry_debug():
-    raise RuntimeError("Sentry test error — safe to ignore")
-
-
 # Routers registered after models are defined
 from app.routers import projects, persona_groups, personas, briefings, simulations, library, auth  # noqa: E402
 

@@ -7,6 +7,7 @@ logging.basicConfig(
     format="%(levelname)s: [%(name)s] %(message)s",
 )
 
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -16,6 +17,16 @@ from app.config import settings
 from app.database import engine
 from app.limiter import limiter
 from app.models import Base
+
+# Initialise Sentry before the app is created so all errors are captured,
+# including startup failures. A missing DSN (local dev) is a no-op.
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        traces_sample_rate=0.1,   # 10 % of requests traced — adjust as needed
+        send_default_pii=False,
+    )
 
 
 @asynccontextmanager

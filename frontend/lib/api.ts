@@ -128,6 +128,8 @@ export const sendIDIMessage = (projectId: string, simId: string, content: string
   });
 export const endIDISession = (projectId: string, simId: string) =>
   request<Simulation>(`/projects/${projectId}/simulations/${simId}/end`, { method: "POST" });
+export const abortSimulation = (projectId: string, simId: string) =>
+  request<Simulation>(`/projects/${projectId}/simulations/${simId}/abort`, { method: "POST" });
 
 // Library
 export const getLibraryPersonas = (params?: {

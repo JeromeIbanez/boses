@@ -14,6 +14,7 @@ delegates to it. The rest of the system never needs to change.
 """
 import json
 import logging
+import uuid as _uuid
 from abc import ABC, abstractmethod
 
 from openai import OpenAI
@@ -266,7 +267,10 @@ def generate_personas(group_id: str) -> None:
             if lib_persona.id in used_library_ids:
                 continue
 
+            _pid = _uuid.uuid4()
             persona = Persona(
+                id=_pid,
+                persona_code=str(_pid).replace('-', '')[:8].upper(),
                 persona_group_id=group_id,
                 full_name=lib_persona.full_name,
                 age=lib_persona.age,
@@ -303,7 +307,10 @@ def generate_personas(group_id: str) -> None:
             group.persona_count = group.persona_count + personas_created  # restore
 
             for profile in profiles:
+                _pid = _uuid.uuid4()
                 persona = Persona(
+                    id=_pid,
+                    persona_code=str(_pid).replace('-', '')[:8].upper(),
                     persona_group_id=group_id,
                     full_name=profile.get("full_name", "Unknown"),
                     age=int(profile.get("age", group.age_min or 25)),

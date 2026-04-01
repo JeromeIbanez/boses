@@ -41,6 +41,7 @@ export interface Persona {
   media_consumption: string | null;
   purchase_behavior: string | null;
   day_in_the_life: string | null;
+  persona_code: string;
   data_source: string | null;
   data_source_references: string[] | null;
   library_persona_id: string | null;

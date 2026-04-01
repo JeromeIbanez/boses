@@ -95,10 +95,21 @@ export interface Simulation {
   id: string;
   project_id: string;
   persona_group_id: string;
-  briefing_id: string;
-  prompt_question: string;
-  status: "pending" | "running" | "complete" | "failed";
+  briefing_id: string | null;
+  prompt_question: string | null;
+  simulation_type: "concept_test" | "idi_ai" | "idi_manual";
+  idi_script_text: string | null;
+  idi_persona_id: string | null;
+  status: "pending" | "running" | "active" | "generating_report" | "complete" | "failed";
   error_message: string | null;
+  progress: {
+    current: number;
+    total: number;
+    current_name: string | null;
+    completed: string[];
+    failed: string[];
+    stage: "interviewing" | "generating_report";
+  } | null;
   created_at: string;
   completed_at: string | null;
 }
@@ -107,17 +118,29 @@ export interface SimulationResult {
   id: string;
   simulation_id: string;
   persona_id: string | null;
-  result_type: "individual" | "aggregate";
-  // Individual fields
+  result_type: "individual" | "aggregate" | "idi_individual" | "idi_aggregate";
+  // Concept test individual fields
   sentiment: "Positive" | "Neutral" | "Negative" | null;
   sentiment_score: number | null;
   reaction_text: string | null;
   key_themes: string[] | null;
   notable_quote: string | null;
-  // Aggregate fields
+  // Concept test aggregate fields
   summary_text: string | null;
   sentiment_distribution: Record<string, number> | null;
   top_themes: string[] | null;
   recommendations: string | null;
+  // IDI fields
+  transcript: string | null;
+  report_sections: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface IDIMessage {
+  id: string;
+  simulation_id: string;
+  persona_id: string | null;
+  role: "user" | "persona";
+  content: string;
   created_at: string;
 }

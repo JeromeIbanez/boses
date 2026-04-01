@@ -188,37 +188,38 @@ async def upload_idi_script(
         shutil.copyfileobj(file.file, f)
 
     if ext == ".txt":
-        script_text = save_path.read_text(errors="replace")
+        raw_text = save_path.read_text(errors="replace")
     else:
         try:
             import docx
             doc = docx.Document(str(save_path))
-
-            # Prefer list/question paragraphs over raw text dump.
-            # Many interview scripts use "List Paragraph" style for questions
-            # and plain/italic paragraphs for interviewer notes — skip the notes.
-            QUESTION_STYLES = {"list paragraph", "list bullet", "list number"}
-            NOTE_KEYWORDS = ("interviewer note", "note:", "probe:", "[note]")
-
-            list_paras = [
-                p.text.strip() for p in doc.paragraphs
-                if p.text.strip()
-                and (p.style and p.style.name.lower() in QUESTION_STYLES)
-            ]
-
-            if list_paras:
-                # Document uses proper list styles — use only those
-                script_text = "\n".join(list_paras)
-            else:
-                # Fallback: all non-empty paragraphs, skipping interviewer notes
-                script_text = "\n".join(
-                    p.text.strip() for p in doc.paragraphs
-                    if p.text.strip()
-                    and not any(p.text.strip().lower().startswith(k) for k in NOTE_KEYWORDS)
-                )
+            raw_text = "\n".join(p.text.strip() for p in doc.paragraphs if p.text.strip())
         except Exception as e:
             logger.error(f"Failed to read .docx script: {e}")
             raise HTTPException(status_code=422, detail="Could not read .docx file")
+
+    # Use LLM to extract only the interview questions, regardless of document format
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=settings.openai_api_key)
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[{
+                "role": "user",
+                "content": (
+                    "Extract only the interview questions from the document below. "
+                    "Return one question per line, with no numbering, no interviewer notes, "
+                    "no section headings, no instructions, and no other text. "
+                    "If something is not a question asked to the respondent, exclude it.\n\n"
+                    f"DOCUMENT:\n{raw_text}"
+                ),
+            }],
+            temperature=0,
+        )
+        script_text = response.choices[0].message.content or raw_text
+    except Exception as e:
+        logger.error(f"LLM question extraction failed, falling back to raw text: {e}")
+        script_text = raw_text
 
     simulation.idi_script_text = script_text
     db.commit()

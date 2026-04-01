@@ -84,6 +84,7 @@ export default function PersonaGroupPage() {
                     {p.library_persona_id && <LibraryBadge />}
                   </div>
                   <p className="text-xs text-zinc-400">{p.age} · {p.occupation}</p>
+                  <p className="text-[10px] font-mono text-zinc-300">#{p.persona_code}</p>
                 </div>
                 <button
                   onClick={() => {

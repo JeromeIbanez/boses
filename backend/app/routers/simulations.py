@@ -1,6 +1,9 @@
+import logging
 import uuid
 import shutil
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, BackgroundTasks, UploadFile
 from sqlalchemy.orm import Session
@@ -190,8 +193,31 @@ async def upload_idi_script(
         try:
             import docx
             doc = docx.Document(str(save_path))
-            script_text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
-        except Exception:
+
+            # Prefer list/question paragraphs over raw text dump.
+            # Many interview scripts use "List Paragraph" style for questions
+            # and plain/italic paragraphs for interviewer notes — skip the notes.
+            QUESTION_STYLES = {"list paragraph", "list bullet", "list number"}
+            NOTE_KEYWORDS = ("interviewer note", "note:", "probe:", "[note]")
+
+            list_paras = [
+                p.text.strip() for p in doc.paragraphs
+                if p.text.strip()
+                and (p.style and p.style.name.lower() in QUESTION_STYLES)
+            ]
+
+            if list_paras:
+                # Document uses proper list styles — use only those
+                script_text = "\n".join(list_paras)
+            else:
+                # Fallback: all non-empty paragraphs, skipping interviewer notes
+                script_text = "\n".join(
+                    p.text.strip() for p in doc.paragraphs
+                    if p.text.strip()
+                    and not any(p.text.strip().lower().startswith(k) for k in NOTE_KEYWORDS)
+                )
+        except Exception as e:
+            logger.error(f"Failed to read .docx script: {e}")
             raise HTTPException(status_code=422, detail="Could not read .docx file")
 
     simulation.idi_script_text = script_text

@@ -1,5 +1,6 @@
 import type {
   Briefing,
+  IDIMessage,
   LibraryPersona,
   LibraryPersonaListResponse,
   Persona,
@@ -56,10 +57,16 @@ export const generatePersonas = (projectId: string, groupId: string) =>
     `/projects/${projectId}/persona-groups/${groupId}/generate`,
     { method: "POST" }
   );
+export const deletePersonaGroup = (projectId: string, groupId: string) =>
+  request<void>(`/projects/${projectId}/persona-groups/${groupId}`, { method: "DELETE" });
 
 // Personas
 export const getPersonas = (projectId: string, groupId: string) =>
   request<Persona[]>(`/projects/${projectId}/persona-groups/${groupId}/personas`);
+export const deletePersona = (projectId: string, groupId: string, personaId: string) =>
+  request<void>(`/projects/${projectId}/persona-groups/${groupId}/personas/${personaId}`, { method: "DELETE" });
+export const deleteAllPersonas = (projectId: string, groupId: string) =>
+  request<void>(`/projects/${projectId}/persona-groups/${groupId}/personas`, { method: "DELETE" });
 
 // Briefings
 export const getBriefings = (projectId: string) =>
@@ -85,14 +92,60 @@ export const getSimulation = (projectId: string, simId: string) =>
   request<Simulation>(`/projects/${projectId}/simulations/${simId}`);
 export const createSimulation = (
   projectId: string,
-  body: { persona_group_id: string; briefing_id: string; prompt_question: string }
+  body: {
+    simulation_type: string;
+    persona_group_id: string;
+    briefing_id?: string | null;
+    prompt_question?: string | null;
+    idi_script_text?: string | null;
+    idi_persona_id?: string | null;
+  }
 ) =>
   request<Simulation>(`/projects/${projectId}/simulations`, {
     method: "POST",
     body: JSON.stringify(body),
   });
+export const uploadIDIScript = (projectId: string, simId: string, formData: FormData) =>
+  fetch(`${BASE}/projects/${projectId}/simulations/${simId}/script`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  }).then(async r => {
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      throw new Error(err.detail || "Upload failed");
+    }
+    return r.json() as Promise<Simulation>;
+  });
 export const getSimulationResults = (projectId: string, simId: string) =>
   request<SimulationResult[]>(`/projects/${projectId}/simulations/${simId}/results`);
+export const deleteSimulation = (projectId: string, simId: string) =>
+  request<void>(`/projects/${projectId}/simulations/${simId}`, { method: "DELETE" });
+export const getIDIMessages = (projectId: string, simId: string) =>
+  request<IDIMessage[]>(`/projects/${projectId}/simulations/${simId}/messages`);
+export const sendIDIMessage = (projectId: string, simId: string, content: string) =>
+  request<IDIMessage>(`/projects/${projectId}/simulations/${simId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+export const endIDISession = (projectId: string, simId: string) =>
+  request<Simulation>(`/projects/${projectId}/simulations/${simId}/end`, { method: "POST" });
+export const abortSimulation = (projectId: string, simId: string) =>
+  request<Simulation>(`/projects/${projectId}/simulations/${simId}/abort`, { method: "POST" });
+export const uploadSurveyFile = (projectId: string, simId: string, formData: FormData) =>
+  fetch(`${BASE}/projects/${projectId}/simulations/${simId}/survey`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  }).then(async r => {
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      throw new Error(err.detail || "Upload failed");
+    }
+    return r.json() as Promise<Simulation>;
+  });
+export const runSurvey = (projectId: string, simId: string) =>
+  request<Simulation>(`/projects/${projectId}/simulations/${simId}/run`, { method: "POST" });
 
 // Library
 export const getLibraryPersonas = (params?: {

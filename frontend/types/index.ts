@@ -41,6 +41,7 @@ export interface Persona {
   media_consumption: string | null;
   purchase_behavior: string | null;
   day_in_the_life: string | null;
+  persona_code: string;
   data_source: string | null;
   data_source_references: string[] | null;
   library_persona_id: string | null;
@@ -91,14 +92,40 @@ export interface Briefing {
   created_at: string;
 }
 
+export interface SurveyQuestion {
+  id: string;
+  type: "likert" | "multiple_choice" | "open_ended";
+  text: string;
+  scale?: number;
+  low_label?: string;
+  high_label?: string;
+  options?: string[];
+}
+
+export interface SurveySchema {
+  questions: SurveyQuestion[];
+}
+
 export interface Simulation {
   id: string;
   project_id: string;
   persona_group_id: string;
-  briefing_id: string;
-  prompt_question: string;
-  status: "pending" | "running" | "complete" | "failed";
+  briefing_id: string | null;
+  prompt_question: string | null;
+  simulation_type: "concept_test" | "idi_ai" | "idi_manual" | "survey";
+  idi_script_text: string | null;
+  idi_persona_id: string | null;
+  survey_schema: SurveySchema | null;
+  status: "pending" | "running" | "active" | "generating_report" | "complete" | "failed";
   error_message: string | null;
+  progress: {
+    current: number;
+    total: number;
+    current_name: string | null;
+    completed: string[];
+    failed: string[];
+    stage: "interviewing" | "generating_report";
+  } | null;
   created_at: string;
   completed_at: string | null;
 }
@@ -107,17 +134,29 @@ export interface SimulationResult {
   id: string;
   simulation_id: string;
   persona_id: string | null;
-  result_type: "individual" | "aggregate";
-  // Individual fields
+  result_type: "individual" | "aggregate" | "idi_individual" | "idi_aggregate" | "survey_individual" | "survey_aggregate";
+  // Concept test individual fields
   sentiment: "Positive" | "Neutral" | "Negative" | null;
   sentiment_score: number | null;
   reaction_text: string | null;
   key_themes: string[] | null;
   notable_quote: string | null;
-  // Aggregate fields
+  // Concept test aggregate fields
   summary_text: string | null;
   sentiment_distribution: Record<string, number> | null;
   top_themes: string[] | null;
   recommendations: string | null;
+  // IDI / Survey fields
+  transcript: string | null;
+  report_sections: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface IDIMessage {
+  id: string;
+  simulation_id: string;
+  persona_id: string | null;
+  role: "user" | "persona";
+  content: string;
   created_at: string;
 }

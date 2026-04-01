@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Plus, Play, ChevronRight } from "lucide-react";
-import { getSimulations, createSimulation, getPersonaGroups, getBriefings } from "@/lib/api";
+import { Plus, Play, ChevronRight, Trash2, Bot, User, MessageSquare, ClipboardList } from "lucide-react";
+import {
+  getSimulations, createSimulation, getPersonaGroups, getBriefings,
+  deleteSimulation, getPersonas, uploadSurveyFile, runSurvey,
+} from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
@@ -19,18 +22,65 @@ interface Props { projectId: string }
 const statusVariant: Record<string, "pending" | "warning" | "success" | "error"> = {
   pending: "pending",
   running: "warning",
+  active: "warning",
+  generating_report: "warning",
   complete: "success",
   failed: "error",
 };
 
+import type { Simulation as SimType_ } from "@/types";
+type SimType = SimType_["simulation_type"];
+
+const SIM_TYPES: { id: SimType; label: string; description: string; icon: React.ReactNode }[] = [
+  {
+    id: "concept_test",
+    label: "Concept Test",
+    description: "All personas read a briefing and answer a single research question.",
+    icon: <MessageSquare size={18} />,
+  },
+  {
+    id: "idi_ai",
+    label: "IDI — AI Assisted",
+    description: "Boses interviews every persona in the group using your script. A report is generated automatically.",
+    icon: <Bot size={18} />,
+  },
+  {
+    id: "idi_manual",
+    label: "IDI — Manual",
+    description: "You conduct the interview yourself in a live chat with one persona. End anytime to generate a report.",
+    icon: <User size={18} />,
+  },
+  {
+    id: "survey",
+    label: "Survey",
+    description: "Upload your survey form and every persona fills it out independently. Get per-question aggregate results.",
+    icon: <ClipboardList size={18} />,
+  },
+];
+
 export default function SimulationsTab({ projectId }: Props) {
   const router = useRouter();
   const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [simType, setSimType] = useState<SimType>("concept_test");
   const [groupId, setGroupId] = useState("");
   const [briefingId, setBriefingId] = useState("");
+  // Concept test
   const [question, setQuestion] = useState("");
+  // IDI shared
+  const [scriptMode, setScriptMode] = useState<"text" | "file">("text");
+  const [scriptText, setScriptText] = useState("");
+  const [scriptFile, setScriptFile] = useState<File | null>(null);
+  // IDI manual
+  const [idiPersonaId, setIdiPersonaId] = useState("");
+  // Survey
+  const surveyFileRef = useRef<HTMLInputElement>(null);
+  const [surveyFile, setSurveyFile] = useState<File | null>(null);
+  const [surveySimId, setSurveySimId] = useState<string | null>(null);
+  const [parsedQuestions, setParsedQuestions] = useState<{ id: string; type: string; text: string }[]>([]);
 
   const { data: simulations, isLoading } = useQuery({
     queryKey: ["simulations", projectId],
@@ -49,22 +99,121 @@ export default function SimulationsTab({ projectId }: Props) {
     enabled: open,
   });
 
-  const run = useMutation({
-    mutationFn: () => createSimulation(projectId, {
-      persona_group_id: groupId,
-      briefing_id: briefingId,
-      prompt_question: question,
-    }),
+  const { data: personas } = useQuery({
+    queryKey: ["personas", groupId],
+    queryFn: () => {
+      const g = groups?.find(g => g.id === groupId);
+      return g ? getPersonas(projectId, groupId) : Promise.resolve([]);
+    },
+    enabled: open && simType === "idi_manual" && !!groupId,
+  });
+
+  const deleteSim = useMutation({
+    mutationFn: (simId: string) => deleteSimulation(projectId, simId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["simulations", projectId] }),
+  });
+
+  // Survey step 3 → 4: create simulation + upload file, show preview
+  const uploadSurvey = useMutation({
+    mutationFn: async () => {
+      const sim = await createSimulation(projectId, {
+        simulation_type: "survey",
+        persona_group_id: groupId,
+        briefing_id: briefingId || null,
+      });
+      const fd = new FormData();
+      fd.append("file", surveyFile!);
+      const updated = await uploadSurveyFile(projectId, sim.id, fd);
+      return updated;
+    },
     onSuccess: (sim) => {
-      qc.invalidateQueries({ queryKey: ["simulations", projectId] });
-      setOpen(false);
-      setStep(0);
-      setGroupId("");
-      setBriefingId("");
-      setQuestion("");
-      router.push(`/projects/${projectId}/simulations/${sim.id}`);
+      setSurveySimId(sim.id);
+      setParsedQuestions(sim.survey_schema?.questions ?? []);
+      setStep(4);
     },
   });
+
+  const run = useMutation({
+    mutationFn: async () => {
+      if (simType === "survey" && surveySimId) {
+        return runSurvey(projectId, surveySimId);
+      }
+
+      const body: Parameters<typeof createSimulation>[1] = {
+        simulation_type: simType,
+        persona_group_id: groupId,
+        briefing_id: briefingId || null,
+      };
+
+      if (simType === "concept_test") {
+        body.prompt_question = question;
+      } else if (simType === "idi_ai") {
+        body.idi_script_text = scriptMode === "text" ? scriptText : null;
+      } else if (simType === "idi_manual") {
+        body.idi_persona_id = idiPersonaId;
+        if (scriptMode === "text" && scriptText) body.idi_script_text = scriptText;
+      }
+
+      const sim = await createSimulation(projectId, body);
+
+      // If file upload selected, upload the script now
+      if ((simType === "idi_ai" || simType === "idi_manual") && scriptMode === "file" && scriptFile) {
+        const fd = new FormData();
+        fd.append("file", scriptFile);
+        const { uploadIDIScript } = await import("@/lib/api");
+        await uploadIDIScript(projectId, sim.id, fd);
+      }
+
+      return sim;
+    },
+    onSuccess: (sim) => {
+      qc.invalidateQueries({ queryKey: ["simulations", projectId] });
+      handleClose();
+      if (sim.simulation_type === "idi_manual") {
+        router.push(`/projects/${projectId}/simulations/${sim.id}/chat`);
+      } else {
+        router.push(`/projects/${projectId}/simulations/${sim.id}`);
+      }
+    },
+  });
+
+  const handleClose = () => {
+    setOpen(false);
+    setStep(0);
+    setSimType("concept_test");
+    setGroupId("");
+    setBriefingId("");
+    setQuestion("");
+    setScriptMode("text");
+    setScriptText("");
+    setScriptFile(null);
+    setIdiPersonaId("");
+    setSurveyFile(null);
+    setSurveySimId(null);
+    setParsedQuestions([]);
+  };
+
+  const totalSteps = simType === "survey" ? 5 : 4; // survey: type → group → briefing → upload → preview
+  const canProceed = () => {
+    if (step === 0) return !!simType;
+    if (step === 1) return !!groupId;
+    if (step === 2) return true; // briefing optional
+    if (step === 3) {
+      if (simType === "concept_test") return !!question.trim();
+      if (simType === "idi_ai") return scriptMode === "text" ? !!scriptText.trim() : !!scriptFile;
+      if (simType === "idi_manual") return !!idiPersonaId;
+      if (simType === "survey") return !!surveyFile;
+    }
+    if (step === 4 && simType === "survey") return parsedQuestions.length > 0;
+    return false;
+  };
+
+  const simTypeLabel = (type: string) => {
+    if (type === "idi_ai") return "IDI — AI";
+    if (type === "idi_manual") return "IDI — Manual";
+    if (type === "survey") return "Survey";
+    return "Concept Test";
+  };
 
   return (
     <>
@@ -75,60 +224,114 @@ export default function SimulationsTab({ projectId }: Props) {
       {isLoading ? (
         <div className="space-y-3">{[1, 2].map(i => <div key={i} className="h-20 bg-zinc-100 rounded-lg animate-pulse" />)}</div>
       ) : !simulations?.length ? (
-        <EmptyState icon={Play} title="No simulations yet" description="Run your first simulation to see how your target personas react to your product." action={<Button onClick={() => setOpen(true)}><Play size={14} /> Run Simulation</Button>} />
+        <EmptyState icon={Play} title="No simulations yet" description="Run your first simulation to see how your target personas react." action={<Button onClick={() => setOpen(true)}><Play size={14} /> Run Simulation</Button>} />
       ) : (
         <div className="space-y-3">
           {simulations.map(s => (
-            <Card key={s.id} onClick={() => router.push(`/projects/${projectId}/simulations/${s.id}`)}>
+            <Card key={s.id} onClick={() => {
+              if (s.simulation_type === "idi_manual" && s.status === "active") {
+                router.push(`/projects/${projectId}/simulations/${s.id}/chat`);
+              } else {
+                router.push(`/projects/${projectId}/simulations/${s.id}`);
+              }
+            }}>
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant={statusVariant[s.status]}>{s.status}</Badge>
+                    <Badge variant={statusVariant[s.status] ?? "pending"}>{s.status}</Badge>
+                    <Badge variant="default">{simTypeLabel(s.simulation_type)}</Badge>
                     <span className="text-xs text-zinc-400">{formatDate(s.created_at)}</span>
                   </div>
-                  <p className="text-sm text-zinc-700 truncate">{s.prompt_question}</p>
+                  <p className="text-sm text-zinc-700 truncate">
+                    {s.prompt_question || (s.simulation_type === "idi_manual" ? "Manual interview" : s.simulation_type === "survey" ? "Survey simulation" : "IDI — AI assisted")}
+                  </p>
                 </div>
-                <ChevronRight size={16} className="text-zinc-300 ml-3 shrink-0" />
+                <div className="flex items-center gap-1 ml-3 shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm("Delete this simulation and all its results?")) deleteSim.mutate(s.id);
+                    }}
+                    className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
+                    title="Delete simulation"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                  <ChevronRight size={16} className="text-zinc-300" />
+                </div>
               </div>
             </Card>
           ))}
         </div>
       )}
 
-      {/* Simulation Wizard */}
-      <Modal open={open} onClose={() => { setOpen(false); setStep(0); }} title={`Run Simulation — Step ${step + 1} of 3`} width="max-w-xl">
+      <Modal open={open} onClose={handleClose} title={`Run Simulation — Step ${step + 1} of ${totalSteps}`} width="max-w-xl" key={simType}>
         <div className="space-y-4">
+
+          {/* Step 0: Choose type */}
           {step === 0 && (
+            <div className="space-y-3">
+              <p className="text-sm text-zinc-500">What kind of research do you want to run?</p>
+              {SIM_TYPES.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setSimType(t.id)}
+                  className={`w-full text-left rounded-lg border px-4 py-3 transition-colors ${simType === t.id ? "border-zinc-800 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300"}`}
+                >
+                  <div className="flex items-center gap-2 mb-1 text-zinc-800">
+                    {t.icon}
+                    <span className="text-sm font-medium">{t.label}</span>
+                  </div>
+                  <p className="text-xs text-zinc-500 ml-7">{t.description}</p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Step 1: Persona group */}
+          {step === 1 && (
             <>
               <p className="text-sm text-zinc-500">Select the persona group to simulate against.</p>
-              <Select label="Persona Group" value={groupId} onChange={e => setGroupId(e.target.value)}>
+              <Select label="Persona Group" value={groupId} onChange={e => { setGroupId(e.target.value); setIdiPersonaId(""); }}>
                 <option value="">Select a group…</option>
                 {groups?.filter(g => g.generation_status === "complete").map(g => (
                   <option key={g.id} value={g.id}>{g.name} ({g.persona_count} personas)</option>
                 ))}
               </Select>
               {groups && groups.filter(g => g.generation_status === "complete").length === 0 && (
-                <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">No groups with generated personas yet. Generate personas first.</p>
+                <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">No groups with generated personas yet.</p>
               )}
             </>
           )}
-          {step === 1 && (
+
+          {/* Step 2: Briefing (optional for IDI) */}
+          {step === 2 && (
             <>
-              <p className="text-sm text-zinc-500">Choose the briefing document to test.</p>
-              <Select label="Briefing" value={briefingId} onChange={e => setBriefingId(e.target.value)}>
-                <option value="">Select a briefing…</option>
+              <p className="text-sm text-zinc-500">
+                {simType === "concept_test"
+                  ? "Choose the briefing document to test against."
+                  : "Optionally select a briefing to give your personas background context before the interview."}
+              </p>
+              <Select
+                label={simType === "concept_test" ? "Briefing" : "Briefing (optional)"}
+                value={briefingId}
+                onChange={e => setBriefingId(e.target.value)}
+              >
+                <option value="">{simType === "concept_test" ? "Select a briefing…" : "No briefing"}</option>
                 {briefings?.map(b => (
                   <option key={b.id} value={b.id}>{b.title}</option>
                 ))}
               </Select>
             </>
           )}
-          {step === 2 && (
+
+          {/* Step 3: Type-specific config */}
+          {step === 3 && simType === "concept_test" && (
             <>
               <p className="text-sm text-zinc-500">What do you want to know? Be specific about what to test.</p>
               <Textarea
                 label="Simulation question"
-                placeholder={"e.g. How would they react to this tagline? or Would they trust this brand based on the briefing?"}
+                placeholder="e.g. How would they react to this tagline? Would they trust this brand?"
                 rows={4}
                 value={question}
                 onChange={e => setQuestion(e.target.value)}
@@ -136,21 +339,140 @@ export default function SimulationsTab({ projectId }: Props) {
             </>
           )}
 
-          {/* Wizard nav */}
+          {step === 3 && (simType === "idi_ai" || simType === "idi_manual") && (
+            <>
+              <p className="text-sm text-zinc-500">
+                {simType === "idi_ai"
+                  ? "Provide your interview script. Boses will use these questions to interview each persona."
+                  : "Optionally upload your script as a reference during your interview."}
+              </p>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setScriptMode("text")}
+                  className={`flex-1 py-1.5 text-xs rounded-md border transition-colors ${scriptMode === "text" ? "border-zinc-800 bg-zinc-50 font-medium" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}
+                >
+                  Type questions
+                </button>
+                <button
+                  onClick={() => setScriptMode("file")}
+                  className={`flex-1 py-1.5 text-xs rounded-md border transition-colors ${scriptMode === "file" ? "border-zinc-800 bg-zinc-50 font-medium" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}
+                >
+                  Upload script file
+                </button>
+              </div>
+
+              {scriptMode === "text" && (
+                <Textarea
+                  label={simType === "idi_ai" ? "Interview questions (one per line)" : "Interview script (optional)"}
+                  placeholder={"1. Can you tell me about yourself?\n2. How do you typically discover new products?\n3. What would make you trust a brand like this?"}
+                  rows={6}
+                  value={scriptText}
+                  onChange={e => setScriptText(e.target.value)}
+                />
+              )}
+
+              {scriptMode === "file" && (
+                <div>
+                  <p className="text-xs text-zinc-500 mb-2">Accepted formats: .txt, .docx</p>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".txt,.docx"
+                    className="hidden"
+                    onChange={e => setScriptFile(e.target.files?.[0] ?? null)}
+                  />
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="w-full border border-dashed border-zinc-300 rounded-lg py-4 text-sm text-zinc-500 hover:border-zinc-400 transition-colors"
+                  >
+                    {scriptFile ? `✓ ${scriptFile.name}` : "Click to select a file"}
+                  </button>
+                </div>
+              )}
+
+              {simType === "idi_manual" && (
+                <>
+                  <Select label="Select persona to interview" value={idiPersonaId} onChange={e => setIdiPersonaId(e.target.value)}>
+                    <option value="">Select a persona…</option>
+                    {personas?.map(p => (
+                      <option key={p.id} value={p.id}>{p.full_name} — {p.age}, {p.occupation}</option>
+                    ))}
+                  </Select>
+                  {!personas?.length && groupId && (
+                    <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">No personas in this group yet.</p>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
+          {/* Step 3: Survey — upload form */}
+          {step === 3 && simType === "survey" && (
+            <>
+              <p className="text-sm text-zinc-500">Upload your survey form. Boses will parse the questions automatically.</p>
+              <div>
+                <p className="text-xs text-zinc-500 mb-2">Accepted formats: .txt, .docx</p>
+                <input
+                  ref={surveyFileRef}
+                  type="file"
+                  accept=".txt,.docx"
+                  className="hidden"
+                  onChange={e => setSurveyFile(e.target.files?.[0] ?? null)}
+                />
+                <button
+                  onClick={() => surveyFileRef.current?.click()}
+                  className="w-full border border-dashed border-zinc-300 rounded-lg py-4 text-sm text-zinc-500 hover:border-zinc-400 transition-colors"
+                >
+                  {surveyFile ? `✓ ${surveyFile.name}` : "Click to select a file"}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Step 4: Survey — preview parsed questions */}
+          {step === 4 && simType === "survey" && (
+            <>
+              <p className="text-sm text-zinc-500">
+                Boses parsed <span className="font-medium text-zinc-800">{parsedQuestions.length} question{parsedQuestions.length !== 1 ? "s" : ""}</span> from your survey. Review and confirm.
+              </p>
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {parsedQuestions.map((q, i) => (
+                  <div key={q.id} className="flex items-start gap-2.5 text-sm">
+                    <span className="text-xs text-zinc-400 shrink-0 mt-0.5 w-5">{i + 1}.</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-zinc-700">{q.text}</span>
+                    </div>
+                    <span className={`text-xs px-1.5 py-0.5 rounded shrink-0 ${
+                      q.type === "likert" ? "bg-blue-50 text-blue-600" :
+                      q.type === "multiple_choice" ? "bg-purple-50 text-purple-600" :
+                      "bg-zinc-100 text-zinc-500"
+                    }`}>
+                      {q.type === "multiple_choice" ? "choice" : q.type}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Nav */}
           <div className="flex justify-between pt-2">
-            <Button variant="ghost" onClick={() => { if (step === 0) setOpen(false); else setStep(s => s - 1); }}>
+            <Button variant="ghost" onClick={() => { if (step === 0) handleClose(); else setStep(s => s - 1); }}>
               {step === 0 ? "Cancel" : "Back"}
             </Button>
-            {step < 2 ? (
-              <Button
-                onClick={() => setStep(s => s + 1)}
-                disabled={(step === 0 && !groupId) || (step === 1 && !briefingId)}
-              >
+            {/* Survey step 3: "Next" uploads + parses */}
+            {step === 3 && simType === "survey" ? (
+              <Button onClick={() => uploadSurvey.mutate()} disabled={!canProceed() || uploadSurvey.isPending}>
+                {uploadSurvey.isPending ? "Parsing…" : "Next"}
+              </Button>
+            ) : step < totalSteps - 1 ? (
+              <Button onClick={() => setStep(s => s + 1)} disabled={!canProceed()}>
                 Next
               </Button>
             ) : (
-              <Button onClick={() => run.mutate()} disabled={!question.trim() || run.isPending}>
-                {run.isPending ? "Starting…" : "Run Simulation"}
+              <Button onClick={() => run.mutate()} disabled={!canProceed() || run.isPending}>
+                {run.isPending ? "Starting…" : simType === "idi_manual" ? "Start Interview" : "Run Simulation"}
               </Button>
             )}
           </div>

@@ -120,6 +120,10 @@ def run_simulation(simulation_id: str) -> None:
         from app.services.focus_group_engine import run_focus_group
         run_focus_group(simulation_id)
         return
+    if sim_type == "conjoint":
+        from app.services.conjoint_engine import run_conjoint
+        run_conjoint(simulation_id)
+        return
 
     # concept_test path
     client = OpenAI(api_key=settings.openai_api_key)

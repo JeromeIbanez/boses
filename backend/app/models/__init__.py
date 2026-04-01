@@ -9,3 +9,4 @@ from app.models.persona import Persona  # noqa: F401
 from app.models.briefing import Briefing  # noqa: F401
 from app.models.simulation import Simulation  # noqa: F401
 from app.models.simulation_result import SimulationResult  # noqa: F401
+from app.models.idi_message import IDIMessage  # noqa: F401

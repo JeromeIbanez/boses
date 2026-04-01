@@ -18,6 +18,7 @@ from app.models.simulation import Simulation
 from app.models.simulation_result import SimulationResult
 from app.models.project import Project
 from app.schemas.simulation import (
+    ConjointDesignCreate,
     IDIMessageCreate,
     IDIMessageResponse,
     SimulationCreate,
@@ -74,6 +75,10 @@ def create_simulation(
     if body.simulation_type == "focus_group":
         if not body.prompt_question or not body.prompt_question.strip():
             raise HTTPException(status_code=422, detail="prompt_question is required for focus groups")
+
+    if body.simulation_type == "conjoint":
+        if not body.prompt_question or not body.prompt_question.strip():
+            raise HTTPException(status_code=422, detail="prompt_question (product category) is required for conjoint tests")
 
     # For idi_ai with inline script, validate it's non-empty.
     # File-upload mode sends no script here — the background task is triggered by the upload endpoint instead.
@@ -467,6 +472,40 @@ def run_survey_simulation(
 
     background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
     db.refresh(simulation)
+    return simulation
+
+
+@router.post("/{simulation_id}/conjoint-design", response_model=SimulationResponse)
+def run_conjoint_simulation(
+    project_id: str,
+    simulation_id: str,
+    body: ConjointDesignCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Save conjoint attribute/level design and start the simulation."""
+    _get_project_or_404(project_id, db, current_user.company_id)
+    simulation = db.get(Simulation, simulation_id)
+    if not simulation or str(simulation.project_id) != project_id:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    if simulation.simulation_type != "conjoint":
+        raise HTTPException(status_code=422, detail="This endpoint is only for conjoint simulations")
+    if simulation.status != "pending":
+        raise HTTPException(status_code=422, detail="Simulation is not in pending state")
+    if len(body.attributes) < 2:
+        raise HTTPException(status_code=422, detail="At least 2 attributes are required")
+    if any(len(a.levels) < 2 for a in body.attributes):
+        raise HTTPException(status_code=422, detail="Each attribute must have at least 2 levels")
+
+    simulation.survey_schema = {
+        "attributes": [{"name": a.name, "levels": a.levels} for a in body.attributes],
+        "n_tasks": min(max(body.n_tasks, 6), 20),
+    }
+    db.commit()
+    db.refresh(simulation)
+
+    background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
     return simulation
 
 

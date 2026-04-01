@@ -1,5 +1,6 @@
 import type {
   Briefing,
+  ConjointDesign,
   IDIMessage,
   LibraryPersona,
   LibraryPersonaListResponse,
@@ -146,6 +147,11 @@ export const uploadSurveyFile = (projectId: string, simId: string, formData: For
   });
 export const runSurvey = (projectId: string, simId: string) =>
   request<Simulation>(`/projects/${projectId}/simulations/${simId}/run`, { method: "POST" });
+export const runConjointDesign = (projectId: string, simId: string, design: ConjointDesign) =>
+  request<Simulation>(`/projects/${projectId}/simulations/${simId}/conjoint-design`, {
+    method: "POST",
+    body: JSON.stringify(design),
+  });
 
 // Library
 export const getLibraryPersonas = (params?: {

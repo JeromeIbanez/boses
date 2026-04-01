@@ -112,7 +112,7 @@ export interface Simulation {
   persona_group_id: string;
   briefing_id: string | null;
   prompt_question: string | null;
-  simulation_type: "concept_test" | "idi_ai" | "idi_manual" | "survey" | "focus_group";
+  simulation_type: "concept_test" | "idi_ai" | "idi_manual" | "survey" | "focus_group" | "conjoint";
   idi_script_text: string | null;
   idi_persona_id: string | null;
   survey_schema: SurveySchema | null;
@@ -124,7 +124,7 @@ export interface Simulation {
     current_name: string | null;
     completed: string[];
     failed: string[];
-    stage: "interviewing" | "round_1" | "moderator_bridge" | "round_2" | "generating_report";
+    stage: "interviewing" | "round_1" | "moderator_bridge" | "round_2" | "choice_tasks" | "generating_report";
   } | null;
   created_at: string;
   completed_at: string | null;
@@ -134,7 +134,7 @@ export interface SimulationResult {
   id: string;
   simulation_id: string;
   persona_id: string | null;
-  result_type: "individual" | "aggregate" | "idi_individual" | "idi_aggregate" | "survey_individual" | "survey_aggregate" | "focus_group_individual" | "focus_group_aggregate";
+  result_type: "individual" | "aggregate" | "idi_individual" | "idi_aggregate" | "survey_individual" | "survey_aggregate" | "focus_group_individual" | "focus_group_aggregate" | "conjoint_individual" | "conjoint_aggregate";
   // Concept test individual fields
   sentiment: "Positive" | "Neutral" | "Negative" | null;
   sentiment_score: number | null;
@@ -150,6 +150,45 @@ export interface SimulationResult {
   transcript: string | null;
   report_sections: Record<string, unknown> | null;
   created_at: string;
+}
+
+export interface ConjointAttribute {
+  name: string;
+  levels: string[];
+}
+
+export interface ConjointDesign {
+  attributes: ConjointAttribute[];
+  n_tasks: number;
+}
+
+export interface ConjointTaskResult {
+  task_index: number;
+  profile_a: Record<string, string>;
+  profile_b: Record<string, string>;
+  chosen: "A" | "B";
+  reasoning: string;
+}
+
+export interface ConjointIndividualSections {
+  tasks: ConjointTaskResult[];
+  attribute_importances: Record<string, number>;
+  part_worths: Record<string, Record<string, number>>;
+  top_driver: string;
+}
+
+export interface ConjointMarketShare {
+  profiles_tested: Array<{ name: string; attributes: Record<string, string> }>;
+  shares: Record<string, number>;
+}
+
+export interface ConjointAggregateSections {
+  attribute_importances: Record<string, number>;
+  part_worths: Record<string, Record<string, number>>;
+  market_share_simulation: ConjointMarketShare;
+  persona_segments: Array<{ label: string; persona_ids: string[]; top_driver: string }>;
+  executive_summary: string;
+  recommendations: string;
 }
 
 export interface IDIMessage {

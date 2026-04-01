@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText } from "lucide-react";
+import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText, BarChart2 } from "lucide-react";
 import { getSimulation, getSimulationResults, abortSimulation } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Spinner from "@/components/ui/Spinner";
 import { formatDate } from "@/lib/utils";
-import type { SimulationResult } from "@/types";
+import type { SimulationResult, ConjointIndividualSections, ConjointAggregateSections } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -743,6 +743,271 @@ function SurveyReportView({ results, projectId, simulationId }: {
 }
 
 // ---------------------------------------------------------------------------
+// Conjoint results view
+// ---------------------------------------------------------------------------
+
+function AttributeImportanceChart({ importances }: { importances: Record<string, number> }) {
+  const sorted = Object.entries(importances).sort(([, a], [, b]) => b - a);
+  const maxVal = sorted[0]?.[1] ?? 100;
+  return (
+    <div className="space-y-2.5">
+      {sorted.map(([attr, pct]) => (
+        <div key={attr} className="space-y-1">
+          <div className="flex justify-between text-xs text-zinc-600">
+            <span className="font-medium">{attr}</span>
+            <span>{pct.toFixed(1)}%</span>
+          </div>
+          <div className="w-full bg-zinc-100 rounded-full h-3 overflow-hidden">
+            <div
+              className="bg-zinc-800 h-3 rounded-full transition-all"
+              style={{ width: `${maxVal > 0 ? (pct / maxVal) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PartWorthChart({ partWorths }: { partWorths: Record<string, Record<string, number>> }) {
+  return (
+    <div className="space-y-5">
+      {Object.entries(partWorths).map(([attr, levels]) => {
+        const maxAbs = Math.max(...Object.values(levels).map(Math.abs), 0.01);
+        const sorted = Object.entries(levels).sort(([, a], [, b]) => b - a);
+        return (
+          <div key={attr}>
+            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">{attr}</p>
+            <div className="space-y-1.5">
+              {sorted.map(([level, utility]) => {
+                const pct = Math.abs(utility) / maxAbs * 44;
+                const isPos = utility >= 0;
+                return (
+                  <div key={level} className="flex items-center gap-2 text-xs">
+                    <span className="text-zinc-500 w-24 shrink-0 text-right truncate">{level}</span>
+                    <div className="flex-1 flex items-center">
+                      <div className="w-1/2 flex justify-end">
+                        {!isPos && <div className="bg-red-300 h-2.5 rounded-l-sm" style={{ width: `${pct}%` }} />}
+                      </div>
+                      <div className="w-px h-3 bg-zinc-300 mx-0.5 shrink-0" />
+                      <div className="w-1/2 flex justify-start">
+                        {isPos && <div className="bg-emerald-400 h-2.5 rounded-r-sm" style={{ width: `${pct}%` }} />}
+                      </div>
+                    </div>
+                    <span className={`w-12 text-right font-mono shrink-0 ${isPos ? "text-emerald-600" : "text-red-500"}`}>
+                      {utility > 0 ? "+" : ""}{utility.toFixed(3)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ConjointReportView({ results }: { results: SimulationResult[] }) {
+  const [activeTab, setActiveTab] = useState<"overview" | "personas" | "simulator">("overview");
+
+  const aggregate = results.find(r => r.result_type === "conjoint_aggregate");
+  const individuals = results.filter(r => r.result_type === "conjoint_individual");
+  const agg = aggregate?.report_sections as ConjointAggregateSections | null;
+
+  // Assign stable colors per persona index
+  const personaColorMap: Record<string, string> = {};
+  individuals.forEach((r, i) => {
+    if (r.persona_id) personaColorMap[r.persona_id] = PERSONA_COLORS[i % PERSONA_COLORS.length];
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Tab nav */}
+      <div className="flex gap-1 border-b border-zinc-200">
+        {(["overview", "personas", "simulator"] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm capitalize transition-colors ${
+              activeTab === tab
+                ? "border-b-2 border-zinc-800 text-zinc-900 font-medium"
+                : "text-zinc-500 hover:text-zinc-700"
+            }`}
+          >
+            {tab === "simulator" ? "Market Simulator" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Overview */}
+      {activeTab === "overview" && agg && (
+        <div className="space-y-8">
+          {/* Attribute importance */}
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+              <BarChart2 size={14} /> Attribute Importance
+            </h2>
+            <Card>
+              <AttributeImportanceChart importances={agg.attribute_importances} />
+            </Card>
+          </div>
+
+          {/* Part-worth utilities */}
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4">Level Utilities (Part-Worths)</h2>
+            <Card>
+              <p className="text-xs text-zinc-400 mb-4">Positive values = preferred levels; negative = dispreferred levels, within each attribute.</p>
+              <PartWorthChart partWorths={agg.part_worths} />
+            </Card>
+          </div>
+
+          {/* Executive summary */}
+          {(agg.executive_summary || agg.recommendations) && (
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+                <MessageSquare size={14} /> Findings
+              </h2>
+              <Card className="space-y-4">
+                {agg.executive_summary && (
+                  <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{agg.executive_summary}</p>
+                )}
+                {agg.recommendations && (
+                  <div className="bg-zinc-50 rounded-lg p-4">
+                    <p className="text-xs font-medium text-zinc-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Lightbulb size={12} /> Recommendations
+                    </p>
+                    <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{agg.recommendations}</p>
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+
+          {/* Persona segments */}
+          {agg.persona_segments && agg.persona_segments.length > 0 && (
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4">Persona Segments</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {agg.persona_segments.map(seg => (
+                  <Card key={seg.label}>
+                    <p className="text-sm font-medium text-zinc-800">{seg.label}</p>
+                    <p className="text-xs text-zinc-400 mt-0.5">{seg.persona_ids.length} persona{seg.persona_ids.length !== 1 ? "s" : ""}</p>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Personas */}
+      {activeTab === "personas" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {individuals.map((r, idx) => {
+            const sections = r.report_sections as ConjointIndividualSections | null;
+            const color = r.persona_id ? (personaColorMap[r.persona_id] ?? PERSONA_COLORS[idx % PERSONA_COLORS.length]) : PERSONA_COLORS[idx % PERSONA_COLORS.length];
+            const initial = String.fromCharCode(65 + (idx % 26)); // A, B, C…
+            const [showTasks, setShowTasks] = useState(false);
+            return (
+              <Card key={r.id} className="flex flex-col gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-full ${color} text-white flex items-center justify-center text-sm font-medium shrink-0`}>
+                    {initial}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Persona {idx + 1}</p>
+                    {sections?.top_driver && (
+                      <p className="text-xs text-zinc-400">Top driver: <span className="text-zinc-600 font-medium">{sections.top_driver}</span></p>
+                    )}
+                  </div>
+                </div>
+
+                {sections?.attribute_importances && (
+                  <div className="space-y-1.5">
+                    {Object.entries(sections.attribute_importances)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([attr, pct]) => (
+                        <div key={attr} className="flex items-center gap-2 text-xs">
+                          <span className="text-zinc-500 w-24 shrink-0 truncate">{attr}</span>
+                          <div className="flex-1 bg-zinc-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-zinc-600 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-zinc-400 w-8 text-right">{pct.toFixed(0)}%</span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                {sections?.tasks && sections.tasks.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => setShowTasks(v => !v)}
+                      className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+                    >
+                      {showTasks ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      {showTasks ? "Hide" : "Show"} {sections.tasks.length} choice tasks
+                    </button>
+                    {showTasks && (
+                      <div className="mt-2 space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                        {sections.tasks.map(task => (
+                          <div key={task.task_index} className="text-xs border border-zinc-100 rounded-lg p-2.5 space-y-1.5">
+                            <div className="flex gap-2">
+                              <div className={`flex-1 rounded-md p-1.5 text-xs ${task.chosen === "A" ? "bg-emerald-50 border border-emerald-100" : "bg-zinc-50 border border-zinc-100 opacity-60"}`}>
+                                <p className="font-medium text-zinc-700 mb-0.5">Option A {task.chosen === "A" && <span className="text-emerald-600">✓</span>}</p>
+                                {Object.entries(task.profile_a).map(([k, v]) => (
+                                  <p key={k} className="text-zinc-500">{k}: {v}</p>
+                                ))}
+                              </div>
+                              <div className={`flex-1 rounded-md p-1.5 text-xs ${task.chosen === "B" ? "bg-emerald-50 border border-emerald-100" : "bg-zinc-50 border border-zinc-100 opacity-60"}`}>
+                                <p className="font-medium text-zinc-700 mb-0.5">Option B {task.chosen === "B" && <span className="text-emerald-600">✓</span>}</p>
+                                {Object.entries(task.profile_b).map(([k, v]) => (
+                                  <p key={k} className="text-zinc-500">{k}: {v}</p>
+                                ))}
+                              </div>
+                            </div>
+                            {task.reasoning && (
+                              <p className="text-zinc-500 italic">"{task.reasoning}"</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Market Simulator */}
+      {activeTab === "simulator" && agg?.market_share_simulation && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+              <TrendingUp size={14} /> Predicted Market Share
+            </h2>
+            <Card className="space-y-4">
+              <p className="text-xs text-zinc-400">Based on persona utility scores, each hypothetical product&apos;s predicted first-choice market share.</p>
+              <ChoiceBar distribution={agg.market_share_simulation.shares} />
+              <div className="space-y-3 border-t border-zinc-100 pt-4">
+                {agg.market_share_simulation.profiles_tested.map(p => (
+                  <div key={p.name}>
+                    <p className="text-xs font-medium text-zinc-700 mb-0.5">{p.name}</p>
+                    <p className="text-xs text-zinc-400">{Object.entries(p.attributes).map(([k, v]) => `${k}: ${v}`).join(" · ")}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -772,6 +1037,7 @@ export default function SimulationResultsPage() {
   const isIDI = simulation?.simulation_type === "idi_ai" || simulation?.simulation_type === "idi_manual";
   const isSurvey = simulation?.simulation_type === "survey";
   const isFocusGroup = simulation?.simulation_type === "focus_group";
+  const isConjoint = simulation?.simulation_type === "conjoint";
 
   const { data: results } = useQuery({
     queryKey: ["simulation-results", simulationId],
@@ -796,6 +1062,7 @@ export default function SimulationResultsPage() {
     if (simulation?.simulation_type === "idi_manual") return "IDI — Manual";
     if (simulation?.simulation_type === "survey") return "Survey";
     if (simulation?.simulation_type === "focus_group") return "Focus Group";
+    if (simulation?.simulation_type === "conjoint") return "Conjoint Test";
     return "Concept Test";
   };
 
@@ -899,7 +1166,9 @@ export default function SimulationResultsPage() {
                         ? `Round 1 — ${simulation.progress.current} of ${simulation.progress.total} personas`
                         : simulation.progress.stage === "round_2"
                           ? `Round 2 — ${simulation.progress.current} of ${simulation.progress.total} personas`
-                          : `${simulation.progress.current} of ${simulation.progress.total} personas`}
+                          : simulation.progress.stage === "choice_tasks"
+                            ? `Choice tasks — ${simulation.progress.current} of ${simulation.progress.total} personas`
+                            : `${simulation.progress.current} of ${simulation.progress.total} personas`}
                 </p>
               </div>
 
@@ -924,7 +1193,7 @@ export default function SimulationResultsPage() {
                       {name}
                     </div>
                   ))}
-                  {(simulation.progress.stage === "interviewing" || simulation.progress.stage === "round_1" || simulation.progress.stage === "round_2") && simulation.progress.current_name && (
+                  {(simulation.progress.stage === "interviewing" || simulation.progress.stage === "round_1" || simulation.progress.stage === "round_2" || simulation.progress.stage === "choice_tasks") && simulation.progress.current_name && (
                     <div className="flex items-center gap-2 text-xs text-zinc-700 font-medium">
                       <Spinner className="h-3 w-3 border-zinc-300 border-t-zinc-600 shrink-0" />
                       {simulation.progress.current_name}
@@ -948,7 +1217,7 @@ export default function SimulationResultsPage() {
             </div>
           )}
 
-          {!showAbortConfirm && (simulation?.simulation_type === "idi_ai" || simulation?.simulation_type === "focus_group") && (
+          {!showAbortConfirm && (simulation?.simulation_type === "idi_ai" || simulation?.simulation_type === "focus_group" || simulation?.simulation_type === "conjoint") && (
             <button
               onClick={() => setShowAbortConfirm(true)}
               className="mt-6 text-xs text-zinc-400 hover:text-red-500 transition-colors"
@@ -977,7 +1246,9 @@ export default function SimulationResultsPage() {
       {/* Results */}
       {simulation?.status === "complete" && results && (
         <>
-          {isFocusGroup ? (
+          {isConjoint ? (
+            <ConjointReportView results={results} />
+          ) : isFocusGroup ? (
             <FocusGroupReportView results={results} />
           ) : isSurvey ? (
             <SurveyReportView results={results} projectId={projectId} simulationId={simulationId} />

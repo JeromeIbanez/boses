@@ -58,6 +58,16 @@ class SimulationResultResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ConjointAttributeSchema(BaseModel):
+    name: str
+    levels: list[str]
+
+
+class ConjointDesignCreate(BaseModel):
+    attributes: list[ConjointAttributeSchema]
+    n_tasks: int = 10
+
+
 class IDIMessageCreate(BaseModel):
     content: str
 

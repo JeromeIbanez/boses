@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     UPLOAD_DIR: str = "app/uploads"
     OPENAI_MODEL: str = "gpt-4o"
+    SENTRY_DSN: str = ""
 
     # Auth
     JWT_SECRET: str = "change-me-in-production"

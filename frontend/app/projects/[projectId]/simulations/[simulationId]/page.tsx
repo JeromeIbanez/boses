@@ -290,6 +290,222 @@ function IDIReportView({ results, projectId, simulationId }: { results: Simulati
 }
 
 // ---------------------------------------------------------------------------
+// Focus Group results view
+// ---------------------------------------------------------------------------
+
+type FGTranscriptEntry = { speaker: string; round: number; text: string; persona_id?: string };
+
+const PERSONA_COLORS = [
+  "bg-violet-700",
+  "bg-sky-700",
+  "bg-emerald-700",
+  "bg-orange-600",
+  "bg-pink-700",
+  "bg-teal-700",
+  "bg-rose-700",
+  "bg-indigo-700",
+];
+
+function FocusGroupReportView({ results }: { results: SimulationResult[] }) {
+  const aggregate = results.find(r => r.result_type === "focus_group_aggregate");
+  const individuals = results.filter(r => r.result_type === "focus_group_individual");
+
+  const aggSections = aggregate?.report_sections as {
+    transcript?: FGTranscriptEntry[];
+    moderator_summary?: string;
+    consensus_themes?: string[];
+    disagreements?: string[];
+    recommendations?: string;
+  } | null;
+
+  // Assign a stable color to each unique non-Moderator speaker
+  const speakerColors: Record<string, string> = {};
+  let colorIdx = 0;
+  (aggSections?.transcript ?? []).forEach(e => {
+    if (e.speaker !== "Moderator" && !speakerColors[e.speaker]) {
+      speakerColors[e.speaker] = PERSONA_COLORS[colorIdx % PERSONA_COLORS.length];
+      colorIdx++;
+    }
+  });
+
+  const round1 = (aggSections?.transcript ?? []).filter(e => e.round === 1);
+  const round2 = (aggSections?.transcript ?? []).filter(e => e.round === 2);
+  const moderatorOpening = (aggSections?.transcript ?? []).find(e => e.speaker === "Moderator" && e.round === 0);
+  const moderatorBridge = (aggSections?.transcript ?? []).find(e => e.speaker === "Moderator" && e.round === 1);
+
+  // Build persona name map
+  const personaNames: Record<string, string> = {};
+  individuals.forEach((r, i) => {
+    if (r.persona_id) personaNames[r.persona_id] = `Persona ${i + 1}`;
+  });
+
+  return (
+    <div className="space-y-8">
+      {/* Aggregate Panel */}
+      {aggregate && (
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <TrendingUp size={14} /> Focus Group Summary
+          </h2>
+          <Card className="space-y-5">
+            {aggSections?.moderator_summary && (
+              <div>
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <MessageSquare size={12} /> Moderator Summary
+                </p>
+                <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{aggSections.moderator_summary}</p>
+              </div>
+            )}
+
+            {aggSections?.consensus_themes && aggSections.consensus_themes.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Consensus Themes</p>
+                <div className="flex flex-wrap gap-2">
+                  {aggSections.consensus_themes.map(t => (
+                    <Badge key={t} variant="info">{t}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {aggSections?.disagreements && aggSections.disagreements.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Points of Disagreement</p>
+                <div className="flex flex-wrap gap-2">
+                  {aggSections.disagreements.map(d => (
+                    <span key={d} className="text-xs px-2.5 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-700">{d}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {aggregate.sentiment_distribution && (
+              <div>
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-3">Sentiment</p>
+                <SentimentBar distribution={aggregate.sentiment_distribution} />
+              </div>
+            )}
+
+            {aggSections?.recommendations && (
+              <div className="bg-zinc-50 rounded-lg p-4">
+                <p className="text-xs font-medium text-zinc-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <Lightbulb size={12} /> Recommendations
+                </p>
+                <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{aggSections.recommendations}</p>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {/* Discussion Transcript */}
+      {aggSections?.transcript && aggSections.transcript.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <Users size={14} /> Discussion Transcript
+          </h2>
+          <div className="space-y-3">
+            {/* Moderator opening */}
+            {moderatorOpening && (
+              <div className="bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3">
+                <p className="text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">Moderator — Opening</p>
+                <p className="text-sm text-zinc-700 leading-relaxed">{moderatorOpening.text}</p>
+              </div>
+            )}
+
+            {/* Round 1 */}
+            {round1.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide px-1 my-3">Round 1 — Initial Responses</p>
+                <div className="space-y-2.5">
+                  {round1.map((e, i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className={`w-8 h-8 rounded-full ${speakerColors[e.speaker] ?? "bg-zinc-600"} text-white flex items-center justify-center text-xs font-semibold shrink-0`}>
+                        {e.speaker.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-zinc-500 mb-1">{e.speaker}</p>
+                        <p className="text-sm text-zinc-700 leading-relaxed">{e.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Moderator bridge */}
+            {moderatorBridge && (
+              <div className="bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 my-1">
+                <p className="text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">Moderator — Follow-up</p>
+                <p className="text-sm text-zinc-700 leading-relaxed">{moderatorBridge.text}</p>
+              </div>
+            )}
+
+            {/* Round 2 */}
+            {round2.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide px-1 my-3">Round 2 — Reactions</p>
+                <div className="space-y-2.5">
+                  {round2.map((e, i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className={`w-8 h-8 rounded-full ${speakerColors[e.speaker] ?? "bg-zinc-600"} text-white flex items-center justify-center text-xs font-semibold shrink-0`}>
+                        {e.speaker.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-zinc-500 mb-1">{e.speaker}</p>
+                        <p className="text-sm text-zinc-700 leading-relaxed">{e.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Individual Cards */}
+      {individuals.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <MessageSquare size={14} /> Individual Contributions ({individuals.length})
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {individuals.map((r, idx) => {
+              const name = r.persona_id ? (personaNames[r.persona_id] || `Persona ${idx + 1}`) : `Persona ${idx + 1}`;
+              const sections = r.report_sections as { round_1_text?: string; round_2_text?: string } | null;
+              const color = speakerColors[name] ?? PERSONA_COLORS[idx % PERSONA_COLORS.length];
+              return (
+                <Card key={r.id} className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-8 h-8 rounded-full ${color} text-white flex items-center justify-center text-sm font-medium shrink-0`}>
+                      {name.charAt(0)}
+                    </div>
+                    <span className="text-sm font-medium text-zinc-900">{name}</span>
+                  </div>
+                  {sections?.round_1_text && (
+                    <div>
+                      <p className="text-xs text-zinc-400 mb-1">Round 1</p>
+                      <p className="text-sm text-zinc-700 leading-relaxed">{sections.round_1_text}</p>
+                    </div>
+                  )}
+                  {sections?.round_2_text && (
+                    <div className="border-t border-zinc-100 pt-3">
+                      <p className="text-xs text-zinc-400 mb-1">Round 2</p>
+                      <p className="text-sm text-zinc-700 leading-relaxed">{sections.round_2_text}</p>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Survey results view
 // ---------------------------------------------------------------------------
 
@@ -555,6 +771,7 @@ export default function SimulationResultsPage() {
 
   const isIDI = simulation?.simulation_type === "idi_ai" || simulation?.simulation_type === "idi_manual";
   const isSurvey = simulation?.simulation_type === "survey";
+  const isFocusGroup = simulation?.simulation_type === "focus_group";
 
   const { data: results } = useQuery({
     queryKey: ["simulation-results", simulationId],
@@ -578,6 +795,7 @@ export default function SimulationResultsPage() {
     if (simulation?.simulation_type === "idi_ai") return "IDI — AI Assisted";
     if (simulation?.simulation_type === "idi_manual") return "IDI — Manual";
     if (simulation?.simulation_type === "survey") return "Survey";
+    if (simulation?.simulation_type === "focus_group") return "Focus Group";
     return "Concept Test";
   };
 
@@ -666,14 +884,22 @@ export default function SimulationResultsPage() {
                 <p className="text-sm font-medium text-zinc-800">
                   {simulation.progress.stage === "generating_report"
                     ? "Generating report…"
-                    : simulation.progress.current_name
-                      ? `Interviewing ${simulation.progress.current_name}…`
-                      : "Running simulation…"}
+                    : simulation.progress.stage === "moderator_bridge"
+                      ? "Moderator synthesising Round 1…"
+                      : simulation.progress.current_name
+                        ? `${simulation.progress.stage === "round_2" ? "Round 2 — " : ""}${simulation.progress.current_name}…`
+                        : "Running simulation…"}
                 </p>
                 <p className="text-xs text-zinc-400 mt-1">
                   {simulation.progress.stage === "generating_report"
                     ? "Synthesising findings across all interviews"
-                    : `${simulation.progress.current} of ${simulation.progress.total} personas`}
+                    : simulation.progress.stage === "moderator_bridge"
+                      ? "Preparing follow-up question"
+                      : simulation.progress.stage === "round_1"
+                        ? `Round 1 — ${simulation.progress.current} of ${simulation.progress.total} personas`
+                        : simulation.progress.stage === "round_2"
+                          ? `Round 2 — ${simulation.progress.current} of ${simulation.progress.total} personas`
+                          : `${simulation.progress.current} of ${simulation.progress.total} personas`}
                 </p>
               </div>
 
@@ -698,7 +924,7 @@ export default function SimulationResultsPage() {
                       {name}
                     </div>
                   ))}
-                  {simulation.progress.stage === "interviewing" && simulation.progress.current_name && (
+                  {(simulation.progress.stage === "interviewing" || simulation.progress.stage === "round_1" || simulation.progress.stage === "round_2") && simulation.progress.current_name && (
                     <div className="flex items-center gap-2 text-xs text-zinc-700 font-medium">
                       <Spinner className="h-3 w-3 border-zinc-300 border-t-zinc-600 shrink-0" />
                       {simulation.progress.current_name}
@@ -722,7 +948,7 @@ export default function SimulationResultsPage() {
             </div>
           )}
 
-          {!showAbortConfirm && simulation?.simulation_type === "idi_ai" && (
+          {!showAbortConfirm && (simulation?.simulation_type === "idi_ai" || simulation?.simulation_type === "focus_group") && (
             <button
               onClick={() => setShowAbortConfirm(true)}
               className="mt-6 text-xs text-zinc-400 hover:text-red-500 transition-colors"
@@ -751,7 +977,9 @@ export default function SimulationResultsPage() {
       {/* Results */}
       {simulation?.status === "complete" && results && (
         <>
-          {isSurvey ? (
+          {isFocusGroup ? (
+            <FocusGroupReportView results={results} />
+          ) : isSurvey ? (
             <SurveyReportView results={results} projectId={projectId} simulationId={simulationId} />
           ) : isIDI ? (
             <IDIReportView results={results} projectId={projectId} simulationId={simulationId} />

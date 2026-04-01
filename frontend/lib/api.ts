@@ -65,6 +65,8 @@ export const getPersonas = (projectId: string, groupId: string) =>
   request<Persona[]>(`/projects/${projectId}/persona-groups/${groupId}/personas`);
 export const deletePersona = (projectId: string, groupId: string, personaId: string) =>
   request<void>(`/projects/${projectId}/persona-groups/${groupId}/personas/${personaId}`, { method: "DELETE" });
+export const deleteAllPersonas = (projectId: string, groupId: string) =>
+  request<void>(`/projects/${projectId}/persona-groups/${groupId}/personas`, { method: "DELETE" });
 
 // Briefings
 export const getBriefings = (projectId: string) =>
@@ -128,6 +130,8 @@ export const sendIDIMessage = (projectId: string, simId: string, content: string
   });
 export const endIDISession = (projectId: string, simId: string) =>
   request<Simulation>(`/projects/${projectId}/simulations/${simId}/end`, { method: "POST" });
+export const abortSimulation = (projectId: string, simId: string) =>
+  request<Simulation>(`/projects/${projectId}/simulations/${simId}/abort`, { method: "POST" });
 
 // Library
 export const getLibraryPersonas = (params?: {

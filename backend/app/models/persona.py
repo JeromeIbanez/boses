@@ -28,6 +28,7 @@ class Persona(Base):
     media_consumption: Mapped[str | None] = mapped_column(Text, nullable=True)
     purchase_behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    persona_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
     day_in_the_life: Mapped[str | None] = mapped_column(Text, nullable=True)
     data_source: Mapped[str] = mapped_column(String(50), default="synthetic", nullable=False)
     data_source_references: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)

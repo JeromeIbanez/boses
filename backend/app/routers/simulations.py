@@ -123,6 +123,27 @@ def get_simulation(
     return simulation
 
 
+@router.post("/{simulation_id}/abort", response_model=SimulationResponse)
+def abort_simulation(
+    project_id: str,
+    simulation_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Abort a running or pending simulation."""
+    _get_project_or_404(project_id, db, current_user.company_id)
+    simulation = db.get(Simulation, simulation_id)
+    if not simulation or str(simulation.project_id) != project_id:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    if simulation.status not in ("pending", "running", "generating_report"):
+        raise HTTPException(status_code=422, detail="Simulation is not currently running")
+    simulation.status = "failed"
+    simulation.error_message = "Aborted by user"
+    db.commit()
+    db.refresh(simulation)
+    return simulation
+
+
 @router.delete("/{simulation_id}", status_code=204)
 def delete_simulation(
     project_id: str,

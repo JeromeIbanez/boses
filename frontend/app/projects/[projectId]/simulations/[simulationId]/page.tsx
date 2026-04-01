@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video } from "lucide-react";
-import { getSimulation, getSimulationResults } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText } from "lucide-react";
+import { getSimulation, getSimulationResults, abortSimulation } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Spinner from "@/components/ui/Spinner";
@@ -154,9 +154,17 @@ function IDIPersonaCard({ result, name }: { result: SimulationResult; name: stri
             {showTranscript ? "Hide transcript" : "View full transcript"}
           </button>
           {showTranscript && (
-            <pre className="mt-3 text-xs text-zinc-600 leading-relaxed whitespace-pre-wrap bg-zinc-50 rounded-lg p-4 font-sans">
-              {result.transcript}
-            </pre>
+            <div className="mt-3">
+              <pre className="text-xs text-zinc-600 leading-relaxed whitespace-pre-wrap bg-zinc-50 rounded-lg p-4 font-sans">
+                {result.transcript}
+              </pre>
+              <button
+                onClick={() => setShowTranscript(false)}
+                className="mt-2 flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+              >
+                <ChevronUp size={12} /> Hide transcript
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -168,7 +176,7 @@ function IDIPersonaCard({ result, name }: { result: SimulationResult; name: stri
 // IDI report view
 // ---------------------------------------------------------------------------
 
-function IDIReportView({ results }: { results: SimulationResult[] }) {
+function IDIReportView({ results, projectId, simulationId }: { results: SimulationResult[]; projectId: string; simulationId: string }) {
   const aggregate = results.find(r => r.result_type === "idi_aggregate");
   const individuals = results.filter(r => r.result_type === "idi_individual");
 
@@ -185,14 +193,28 @@ function IDIReportView({ results }: { results: SimulationResult[] }) {
     if (r.persona_id) personaNames[r.persona_id] = `Persona ${i + 1}`;
   });
 
+  const hasTranscripts = individuals.some(r => r.transcript);
+
   return (
     <div className="space-y-8">
       {/* Executive Summary */}
       {aggregate && (
         <div>
-          <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-            <TrendingUp size={14} /> Executive Summary
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide flex items-center gap-2">
+              <TrendingUp size={14} /> Executive Summary
+            </h2>
+            {hasTranscripts && (
+              <a
+                href={`/projects/${projectId}/simulations/${simulationId}/transcript`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
+              >
+                <FileText size={13} /> View transcript (PDF)
+              </a>
+            )}
+          </div>
           <Card className="space-y-5">
             {aggregate.top_themes && aggregate.top_themes.length > 0 && (
               <div>
@@ -274,6 +296,16 @@ function IDIReportView({ results }: { results: SimulationResult[] }) {
 export default function SimulationResultsPage() {
   const { projectId, simulationId } = useParams<{ projectId: string; simulationId: string }>();
   const router = useRouter();
+  const qc = useQueryClient();
+  const [showAbortConfirm, setShowAbortConfirm] = useState(false);
+
+  const abort = useMutation({
+    mutationFn: () => abortSimulation(projectId, simulationId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["simulation", simulationId] });
+      setShowAbortConfirm(false);
+    },
+  });
 
   const { data: simulation } = useQuery({
     queryKey: ["simulation", simulationId],
@@ -367,6 +399,27 @@ export default function SimulationResultsPage() {
       {isRunning && (
         <div className="flex flex-col items-center justify-center py-16 max-w-md mx-auto">
           <Spinner className="h-7 w-7 border-zinc-200 border-t-zinc-700 mb-6" />
+          {showAbortConfirm ? (
+            <div className="w-full mb-4 border border-red-200 bg-red-50 rounded-xl px-4 py-3 text-center">
+              <p className="text-sm font-medium text-red-700 mb-3">Stop this simulation?</p>
+              <p className="text-xs text-red-500 mb-4">Any personas already interviewed will be discarded.</p>
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={() => abort.mutate()}
+                  disabled={abort.isPending}
+                  className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {abort.isPending ? "Stopping…" : "Yes, stop it"}
+                </button>
+                <button
+                  onClick={() => setShowAbortConfirm(false)}
+                  className="px-3 py-1.5 text-xs font-medium text-zinc-600 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {simulation?.progress ? (
             <div className="w-full space-y-4">
@@ -429,6 +482,15 @@ export default function SimulationResultsPage() {
               <p className="text-xs text-zinc-400 mt-1">This takes a few minutes depending on group size.</p>
             </div>
           )}
+
+          {!showAbortConfirm && simulation?.simulation_type === "idi_ai" && (
+            <button
+              onClick={() => setShowAbortConfirm(true)}
+              className="mt-6 text-xs text-zinc-400 hover:text-red-500 transition-colors"
+            >
+              Stop interview
+            </button>
+          )}
         </div>
       )}
 
@@ -451,7 +513,7 @@ export default function SimulationResultsPage() {
       {simulation?.status === "complete" && results && (
         <>
           {isIDI ? (
-            <IDIReportView results={results} />
+            <IDIReportView results={results} projectId={projectId} simulationId={simulationId} />
           ) : (
             <div className="space-y-8">
               {/* Aggregate Summary */}

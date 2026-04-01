@@ -365,16 +365,70 @@ export default function SimulationResultsPage() {
 
       {/* Running / generating state */}
       {isRunning && (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Spinner className="h-8 w-8 border-zinc-200 border-t-zinc-700 mb-5" />
-          <p className="text-sm font-medium text-zinc-800">
-            {simulation?.status === "generating_report" ? "Generating report…" : "Running simulation…"}
-          </p>
-          <p className="text-xs text-zinc-400 mt-1">
-            {simulation?.status === "generating_report"
-              ? "Analysing the interview transcript. This usually takes under a minute."
-              : "Each persona is being interviewed by AI. This takes 30–90 seconds."}
-          </p>
+        <div className="flex flex-col items-center justify-center py-16 max-w-md mx-auto">
+          <Spinner className="h-7 w-7 border-zinc-200 border-t-zinc-700 mb-6" />
+
+          {simulation?.progress ? (
+            <div className="w-full space-y-4">
+              <div className="text-center">
+                <p className="text-sm font-medium text-zinc-800">
+                  {simulation.progress.stage === "generating_report"
+                    ? "Generating report…"
+                    : simulation.progress.current_name
+                      ? `Interviewing ${simulation.progress.current_name}…`
+                      : "Running simulation…"}
+                </p>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {simulation.progress.stage === "generating_report"
+                    ? "Synthesising findings across all interviews"
+                    : `${simulation.progress.current} of ${simulation.progress.total} personas`}
+                </p>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full bg-zinc-100 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-zinc-800 h-2 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${simulation.progress.stage === "generating_report"
+                      ? 100
+                      : ((simulation.progress.current - 1) / simulation.progress.total) * 100}%`
+                  }}
+                />
+              </div>
+
+              {/* Completed personas */}
+              {simulation.progress.completed.length > 0 && (
+                <div className="space-y-1.5">
+                  {simulation.progress.completed.map(name => (
+                    <div key={name} className="flex items-center gap-2 text-xs text-zinc-500">
+                      <span className="text-emerald-500">✓</span>
+                      {name}
+                    </div>
+                  ))}
+                  {simulation.progress.stage === "interviewing" && simulation.progress.current_name && (
+                    <div className="flex items-center gap-2 text-xs text-zinc-700 font-medium">
+                      <Spinner className="h-3 w-3 border-zinc-300 border-t-zinc-600 shrink-0" />
+                      {simulation.progress.current_name}
+                    </div>
+                  )}
+                  {simulation.progress.failed.map(name => (
+                    <div key={name} className="flex items-center gap-2 text-xs text-red-400">
+                      <span>✗</span>
+                      {name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-sm font-medium text-zinc-800">
+                {simulation?.status === "generating_report" ? "Generating report…" : "Running simulation…"}
+              </p>
+              <p className="text-xs text-zinc-400 mt-1">This takes a few minutes depending on group size.</p>
+            </div>
+          )}
         </div>
       )}
 

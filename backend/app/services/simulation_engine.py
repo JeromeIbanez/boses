@@ -136,9 +136,19 @@ def run_simulation(simulation_id: str) -> None:
         individual_results = []
         failed_personas = []
         sim_ref = simulation_id[:8]
+        total = len(personas)
 
         for i, persona in enumerate(personas, 1):
-            logger.info(f"[sim:{sim_ref}] Persona {i}/{len(personas)}: {persona.full_name}")
+            logger.info(f"[sim:{sim_ref}] Persona {i}/{total}: {persona.full_name}")
+            simulation.progress = {
+                "current": i,
+                "total": total,
+                "current_name": persona.full_name,
+                "completed": [p.full_name for p, _ in individual_results],
+                "failed": failed_personas[:],
+                "stage": "interviewing",
+            }
+            db.commit()
             try:
                 traits = ", ".join(persona.personality_traits or [])
                 system_prompt = (

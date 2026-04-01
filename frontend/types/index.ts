@@ -102,6 +102,14 @@ export interface Simulation {
   idi_persona_id: string | null;
   status: "pending" | "running" | "active" | "generating_report" | "complete" | "failed";
   error_message: string | null;
+  progress: {
+    current: number;
+    total: number;
+    current_name: string | null;
+    completed: string[];
+    failed: string[];
+    stage: "interviewing" | "generating_report";
+  } | null;
   created_at: string;
   completed_at: string | null;
 }

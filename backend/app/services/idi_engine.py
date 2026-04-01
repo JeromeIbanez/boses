@@ -240,9 +240,19 @@ def run_idi_ai(simulation_id: str) -> None:
 
         persona_analyses = []
         failed_personas = []
+        total = len(personas)
 
         for i, persona in enumerate(personas, 1):
-            logger.info(f"[idi:{sim_ref}] Persona {i}/{len(personas)}: {persona.full_name}")
+            logger.info(f"[idi:{sim_ref}] Persona {i}/{total}: {persona.full_name}")
+            simulation.progress = {
+                "current": i,
+                "total": total,
+                "current_name": persona.full_name,
+                "completed": [a["name"] for a in persona_analyses],
+                "failed": failed_personas[:],
+                "stage": "interviewing",
+            }
+            db.commit()
             try:
                 system_prompt = _build_persona_system_prompt(persona, briefing_text)
                 messages = [{"role": "system", "content": system_prompt}]
@@ -301,6 +311,16 @@ def run_idi_ai(simulation_id: str) -> None:
             )
 
         # Aggregate report
+        simulation.progress = {
+            "current": total,
+            "total": total,
+            "current_name": None,
+            "completed": [a["name"] for a in persona_analyses],
+            "failed": failed_personas[:],
+            "stage": "generating_report",
+        }
+        db.commit()
+
         group = simulation.persona_group
         agg_sections = _generate_aggregate_report(client, group.name, question_summary, persona_analyses)
 

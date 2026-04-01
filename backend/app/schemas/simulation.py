@@ -25,6 +25,7 @@ class SimulationResponse(BaseModel):
     idi_persona_id: Optional[uuid.UUID]
     status: str
     error_message: Optional[str]
+    progress: Optional[dict[str, Any]]
     created_at: datetime
     completed_at: Optional[datetime]
 

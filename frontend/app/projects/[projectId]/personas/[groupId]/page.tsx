@@ -1,9 +1,9 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
-import { getPersonaGroup, getPersonas } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import { getPersonaGroup, getPersonas, deletePersona, deleteAllPersonas } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import LibraryBadge from "@/components/ui/LibraryBadge";
@@ -13,6 +13,17 @@ import Spinner from "@/components/ui/Spinner";
 export default function PersonaGroupPage() {
   const { projectId, groupId } = useParams<{ projectId: string; groupId: string }>();
   const router = useRouter();
+  const qc = useQueryClient();
+
+  const remove = useMutation({
+    mutationFn: (personaId: string) => deletePersona(projectId, groupId, personaId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
+  });
+
+  const removeAll = useMutation({
+    mutationFn: () => deleteAllPersonas(projectId, groupId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
+  });
 
   const { data: group } = useQuery({
     queryKey: ["persona-group", groupId],
@@ -41,7 +52,20 @@ export default function PersonaGroupPage() {
         <ArrowLeft size={13} /> Back to Project
       </button>
 
-      <PageHeader title={group.name} description={`${group.age_min}–${group.age_max} yrs · ${group.gender} · ${group.occupation} · ${group.location}`} />
+      <div className="flex items-start justify-between gap-4">
+        <PageHeader title={group.name} description={`${group.age_min}–${group.age_max} yrs · ${group.gender} · ${group.occupation} · ${group.location}`} />
+        {personas && personas.length > 0 && (
+          <button
+            onClick={() => {
+              if (confirm(`Delete all ${personas.length} persona(s) in this group?`)) removeAll.mutate();
+            }}
+            disabled={removeAll.isPending}
+            className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded-md px-3 py-1.5 transition-colors shrink-0 disabled:opacity-50"
+          >
+            <Trash2 size={13} /> Delete All Personas
+          </button>
+        )}
+      </div>
 
       {/* Demographic summary */}
       <div className="flex flex-wrap gap-2 mb-7">
@@ -78,7 +102,17 @@ export default function PersonaGroupPage() {
                     {p.library_persona_id && <LibraryBadge />}
                   </div>
                   <p className="text-xs text-zinc-400">{p.age} · {p.occupation}</p>
+                  <p className="text-[10px] font-mono text-zinc-300">#{p.persona_code}</p>
                 </div>
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete ${p.full_name}?`)) remove.mutate(p.id);
+                  }}
+                  className="p-1 text-zinc-300 hover:text-red-500 transition-colors shrink-0"
+                  title="Delete persona"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
 
               {p.personality_traits && p.personality_traits.length > 0 && (

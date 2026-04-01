@@ -97,6 +97,27 @@ def _parse_aggregate_response(text: str) -> dict:
 
 
 def run_simulation(simulation_id: str) -> None:
+    from app.services.idi_engine import run_idi_ai  # local import avoids circular dependency
+
+    # Route to the appropriate engine based on simulation type
+    _db = SessionLocal()
+    try:
+        _sim = _db.get(Simulation, simulation_id)
+        sim_type = _sim.simulation_type if _sim else "concept_test"
+    finally:
+        _db.close()
+
+    if sim_type == "idi_ai":
+        run_idi_ai(simulation_id)
+        return
+    if sim_type == "idi_manual":
+        return  # manual sessions are driven by the chat endpoint
+    if sim_type == "survey":
+        from app.services.survey_engine import run_survey
+        run_survey(simulation_id)
+        return
+
+    # concept_test path
     client = OpenAI(api_key=settings.openai_api_key)
     db = SessionLocal()
     try:
@@ -119,9 +140,19 @@ def run_simulation(simulation_id: str) -> None:
         individual_results = []
         failed_personas = []
         sim_ref = simulation_id[:8]
+        total = len(personas)
 
         for i, persona in enumerate(personas, 1):
-            logger.info(f"[sim:{sim_ref}] Persona {i}/{len(personas)}: {persona.full_name}")
+            logger.info(f"[sim:{sim_ref}] Persona {i}/{total}: {persona.full_name}")
+            simulation.progress = {
+                "current": i,
+                "total": total,
+                "current_name": persona.full_name,
+                "completed": [p.full_name for p, _ in individual_results],
+                "failed": failed_personas[:],
+                "stage": "interviewing",
+            }
+            db.commit()
             try:
                 traits = ", ".join(persona.personality_traits or [])
                 system_prompt = (

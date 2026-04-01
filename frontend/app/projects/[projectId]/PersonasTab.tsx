@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Plus, Users, Sparkles, ArrowRight, RotateCcw } from "lucide-react";
-import { getPersonaGroups, createPersonaGroup, generatePersonas, parsePersonaPrompt } from "@/lib/api";
+import { Plus, Users, Sparkles, ArrowRight, RotateCcw, Trash2 } from "lucide-react";
+import { getPersonaGroups, createPersonaGroup, generatePersonas, parsePersonaPrompt, deletePersonaGroup } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
@@ -83,6 +83,11 @@ export default function PersonasTab({ projectId }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["persona-groups", projectId] }),
   });
 
+  const deleteGroup = useMutation({
+    mutationFn: (groupId: string) => deletePersonaGroup(projectId, groupId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["persona-groups", projectId] }),
+  });
+
   const set = (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm(f => ({ ...f, [k]: e.target.value }));
@@ -119,16 +124,28 @@ export default function PersonasTab({ projectId }: Props) {
                   </p>
                   <p className="text-xs text-zinc-400 mt-0.5">{g.persona_count} personas</p>
                 </div>
-                {g.generation_status === "pending" && (
-                  <Button size="sm" onClick={() => generate.mutate(g.id)}>
-                    <Sparkles size={13} /> Generate
-                  </Button>
-                )}
-                {g.generation_status === "failed" && (
-                  <Button size="sm" variant="danger" onClick={() => generate.mutate(g.id)}>
-                    Retry
-                  </Button>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {g.generation_status === "pending" && (
+                    <Button size="sm" onClick={() => generate.mutate(g.id)}>
+                      <Sparkles size={13} /> Generate
+                    </Button>
+                  )}
+                  {g.generation_status === "failed" && (
+                    <Button size="sm" variant="danger" onClick={() => generate.mutate(g.id)}>
+                      Retry
+                    </Button>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Delete "${g.name}" and all its personas?`)) deleteGroup.mutate(g.id);
+                    }}
+                    className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
+                    title="Delete group"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             </Card>
           ))}

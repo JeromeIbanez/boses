@@ -22,6 +22,7 @@ class PersonaResponse(BaseModel):
     media_consumption: Optional[str]
     purchase_behavior: Optional[str]
     day_in_the_life: Optional[str]
+    persona_code: str
     data_source: Optional[str]
     data_source_references: Optional[list[str]]
     library_persona_id: Optional[uuid.UUID]

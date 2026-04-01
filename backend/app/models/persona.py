@@ -28,6 +28,7 @@ class Persona(Base):
     media_consumption: Mapped[str | None] = mapped_column(Text, nullable=True)
     purchase_behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    persona_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
     day_in_the_life: Mapped[str | None] = mapped_column(Text, nullable=True)
     data_source: Mapped[str] = mapped_column(String(50), default="synthetic", nullable=False)
     data_source_references: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
@@ -37,5 +38,5 @@ class Persona(Base):
     library_persona_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("library_personas.id"), nullable=True)
 
     persona_group: Mapped["PersonaGroup"] = relationship(back_populates="personas")
-    simulation_results: Mapped[list["SimulationResult"]] = relationship(back_populates="persona")
-    library_link: Mapped["PersonaLibraryLink | None"] = relationship(back_populates="persona", uselist=False)
+    simulation_results: Mapped[list["SimulationResult"]] = relationship(back_populates="persona", passive_deletes=True)
+    library_link: Mapped["PersonaLibraryLink | None"] = relationship(back_populates="persona", uselist=False, passive_deletes=True)

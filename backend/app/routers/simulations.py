@@ -71,6 +71,10 @@ def create_simulation(
         if not body.idi_persona_id:
             raise HTTPException(status_code=422, detail="idi_persona_id is required for manual IDI")
 
+    if body.simulation_type == "focus_group":
+        if not body.prompt_question or not body.prompt_question.strip():
+            raise HTTPException(status_code=422, detail="prompt_question is required for focus groups")
+
     # For idi_ai with inline script, validate it's non-empty.
     # File-upload mode sends no script here — the background task is triggered by the upload endpoint instead.
     idi_ai_ready = body.simulation_type == "idi_ai" and bool(body.idi_script_text and body.idi_script_text.strip())
@@ -94,7 +98,7 @@ def create_simulation(
 
     # Schedule background task now only if we already have the script (text mode).
     # File-upload mode (IDI/survey): task is scheduled after the file is processed / confirmed.
-    if body.simulation_type == "concept_test" or idi_ai_ready:
+    if body.simulation_type in ("concept_test", "focus_group") or idi_ai_ready:
         background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
 
     return simulation

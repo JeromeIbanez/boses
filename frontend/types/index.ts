@@ -112,7 +112,7 @@ export interface Simulation {
   persona_group_id: string;
   briefing_id: string | null;
   prompt_question: string | null;
-  simulation_type: "concept_test" | "idi_ai" | "idi_manual" | "survey";
+  simulation_type: "concept_test" | "idi_ai" | "idi_manual" | "survey" | "focus_group";
   idi_script_text: string | null;
   idi_persona_id: string | null;
   survey_schema: SurveySchema | null;
@@ -124,7 +124,7 @@ export interface Simulation {
     current_name: string | null;
     completed: string[];
     failed: string[];
-    stage: "interviewing" | "generating_report";
+    stage: "interviewing" | "round_1" | "moderator_bridge" | "round_2" | "generating_report";
   } | null;
   created_at: string;
   completed_at: string | null;
@@ -134,7 +134,7 @@ export interface SimulationResult {
   id: string;
   simulation_id: string;
   persona_id: string | null;
-  result_type: "individual" | "aggregate" | "idi_individual" | "idi_aggregate" | "survey_individual" | "survey_aggregate";
+  result_type: "individual" | "aggregate" | "idi_individual" | "idi_aggregate" | "survey_individual" | "survey_aggregate" | "focus_group_individual" | "focus_group_aggregate";
   // Concept test individual fields
   sentiment: "Positive" | "Neutral" | "Negative" | null;
   sentiment_score: number | null;

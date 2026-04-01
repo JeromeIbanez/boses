@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Plus, Play, ChevronRight, Trash2, Bot, User, MessageSquare, ClipboardList } from "lucide-react";
+import { Plus, Play, ChevronRight, Trash2, Bot, User, MessageSquare, ClipboardList, Users } from "lucide-react";
 import {
   getSimulations, createSimulation, getPersonaGroups, getBriefings,
   deleteSimulation, getPersonas, uploadSurveyFile, runSurvey,
@@ -55,6 +55,12 @@ const SIM_TYPES: { id: SimType; label: string; description: string; icon: React.
     label: "Survey",
     description: "Upload your survey form and every persona fills it out independently. Get per-question aggregate results.",
     icon: <ClipboardList size={18} />,
+  },
+  {
+    id: "focus_group",
+    label: "Focus Group",
+    description: "Personas discuss a topic together in a moderated group session, reacting to each other's statements.",
+    icon: <Users size={18} />,
   },
 ];
 
@@ -145,7 +151,7 @@ export default function SimulationsTab({ projectId }: Props) {
         briefing_id: briefingId || null,
       };
 
-      if (simType === "concept_test") {
+      if (simType === "concept_test" || simType === "focus_group") {
         body.prompt_question = question;
       } else if (simType === "idi_ai") {
         body.idi_script_text = scriptMode === "text" ? scriptText : null;
@@ -200,6 +206,7 @@ export default function SimulationsTab({ projectId }: Props) {
     if (step === 2) return true; // briefing optional
     if (step === 3) {
       if (simType === "concept_test") return !!question.trim();
+      if (simType === "focus_group") return !!question.trim();
       if (simType === "idi_ai") return scriptMode === "text" ? !!scriptText.trim() : !!scriptFile;
       if (simType === "idi_manual") return !!idiPersonaId;
       if (simType === "survey") return !!surveyFile;
@@ -212,6 +219,7 @@ export default function SimulationsTab({ projectId }: Props) {
     if (type === "idi_ai") return "IDI — AI";
     if (type === "idi_manual") return "IDI — Manual";
     if (type === "survey") return "Survey";
+    if (type === "focus_group") return "Focus Group";
     return "Concept Test";
   };
 
@@ -243,7 +251,7 @@ export default function SimulationsTab({ projectId }: Props) {
                     <span className="text-xs text-zinc-400">{formatDate(s.created_at)}</span>
                   </div>
                   <p className="text-sm text-zinc-700 truncate">
-                    {s.prompt_question || (s.simulation_type === "idi_manual" ? "Manual interview" : s.simulation_type === "survey" ? "Survey simulation" : "IDI — AI assisted")}
+                    {s.prompt_question || (s.simulation_type === "idi_manual" ? "Manual interview" : s.simulation_type === "survey" ? "Survey simulation" : s.simulation_type === "focus_group" ? "Focus group session" : "IDI — AI assisted")}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 ml-3 shrink-0">
@@ -332,6 +340,19 @@ export default function SimulationsTab({ projectId }: Props) {
               <Textarea
                 label="Simulation question"
                 placeholder="e.g. How would they react to this tagline? Would they trust this brand?"
+                rows={4}
+                value={question}
+                onChange={e => setQuestion(e.target.value)}
+              />
+            </>
+          )}
+
+          {step === 3 && simType === "focus_group" && (
+            <>
+              <p className="text-sm text-zinc-500">What topic should the group discuss? The moderator will use this to open the session and guide the conversation.</p>
+              <Textarea
+                label="Discussion topic"
+                placeholder="e.g. How do you feel about this new product concept? What would make you try it or not?"
                 rows={4}
                 value={question}
                 onChange={e => setQuestion(e.target.value)}

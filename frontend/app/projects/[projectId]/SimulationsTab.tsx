@@ -3,11 +3,12 @@
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Plus, Play, ChevronRight, Trash2, Bot, User, MessageSquare, ClipboardList, Users } from "lucide-react";
+import { Plus, Play, ChevronRight, Trash2, Bot, User, MessageSquare, ClipboardList, Users, BarChart2 } from "lucide-react";
 import {
   getSimulations, createSimulation, getPersonaGroups, getBriefings,
-  deleteSimulation, getPersonas, uploadSurveyFile, runSurvey,
+  deleteSimulation, getPersonas, uploadSurveyFile, runSurvey, runConjointDesign,
 } from "@/lib/api";
+import type { ConjointAttribute } from "@/types";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
@@ -62,6 +63,12 @@ const SIM_TYPES: { id: SimType; label: string; description: string; icon: React.
     description: "Personas discuss a topic together in a moderated group session, reacting to each other's statements.",
     icon: <Users size={18} />,
   },
+  {
+    id: "conjoint",
+    label: "Conjoint / Trade-Off Test",
+    description: "Personas choose between product profiles with different attributes and prices, revealing what they actually trade off.",
+    icon: <BarChart2 size={18} />,
+  },
 ];
 
 export default function SimulationsTab({ projectId }: Props) {
@@ -87,6 +94,13 @@ export default function SimulationsTab({ projectId }: Props) {
   const [surveyFile, setSurveyFile] = useState<File | null>(null);
   const [surveySimId, setSurveySimId] = useState<string | null>(null);
   const [parsedQuestions, setParsedQuestions] = useState<{ id: string; type: string; text: string }[]>([]);
+  // Conjoint
+  const [conjointAttributes, setConjointAttributes] = useState<ConjointAttribute[]>([
+    { name: "Price", levels: ["$49", "$99", "$149"] },
+    { name: "Feature", levels: ["Basic", "Premium"] },
+  ]);
+  const [conjointNTasks, setConjointNTasks] = useState(10);
+  const [conjointSimId, setConjointSimId] = useState<string | null>(null);
 
   const { data: simulations, isLoading } = useQuery({
     queryKey: ["simulations", projectId],
@@ -119,6 +133,21 @@ export default function SimulationsTab({ projectId }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["simulations", projectId] }),
   });
 
+  // Conjoint step 3 → 4: create simulation, save sim ID, show design preview
+  const createConjointSim = useMutation({
+    mutationFn: async () => {
+      const sim = await createSimulation(projectId, {
+        simulation_type: "conjoint",
+        persona_group_id: groupId,
+        briefing_id: briefingId || null,
+        prompt_question: question || "the product",
+      });
+      setConjointSimId(sim.id);
+      return sim;
+    },
+    onSuccess: () => setStep(4),
+  });
+
   // Survey step 3 → 4: create simulation + upload file, show preview
   const uploadSurvey = useMutation({
     mutationFn: async () => {
@@ -143,6 +172,16 @@ export default function SimulationsTab({ projectId }: Props) {
     mutationFn: async () => {
       if (simType === "survey" && surveySimId) {
         return runSurvey(projectId, surveySimId);
+      }
+
+      if (simType === "conjoint" && conjointSimId) {
+        return runConjointDesign(projectId, conjointSimId, {
+          attributes: conjointAttributes.map(a => ({
+            name: a.name,
+            levels: a.levels.filter(l => l.trim()),
+          })),
+          n_tasks: conjointNTasks,
+        });
       }
 
       const body: Parameters<typeof createSimulation>[1] = {
@@ -197,9 +236,15 @@ export default function SimulationsTab({ projectId }: Props) {
     setSurveyFile(null);
     setSurveySimId(null);
     setParsedQuestions([]);
+    setConjointAttributes([
+      { name: "Price", levels: ["$49", "$99", "$149"] },
+      { name: "Feature", levels: ["Basic", "Premium"] },
+    ]);
+    setConjointNTasks(10);
+    setConjointSimId(null);
   };
 
-  const totalSteps = simType === "survey" ? 5 : 4; // survey: type → group → briefing → upload → preview
+  const totalSteps = simType === "survey" || simType === "conjoint" ? 5 : 4;
   const canProceed = () => {
     if (step === 0) return !!simType;
     if (step === 1) return !!groupId;
@@ -210,8 +255,17 @@ export default function SimulationsTab({ projectId }: Props) {
       if (simType === "idi_ai") return scriptMode === "text" ? !!scriptText.trim() : !!scriptFile;
       if (simType === "idi_manual") return !!idiPersonaId;
       if (simType === "survey") return !!surveyFile;
+      if (simType === "conjoint") {
+        return (
+          conjointAttributes.length >= 2 &&
+          conjointAttributes.every(
+            a => a.name.trim() && a.levels.filter(l => l.trim()).length >= 2
+          )
+        );
+      }
     }
     if (step === 4 && simType === "survey") return parsedQuestions.length > 0;
+    if (step === 4 && simType === "conjoint") return !!conjointSimId;
     return false;
   };
 
@@ -220,6 +274,7 @@ export default function SimulationsTab({ projectId }: Props) {
     if (type === "idi_manual") return "IDI — Manual";
     if (type === "survey") return "Survey";
     if (type === "focus_group") return "Focus Group";
+    if (type === "conjoint") return "Conjoint Test";
     return "Concept Test";
   };
 
@@ -251,7 +306,7 @@ export default function SimulationsTab({ projectId }: Props) {
                     <span className="text-xs text-zinc-400">{formatDate(s.created_at)}</span>
                   </div>
                   <p className="text-sm text-zinc-700 truncate">
-                    {s.prompt_question || (s.simulation_type === "idi_manual" ? "Manual interview" : s.simulation_type === "survey" ? "Survey simulation" : s.simulation_type === "focus_group" ? "Focus group session" : "IDI — AI assisted")}
+                    {s.prompt_question || (s.simulation_type === "idi_manual" ? "Manual interview" : s.simulation_type === "survey" ? "Survey simulation" : s.simulation_type === "focus_group" ? "Focus group session" : s.simulation_type === "conjoint" ? "Conjoint trade-off test" : "IDI — AI assisted")}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 ml-3 shrink-0">
@@ -451,6 +506,124 @@ export default function SimulationsTab({ projectId }: Props) {
             </>
           )}
 
+          {/* Step 3: Conjoint — attribute builder */}
+          {step === 3 && simType === "conjoint" && (
+            <div className="space-y-4">
+              <p className="text-sm text-zinc-500">Define the product attributes and their levels. Personas will make forced trade-off choices between product profiles.</p>
+
+              <Textarea
+                label="Product category"
+                placeholder="e.g. Wireless over-ear headphones"
+                rows={2}
+                value={question}
+                onChange={e => setQuestion(e.target.value)}
+              />
+
+              <div className="space-y-3">
+                {conjointAttributes.map((attr, attrIdx) => (
+                  <div key={attrIdx} className="border border-zinc-200 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        className="flex-1 text-sm border-b border-zinc-200 bg-transparent focus:outline-none focus:border-zinc-500 py-0.5"
+                        placeholder="Attribute name (e.g. Price)"
+                        value={attr.name}
+                        onChange={e => {
+                          const next = [...conjointAttributes];
+                          next[attrIdx] = { ...next[attrIdx], name: e.target.value };
+                          setConjointAttributes(next);
+                        }}
+                      />
+                      {conjointAttributes.length > 2 && (
+                        <button
+                          onClick={() => setConjointAttributes(conjointAttributes.filter((_, i) => i !== attrIdx))}
+                          className="text-xs text-zinc-300 hover:text-red-500 transition-colors shrink-0"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {attr.levels.map((lv, lvIdx) => (
+                        <div key={lvIdx} className="flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-md px-2 py-0.5">
+                          <input
+                            className="text-xs bg-transparent w-20 focus:outline-none"
+                            value={lv}
+                            placeholder="Level…"
+                            onChange={e => {
+                              const next = [...conjointAttributes];
+                              const levels = [...next[attrIdx].levels];
+                              levels[lvIdx] = e.target.value;
+                              next[attrIdx] = { ...next[attrIdx], levels };
+                              setConjointAttributes(next);
+                            }}
+                          />
+                          {attr.levels.length > 2 && (
+                            <button
+                              onClick={() => {
+                                const next = [...conjointAttributes];
+                                next[attrIdx] = { ...next[attrIdx], levels: next[attrIdx].levels.filter((_, i) => i !== lvIdx) };
+                                setConjointAttributes(next);
+                              }}
+                              className="text-zinc-300 hover:text-red-400 text-xs ml-0.5"
+                            >×</button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => {
+                          const next = [...conjointAttributes];
+                          next[attrIdx] = { ...next[attrIdx], levels: [...next[attrIdx].levels, ""] };
+                          setConjointAttributes(next);
+                        }}
+                        className="text-xs text-zinc-400 hover:text-zinc-600 px-2 py-0.5 border border-dashed border-zinc-200 rounded-md transition-colors"
+                      >
+                        + Level
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setConjointAttributes([...conjointAttributes, { name: "", levels: ["", ""] }])}
+                  className="w-full text-xs text-zinc-400 hover:text-zinc-600 border border-dashed border-zinc-200 rounded-lg py-2 transition-colors"
+                >
+                  + Add attribute
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-zinc-500 shrink-0">Tasks per persona:</label>
+                <input
+                  type="range" min={6} max={20} step={1}
+                  value={conjointNTasks}
+                  onChange={e => setConjointNTasks(Number(e.target.value))}
+                  className="flex-1"
+                />
+                <span className="text-xs text-zinc-700 font-medium w-6 text-right">{conjointNTasks}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Conjoint — design preview */}
+          {step === 4 && simType === "conjoint" && (
+            <div className="space-y-4">
+              <p className="text-sm text-zinc-500">
+                Confirm your conjoint design. Each persona will complete <span className="font-medium text-zinc-800">{conjointNTasks} choice tasks</span> across <span className="font-medium text-zinc-800">{conjointAttributes.length} attributes</span>.
+              </p>
+              <div className="space-y-2">
+                {conjointAttributes.map((attr, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm">
+                    <span className="text-zinc-400 text-xs w-4 mt-0.5 shrink-0">{i + 1}.</span>
+                    <span className="font-medium text-zinc-700 shrink-0">{attr.name}:</span>
+                    <span className="text-zinc-500">{attr.levels.filter(l => l.trim()).join(", ")}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-zinc-400 bg-zinc-50 rounded-lg px-3 py-2">
+                Estimated {conjointNTasks * (groups?.find(g => g.id === groupId)?.persona_count ?? 0)} total choice observations across all personas.
+              </div>
+            </div>
+          )}
+
           {/* Step 4: Survey — preview parsed questions */}
           {step === 4 && simType === "survey" && (
             <>
@@ -486,6 +659,10 @@ export default function SimulationsTab({ projectId }: Props) {
             {step === 3 && simType === "survey" ? (
               <Button onClick={() => uploadSurvey.mutate()} disabled={!canProceed() || uploadSurvey.isPending}>
                 {uploadSurvey.isPending ? "Parsing…" : "Next"}
+              </Button>
+            ) : step === 3 && simType === "conjoint" ? (
+              <Button onClick={() => createConjointSim.mutate()} disabled={!canProceed() || createConjointSim.isPending}>
+                {createConjointSim.isPending ? "Saving…" : "Next"}
               </Button>
             ) : step < totalSteps - 1 ? (
               <Button onClick={() => setStep(s => s + 1)} disabled={!canProceed()}>

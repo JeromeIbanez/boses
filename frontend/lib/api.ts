@@ -132,6 +132,20 @@ export const endIDISession = (projectId: string, simId: string) =>
   request<Simulation>(`/projects/${projectId}/simulations/${simId}/end`, { method: "POST" });
 export const abortSimulation = (projectId: string, simId: string) =>
   request<Simulation>(`/projects/${projectId}/simulations/${simId}/abort`, { method: "POST" });
+export const uploadSurveyFile = (projectId: string, simId: string, formData: FormData) =>
+  fetch(`${BASE}/projects/${projectId}/simulations/${simId}/survey`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  }).then(async r => {
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      throw new Error(err.detail || "Upload failed");
+    }
+    return r.json() as Promise<Simulation>;
+  });
+export const runSurvey = (projectId: string, simId: string) =>
+  request<Simulation>(`/projects/${projectId}/simulations/${simId}/run`, { method: "POST" });
 
 // Library
 export const getLibraryPersonas = (params?: {

@@ -290,6 +290,243 @@ function IDIReportView({ results, projectId, simulationId }: { results: Simulati
 }
 
 // ---------------------------------------------------------------------------
+// Survey results view
+// ---------------------------------------------------------------------------
+
+type SurveyAggQuestion = {
+  id: string;
+  type: "likert" | "multiple_choice" | "open_ended";
+  text: string;
+  scale?: number;
+  low_label?: string;
+  high_label?: string;
+  average?: number;
+  distribution?: Record<string, number>;
+  options?: string[];
+  themes?: string[];
+  notable_quotes?: string[];
+  n?: number;
+};
+
+type SurveyIndividualAnswer = {
+  id: string;
+  question_text: string;
+  type: string;
+  answer: string | number;
+};
+
+function LikertBar({ distribution, scale, lowLabel, highLabel, average }: {
+  distribution: Record<string, number>;
+  scale: number;
+  lowLabel?: string;
+  highLabel?: string;
+  average?: number;
+}) {
+  const total = Object.values(distribution).reduce((a, b) => a + b, 0);
+  if (total === 0) return null;
+  const buckets = Array.from({ length: scale }, (_, i) => i + 1);
+  const colors = ["bg-red-300", "bg-orange-300", "bg-yellow-300", "bg-lime-300", "bg-emerald-400"];
+  return (
+    <div className="space-y-2">
+      {average != null && (
+        <p className="text-2xl font-semibold text-zinc-900">{average.toFixed(1)} <span className="text-sm font-normal text-zinc-400">/ {scale}</span></p>
+      )}
+      <div className="flex gap-1 items-end h-10">
+        {buckets.map(n => {
+          const count = distribution[String(n)] ?? 0;
+          const pct = total > 0 ? (count / total) * 100 : 0;
+          return (
+            <div key={n} className="flex-1 flex flex-col items-center gap-0.5">
+              <div
+                className={`w-full rounded-sm ${colors[Math.min(n - 1, colors.length - 1)]}`}
+                style={{ height: `${Math.max(4, pct)}%`, minHeight: count > 0 ? 8 : 4 }}
+                title={`${n}: ${count}`}
+              />
+              <span className="text-xs text-zinc-400">{n}</span>
+            </div>
+          );
+        })}
+      </div>
+      {(lowLabel || highLabel) && (
+        <div className="flex justify-between text-xs text-zinc-400">
+          <span>{lowLabel}</span>
+          <span>{highLabel}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChoiceBar({ distribution, options }: { distribution: Record<string, number>; options?: string[] }) {
+  const total = Object.values(distribution).reduce((a, b) => a + b, 0);
+  const keys = options?.length ? options : Object.keys(distribution);
+  if (total === 0) return null;
+  return (
+    <div className="space-y-2">
+      {keys.map(opt => {
+        const count = distribution[opt] ?? 0;
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        return (
+          <div key={opt} className="space-y-1">
+            <div className="flex justify-between text-xs text-zinc-600">
+              <span>{opt}</span>
+              <span className="font-medium">{pct}% <span className="text-zinc-400 font-normal">({count})</span></span>
+            </div>
+            <div className="w-full bg-zinc-100 rounded-full h-2 overflow-hidden">
+              <div className="bg-zinc-700 h-2 rounded-full" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SurveyReportView({ results, projectId, simulationId }: {
+  results: SimulationResult[];
+  projectId: string;
+  simulationId: string;
+}) {
+  const aggregate = results.find(r => r.result_type === "survey_aggregate");
+  const individuals = results.filter(r => r.result_type === "survey_individual");
+
+  const aggSections = aggregate?.report_sections as {
+    per_question?: SurveyAggQuestion[];
+    executive_summary?: string;
+    recommendations?: string;
+  } | null;
+
+  const personaNames: Record<string, string> = {};
+  individuals.forEach((r, i) => {
+    if (r.persona_id) personaNames[r.persona_id] = `Persona ${i + 1}`;
+  });
+
+  return (
+    <div className="space-y-8">
+      {/* Executive Summary */}
+      {aggregate && (aggSections?.executive_summary || aggSections?.recommendations) && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide flex items-center gap-2">
+              <TrendingUp size={14} /> Executive Summary
+            </h2>
+            <a
+              href={`/projects/${projectId}/simulations/${simulationId}/survey-export`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
+            >
+              <FileText size={13} /> Export as PDF
+            </a>
+          </div>
+          <Card className="space-y-4">
+            {aggSections?.executive_summary && (
+              <div>
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <MessageSquare size={12} /> Summary
+                </p>
+                <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{aggSections.executive_summary}</p>
+              </div>
+            )}
+            {aggSections?.recommendations && (
+              <div className="bg-zinc-50 rounded-lg p-4">
+                <p className="text-xs font-medium text-zinc-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <Lightbulb size={12} /> Recommendations
+                </p>
+                <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{aggSections.recommendations}</p>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {/* Per-question aggregate results */}
+      {aggSections?.per_question && aggSections.per_question.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <TrendingUp size={14} /> Results by Question
+          </h2>
+          <div className="space-y-4">
+            {aggSections.per_question.map((q, i) => (
+              <Card key={q.id} className="space-y-3">
+                <div>
+                  <p className="text-xs text-zinc-400 mb-0.5">Q{i + 1} · <span className={`${q.type === "likert" ? "text-blue-500" : q.type === "multiple_choice" ? "text-purple-500" : "text-zinc-400"}`}>{q.type === "multiple_choice" ? "Multiple choice" : q.type === "likert" ? "Likert scale" : "Open-ended"}</span></p>
+                  <p className="text-sm font-medium text-zinc-800">{q.text}</p>
+                </div>
+                {q.type === "likert" && q.distribution && (
+                  <LikertBar
+                    distribution={q.distribution}
+                    scale={q.scale ?? 5}
+                    lowLabel={q.low_label}
+                    highLabel={q.high_label}
+                    average={q.average}
+                  />
+                )}
+                {q.type === "multiple_choice" && q.distribution && (
+                  <ChoiceBar distribution={q.distribution} options={q.options} />
+                )}
+                {q.type === "open_ended" && (
+                  <div className="space-y-3">
+                    {q.themes && q.themes.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {q.themes.map(t => <Badge key={t} variant="info">{t}</Badge>)}
+                      </div>
+                    )}
+                    {q.notable_quotes && q.notable_quotes.length > 0 && (
+                      <div className="space-y-2">
+                        {q.notable_quotes.map((quote, j) => (
+                          <blockquote key={j} className="border-l-2 border-zinc-200 pl-3 text-sm text-zinc-500 italic">
+                            "{quote}"
+                          </blockquote>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-zinc-400">{q.n} respondent{q.n !== 1 ? "s" : ""}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Individual responses */}
+      {individuals.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <MessageSquare size={14} /> Individual Responses ({individuals.length})
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {individuals.map(r => {
+              const answers = (r.report_sections as { answers?: SurveyIndividualAnswer[] } | null)?.answers ?? [];
+              const name = r.persona_id ? (personaNames[r.persona_id] || "Persona") : "Persona";
+              return (
+                <Card key={r.id} className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
+                      {name.charAt(0)}
+                    </div>
+                    <span className="text-sm font-medium text-zinc-900">{name}</span>
+                  </div>
+                  <div className="space-y-2.5">
+                    {answers.map((a, i) => (
+                      <div key={a.id ?? i} className="text-sm">
+                        <p className="text-xs text-zinc-400 mb-0.5">Q{i + 1}. {a.question_text}</p>
+                        <p className="text-zinc-700">{String(a.answer)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -317,6 +554,7 @@ export default function SimulationResultsPage() {
   });
 
   const isIDI = simulation?.simulation_type === "idi_ai" || simulation?.simulation_type === "idi_manual";
+  const isSurvey = simulation?.simulation_type === "survey";
 
   const { data: results } = useQuery({
     queryKey: ["simulation-results", simulationId],
@@ -339,6 +577,7 @@ export default function SimulationResultsPage() {
   const simTypeLabel = () => {
     if (simulation?.simulation_type === "idi_ai") return "IDI — AI Assisted";
     if (simulation?.simulation_type === "idi_manual") return "IDI — Manual";
+    if (simulation?.simulation_type === "survey") return "Survey";
     return "Concept Test";
   };
 
@@ -512,7 +751,9 @@ export default function SimulationResultsPage() {
       {/* Results */}
       {simulation?.status === "complete" && results && (
         <>
-          {isIDI ? (
+          {isSurvey ? (
+            <SurveyReportView results={results} projectId={projectId} simulationId={simulationId} />
+          ) : isIDI ? (
             <IDIReportView results={results} projectId={projectId} simulationId={simulationId} />
           ) : (
             <div className="space-y-8">

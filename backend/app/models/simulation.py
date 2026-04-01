@@ -19,6 +19,7 @@ class Simulation(Base):
     simulation_type: Mapped[str] = mapped_column(String(50), default="concept_test", nullable=False)
     idi_script_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     idi_persona_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("personas.id", ondelete="SET NULL"), nullable=True)
+    survey_schema: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="pending")
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     progress: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

@@ -112,6 +112,10 @@ def run_simulation(simulation_id: str) -> None:
         return
     if sim_type == "idi_manual":
         return  # manual sessions are driven by the chat endpoint
+    if sim_type == "survey":
+        from app.services.survey_engine import run_survey
+        run_survey(simulation_id)
+        return
 
     # concept_test path
     client = OpenAI(api_key=settings.openai_api_key)

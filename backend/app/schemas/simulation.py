@@ -12,6 +12,7 @@ class SimulationCreate(BaseModel):
     prompt_question: Optional[str] = None
     idi_script_text: Optional[str] = None
     idi_persona_id: Optional[uuid.UUID] = None
+    survey_schema: Optional[dict[str, Any]] = None
 
 
 class SimulationResponse(BaseModel):
@@ -23,6 +24,7 @@ class SimulationResponse(BaseModel):
     simulation_type: str
     idi_script_text: Optional[str]
     idi_persona_id: Optional[uuid.UUID]
+    survey_schema: Optional[dict[str, Any]]
     status: str
     error_message: Optional[str]
     progress: Optional[dict[str, Any]]

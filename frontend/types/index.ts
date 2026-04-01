@@ -92,15 +92,30 @@ export interface Briefing {
   created_at: string;
 }
 
+export interface SurveyQuestion {
+  id: string;
+  type: "likert" | "multiple_choice" | "open_ended";
+  text: string;
+  scale?: number;
+  low_label?: string;
+  high_label?: string;
+  options?: string[];
+}
+
+export interface SurveySchema {
+  questions: SurveyQuestion[];
+}
+
 export interface Simulation {
   id: string;
   project_id: string;
   persona_group_id: string;
   briefing_id: string | null;
   prompt_question: string | null;
-  simulation_type: "concept_test" | "idi_ai" | "idi_manual";
+  simulation_type: "concept_test" | "idi_ai" | "idi_manual" | "survey";
   idi_script_text: string | null;
   idi_persona_id: string | null;
+  survey_schema: SurveySchema | null;
   status: "pending" | "running" | "active" | "generating_report" | "complete" | "failed";
   error_message: string | null;
   progress: {
@@ -119,7 +134,7 @@ export interface SimulationResult {
   id: string;
   simulation_id: string;
   persona_id: string | null;
-  result_type: "individual" | "aggregate" | "idi_individual" | "idi_aggregate";
+  result_type: "individual" | "aggregate" | "idi_individual" | "idi_aggregate" | "survey_individual" | "survey_aggregate";
   // Concept test individual fields
   sentiment: "Positive" | "Neutral" | "Negative" | null;
   sentiment_score: number | null;
@@ -131,7 +146,7 @@ export interface SimulationResult {
   sentiment_distribution: Record<string, number> | null;
   top_themes: string[] | null;
   recommendations: string | null;
-  // IDI fields
+  // IDI / Survey fields
   transcript: string | null;
   report_sections: Record<string, unknown> | null;
   created_at: string;

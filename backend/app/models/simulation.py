@@ -28,6 +28,6 @@ class Simulation(Base):
     project: Mapped["Project"] = relationship(back_populates="simulations")
     persona_group: Mapped["PersonaGroup"] = relationship()
     briefing: Mapped["Briefing | None"] = relationship(back_populates="simulations")
-    idi_persona: Mapped["Persona | None"] = relationship(foreign_keys="[Simulation.idi_persona_id]")
+    idi_persona: Mapped["Persona | None"] = relationship(foreign_keys="[Simulation.idi_persona_id]", passive_deletes=True)
     results: Mapped[list["SimulationResult"]] = relationship(back_populates="simulation", cascade="all, delete-orphan")
     idi_messages: Mapped[list["IDIMessage"]] = relationship(back_populates="simulation", cascade="all, delete-orphan")

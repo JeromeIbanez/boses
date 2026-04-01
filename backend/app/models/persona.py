@@ -38,4 +38,4 @@ class Persona(Base):
 
     persona_group: Mapped["PersonaGroup"] = relationship(back_populates="personas")
     simulation_results: Mapped[list["SimulationResult"]] = relationship(back_populates="persona", passive_deletes=True)
-    library_link: Mapped["PersonaLibraryLink | None"] = relationship(back_populates="persona", uselist=False)
+    library_link: Mapped["PersonaLibraryLink | None"] = relationship(back_populates="persona", uselist=False, passive_deletes=True)

@@ -20,6 +20,12 @@ export interface PersonaGroup {
   psychographic_notes: string | null;
   persona_count: number;
   generation_status: "pending" | "generating" | "complete" | "failed";
+  generation_progress: {
+    current: number;
+    total: number;
+    current_name: string | null;
+    completed: string[];
+  } | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -45,6 +45,7 @@ class PersonaGroupResponse(BaseModel):
     psychographic_notes: Optional[str]
     persona_count: int
     generation_status: str
+    generation_progress: Optional[Any] = None
     created_at: datetime
     updated_at: datetime
 

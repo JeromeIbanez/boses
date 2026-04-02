@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { getPersonaGroup, getPersonas, deletePersona, deleteAllPersonas } from "@/lib/api";
+import { Persona } from "@/types";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import LibraryBadge from "@/components/ui/LibraryBadge";

@@ -59,7 +59,7 @@ def health():
 
 
 # Routers registered after models are defined
-from app.routers import projects, persona_groups, personas, briefings, simulations, library, auth, benchmarks  # noqa: E402
+from app.routers import projects, persona_groups, personas, briefings, simulations, library, auth  # noqa: E402
 
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(projects.router, prefix="/api/v1")
@@ -68,4 +68,3 @@ app.include_router(personas.router, prefix="/api/v1")
 app.include_router(briefings.router, prefix="/api/v1")
 app.include_router(simulations.router, prefix="/api/v1")
 app.include_router(library.router, prefix="/api/v1")
-app.include_router(benchmarks.router, prefix="/api/v1")

@@ -11,3 +11,4 @@ from app.models.simulation import Simulation  # noqa: F401
 from app.models.simulation_result import SimulationResult  # noqa: F401
 from app.models.idi_message import IDIMessage  # noqa: F401
 from app.models.reproducibility import ReproducibilityStudy, ReproducibilityRun  # noqa: F401
+from app.models.cultural_context import CulturalContextSnapshot  # noqa: F401

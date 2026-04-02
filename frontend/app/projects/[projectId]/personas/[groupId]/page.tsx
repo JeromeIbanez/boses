@@ -22,12 +22,30 @@ export default function PersonaGroupPage() {
 
   const remove = useMutation({
     mutationFn: (personaId: string) => deletePersona(projectId, groupId, personaId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
+    onMutate: async (personaId) => {
+      await qc.cancelQueries({ queryKey: ["personas", groupId] });
+      const prev = qc.getQueryData<Persona[]>(["personas", groupId]);
+      if (prev) qc.setQueryData(["personas", groupId], prev.filter((p) => p.id !== personaId));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["personas", groupId], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
   });
 
   const removeAll = useMutation({
     mutationFn: () => deleteAllPersonas(projectId, groupId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["personas", groupId] });
+      const prev = qc.getQueryData<Persona[]>(["personas", groupId]);
+      qc.setQueryData(["personas", groupId], []);
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["personas", groupId], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
   });
 
   const { data: group } = useQuery({
@@ -155,7 +173,7 @@ export default function PersonaGroupPage() {
       <PersonaDetailModal
         persona={selectedPersona}
         onClose={() => setSelectedPersona(null)}
-        onDelete={(id) => remove.mutate(id)}
+        onDelete={(id) => { remove.mutate(id); setSelectedPersona(null); }}
       />
     </div>
   );

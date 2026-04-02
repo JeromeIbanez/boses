@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BookMarked, Search, Trash2, X } from "lucide-react";
 import { getLibraryPersonas, getLibraryPersona, deleteLibraryPersona, deleteAllLibraryPersonas } from "@/lib/api";
-import type { LibraryPersona } from "@/types";
+import type { LibraryPersona, LibraryPersonaListResponse } from "@/types";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";

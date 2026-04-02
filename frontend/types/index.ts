@@ -209,46 +209,6 @@ export interface ConjointAggregateSections {
   recommendations: string;
 }
 
-// ---------------------------------------------------------------------------
-// Benchmarking types
-// ---------------------------------------------------------------------------
-
-export interface BenchmarkGroundTruth {
-  sentiment: "Positive" | "Neutral" | "Negative";
-  positive_pct?: number;
-  neutral_pct?: number;
-  negative_pct?: number;
-  top_themes: string[];
-  outcome_summary: string;
-  source_notes?: string;
-}
-
-export interface BenchmarkCase {
-  id: string;
-  slug: string;
-  title: string;
-  category: string;
-  description: string;
-  briefing_text?: string;
-  prompt_question?: string;
-  simulation_type: string;
-  ground_truth: BenchmarkGroundTruth;
-  source_citations?: string[];
-}
-
-export interface BenchmarkRun {
-  id: string;
-  benchmark_case_id: string;
-  benchmark_case_title: string | null;
-  benchmark_case_slug: string | null;
-  simulation_id: string;
-  status: "pending" | "complete" | "failed";
-  overall_accuracy_score: number | null;
-  score_breakdown: Record<string, unknown> | null;
-  created_at: string;
-  completed_at: string | null;
-}
-
 export interface ReliabilityCheck {
   exists: boolean;
   id?: string;

@@ -1,6 +1,4 @@
 import type {
-  BenchmarkCase,
-  BenchmarkRun,
   Briefing,
   ConjointDesign,
   ConvergenceResult,
@@ -186,16 +184,6 @@ export const deleteLibraryPersona = (id: string) =>
 
 export const deleteAllLibraryPersonas = () =>
   request<void>(`/library/personas`, { method: "DELETE" });
-
-// Benchmarks
-export const getBenchmarkCases = () => request<BenchmarkCase[]>("/benchmarks");
-export const getBenchmarkCase = (slug: string) => request<BenchmarkCase>(`/benchmarks/${slug}`);
-export const getMyBenchmarkRuns = () => request<BenchmarkRun[]>("/benchmarks/runs");
-export const runBenchmark = (slug: string, body: { persona_group_id: string; project_id: string }) =>
-  request<{ id: string; simulation_id: string; benchmark_case_slug: string; status: string; created_at: string }>(
-    `/benchmarks/${slug}/run`,
-    { method: "POST", body: JSON.stringify(body) }
-  );
 
 // Reliability check
 export const createReliabilityCheck = (projectId: string, simId: string, nRuns = 3) =>

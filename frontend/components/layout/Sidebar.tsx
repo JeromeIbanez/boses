@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderOpen, BookMarked, LogOut, FlaskConical } from "lucide-react";
+import { LayoutDashboard, FolderOpen, BookMarked, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,7 +10,6 @@ const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/projects", icon: FolderOpen },
   { label: "Personas", href: "/personas", icon: BookMarked },
-  { label: "Benchmarks", href: "/benchmarks", icon: FlaskConical },
 ];
 
 export default function Sidebar() {

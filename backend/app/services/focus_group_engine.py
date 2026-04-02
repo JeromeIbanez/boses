@@ -372,6 +372,7 @@ def run_focus_group(simulation_id: str) -> None:
             f"[fg:{sim_ref}] Focus group complete — "
             f"{len(round1_per_persona)}/{total_personas} personas participated"
         )
+        _trigger_scoring(simulation_id)
 
     except Exception as e:
         logger.error(f"[fg:{sim_ref}] Focus group failed: {e}")
@@ -383,5 +384,14 @@ def run_focus_group(simulation_id: str) -> None:
                 db.commit()
         except Exception:
             db.rollback()
+        _trigger_scoring(simulation_id)
     finally:
         db.close()
+
+
+def _trigger_scoring(simulation_id: str) -> None:
+    try:
+        from app.services.simulation_engine import _trigger_post_completion_scoring
+        _trigger_post_completion_scoring(simulation_id)
+    except Exception:
+        pass

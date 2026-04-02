@@ -281,6 +281,7 @@ def run_survey(simulation_id: str) -> None:
         simulation.completed_at = datetime.utcnow()
         db.commit()
         logger.info(f"[survey:{sim_ref}] Complete ({len(individual_results)}/{total} personas)")
+        _trigger_scoring(simulation_id)
 
     except Exception as e:
         logger.error(f"[survey:{simulation_id[:8]}] Failed: {e}")
@@ -292,5 +293,14 @@ def run_survey(simulation_id: str) -> None:
                 db.commit()
         except Exception:
             db.rollback()
+        _trigger_scoring(simulation_id)
     finally:
         db.close()
+
+
+def _trigger_scoring(simulation_id: str) -> None:
+    try:
+        from app.services.simulation_engine import _trigger_post_completion_scoring
+        _trigger_post_completion_scoring(simulation_id)
+    except Exception:
+        pass

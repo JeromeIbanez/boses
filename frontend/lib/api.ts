@@ -1,12 +1,16 @@
 import type {
+  BenchmarkCase,
+  BenchmarkRun,
   Briefing,
   ConjointDesign,
+  ConvergenceResult,
   IDIMessage,
   LibraryPersona,
   LibraryPersonaListResponse,
   Persona,
   PersonaGroup,
   Project,
+  ReliabilityCheck,
   Simulation,
   SimulationResult,
 } from "@/types";
@@ -182,3 +186,29 @@ export const deleteLibraryPersona = (id: string) =>
 
 export const deleteAllLibraryPersonas = () =>
   request<void>(`/library/personas`, { method: "DELETE" });
+
+// Benchmarks
+export const getBenchmarkCases = () => request<BenchmarkCase[]>("/benchmarks");
+export const getBenchmarkCase = (slug: string) => request<BenchmarkCase>(`/benchmarks/${slug}`);
+export const getMyBenchmarkRuns = () => request<BenchmarkRun[]>("/benchmarks/runs");
+export const runBenchmark = (slug: string, body: { persona_group_id: string; project_id: string }) =>
+  request<{ id: string; simulation_id: string; benchmark_case_slug: string; status: string; created_at: string }>(
+    `/benchmarks/${slug}/run`,
+    { method: "POST", body: JSON.stringify(body) }
+  );
+
+// Reliability check
+export const createReliabilityCheck = (projectId: string, simId: string, nRuns = 3) =>
+  request<ReliabilityCheck>(`/projects/${projectId}/simulations/${simId}/reliability-check`, {
+    method: "POST",
+    body: JSON.stringify({ n_runs: nRuns }),
+  });
+export const getReliabilityCheck = (projectId: string, simId: string) =>
+  request<ReliabilityCheck>(`/projects/${projectId}/simulations/${simId}/reliability-check`);
+
+// Cross-simulation convergence
+export const getConvergence = (projectId: string, personaGroupId: string, briefingId?: string | null) => {
+  const qs = new URLSearchParams({ persona_group_id: personaGroupId });
+  if (briefingId) qs.set("briefing_id", briefingId);
+  return request<ConvergenceResult>(`/projects/${projectId}/simulations/convergence?${qs}`);
+};

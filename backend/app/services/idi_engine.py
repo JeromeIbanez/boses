@@ -291,6 +291,7 @@ def run_idi_ai(simulation_id: str) -> None:
         simulation.completed_at = datetime.utcnow()
         db.commit()
         logger.info(f"[idi:{sim_ref}] IDI complete ({len(persona_analyses)}/{len(personas)} personas)")
+        _trigger_scoring(simulation_id)
 
     except Exception as e:
         logger.error(f"[idi:{sim_ref}] IDI failed: {e}")
@@ -302,8 +303,17 @@ def run_idi_ai(simulation_id: str) -> None:
                 db.commit()
         except Exception:
             db.rollback()
+        _trigger_scoring(simulation_id)
     finally:
         db.close()
+
+
+def _trigger_scoring(simulation_id: str) -> None:
+    try:
+        from app.services.simulation_engine import _trigger_post_completion_scoring
+        _trigger_post_completion_scoring(simulation_id)
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -386,6 +396,7 @@ def generate_idi_report_from_messages(simulation_id: str) -> None:
         simulation.completed_at = datetime.utcnow()
         db.commit()
         logger.info(f"[idi:{sim_ref}] Manual IDI report generated for {persona.full_name}")
+        _trigger_scoring(simulation_id)
 
     except Exception as e:
         logger.error(f"[idi:{sim_ref}] Report generation failed: {e}")
@@ -397,5 +408,6 @@ def generate_idi_report_from_messages(simulation_id: str) -> None:
                 db.commit()
         except Exception:
             db.rollback()
+        _trigger_scoring(simulation_id)
     finally:
         db.close()

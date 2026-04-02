@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText, BarChart2 } from "lucide-react";
 import { getSimulation, getSimulationResults, abortSimulation } from "@/lib/api";
+import ConvergencePanel from "@/components/simulations/ConvergencePanel";
+import ReliabilityPanel from "@/components/simulations/ReliabilityPanel";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Spinner from "@/components/ui/Spinner";
@@ -1240,6 +1242,20 @@ export default function SimulationResultsPage() {
       {simulation?.status === "complete" && simulation?.error_message && (
         <div className="border border-amber-200 bg-amber-50 rounded-xl px-4 py-3 mb-5">
           <p className="text-xs text-amber-700">⚠ Partial results — {simulation.error_message}</p>
+        </div>
+      )}
+
+      {/* Trust panels — shown once simulation is complete */}
+      {simulation?.status === "complete" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+          <ReliabilityPanel projectId={projectId} simulationId={simulationId} />
+          {simulation.persona_group_id && (
+            <ConvergencePanel
+              projectId={projectId}
+              personaGroupId={simulation.persona_group_id}
+              briefingId={simulation.briefing_id}
+            />
+          )}
         </div>
       )}
 

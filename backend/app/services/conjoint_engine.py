@@ -524,6 +524,7 @@ def run_conjoint(simulation_id: str) -> None:
             f"[conjoint:{sim_ref}] Complete — "
             f"{len(individual_results)}/{total} personas succeeded"
         )
+        _trigger_scoring(simulation_id)
 
     except Exception as e:
         logger.error(f"[conjoint:{sim_ref}] Failed: {e}")
@@ -535,5 +536,14 @@ def run_conjoint(simulation_id: str) -> None:
                 db.commit()
         except Exception:
             db.rollback()
+        _trigger_scoring(simulation_id)
     finally:
         db.close()
+
+
+def _trigger_scoring(simulation_id: str) -> None:
+    try:
+        from app.services.simulation_engine import _trigger_post_completion_scoring
+        _trigger_post_completion_scoring(simulation_id)
+    except Exception:
+        pass

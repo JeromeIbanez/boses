@@ -252,6 +252,7 @@ def run_simulation(simulation_id: str) -> None:
         simulation.completed_at = datetime.utcnow()
         db.commit()
         logger.info(f"[sim:{sim_ref}] Simulation complete ({len(individual_results)}/{len(personas)} personas)")
+        _trigger_post_completion_scoring(simulation_id)
 
     except Exception as e:
         logger.error(f"[sim:{simulation_id[:8]}] Simulation failed: {e}")
@@ -263,5 +264,16 @@ def run_simulation(simulation_id: str) -> None:
                 db.commit()
         except Exception:
             db.rollback()
+        _trigger_post_completion_scoring(simulation_id)
     finally:
         db.close()
+
+
+def _trigger_post_completion_scoring(simulation_id: str) -> None:
+    """Fire-and-forget: score any reproducibility study or benchmark run linked to this simulation."""
+    try:
+        from app.services.benchmarking_service import maybe_score_reproducibility, maybe_score_benchmark
+        maybe_score_reproducibility(simulation_id)
+        maybe_score_benchmark(simulation_id)
+    except Exception as e:
+        logger.warning(f"Post-completion scoring skipped for {simulation_id[:8]}: {e}")

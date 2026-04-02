@@ -10,3 +10,5 @@ from app.models.briefing import Briefing  # noqa: F401
 from app.models.simulation import Simulation  # noqa: F401
 from app.models.simulation_result import SimulationResult  # noqa: F401
 from app.models.idi_message import IDIMessage  # noqa: F401
+from app.models.reproducibility import ReproducibilityStudy, ReproducibilityRun  # noqa: F401
+from app.models.benchmark import BenchmarkCase, BenchmarkRun  # noqa: F401

@@ -130,7 +130,18 @@ export default function SimulationsTab({ projectId }: Props) {
 
   const deleteSim = useMutation({
     mutationFn: (simId: string) => deleteSimulation(projectId, simId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["simulations", projectId] }),
+    onMutate: async (simId) => {
+      await qc.cancelQueries({ queryKey: ["simulations", projectId] });
+      const prev = qc.getQueryData(["simulations", projectId]);
+      qc.setQueryData(["simulations", projectId], (old: typeof simulations) =>
+        old ? old.filter((s) => s.id !== simId) : []
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      qc.setQueryData(["simulations", projectId], ctx?.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["simulations", projectId] }),
   });
 
   // Conjoint step 3 → 4: create simulation, save sim ID, show design preview

@@ -85,7 +85,18 @@ export default function PersonasTab({ projectId }: Props) {
 
   const deleteGroup = useMutation({
     mutationFn: (groupId: string) => deletePersonaGroup(projectId, groupId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["persona-groups", projectId] }),
+    onMutate: async (groupId) => {
+      await qc.cancelQueries({ queryKey: ["persona-groups", projectId] });
+      const prev = qc.getQueryData(["persona-groups", projectId]);
+      qc.setQueryData(["persona-groups", projectId], (old: typeof groups) =>
+        old ? old.filter((g) => g.id !== groupId) : []
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      qc.setQueryData(["persona-groups", projectId], ctx?.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["persona-groups", projectId] }),
   });
 
   const set = (k: keyof typeof form) =>

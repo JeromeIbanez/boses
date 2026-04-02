@@ -28,6 +28,13 @@ class Persona(Base):
     media_consumption: Mapped[str | None] = mapped_column(Text, nullable=True)
     purchase_behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    archetype_label: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    psychographic_segment: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    brand_attitudes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    buying_triggers: Mapped[str | None] = mapped_column(Text, nullable=True)
+    aspirational_identity: Mapped[str | None] = mapped_column(Text, nullable=True)
+    digital_behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     persona_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
     day_in_the_life: Mapped[str | None] = mapped_column(Text, nullable=True)
     data_source: Mapped[str] = mapped_column(String(50), default="synthetic", nullable=False)

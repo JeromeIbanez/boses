@@ -21,6 +21,12 @@ class PersonaResponse(BaseModel):
     pain_points: Optional[str]
     media_consumption: Optional[str]
     purchase_behavior: Optional[str]
+    archetype_label: Optional[str]
+    psychographic_segment: Optional[str]
+    brand_attitudes: Optional[str]
+    buying_triggers: Optional[str]
+    aspirational_identity: Optional[str]
+    digital_behavior: Optional[str]
     day_in_the_life: Optional[str]
     persona_code: str
     data_source: Optional[str]

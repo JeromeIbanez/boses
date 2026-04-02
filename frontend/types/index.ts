@@ -20,6 +20,12 @@ export interface PersonaGroup {
   psychographic_notes: string | null;
   persona_count: number;
   generation_status: "pending" | "generating" | "complete" | "failed";
+  generation_progress: {
+    current: number;
+    total: number;
+    current_name: string | null;
+    completed: string[];
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -40,6 +46,12 @@ export interface Persona {
   pain_points: string | null;
   media_consumption: string | null;
   purchase_behavior: string | null;
+  archetype_label: string | null;
+  psychographic_segment: string | null;
+  brand_attitudes: string | null;
+  buying_triggers: string | null;
+  aspirational_identity: string | null;
+  digital_behavior: string | null;
   day_in_the_life: string | null;
   persona_code: string;
   data_source: string | null;
@@ -65,6 +77,12 @@ export interface LibraryPersona {
   tech_savviness: string | null;
   media_consumption: string | null;
   spending_habits: string | null;
+  archetype_label: string | null;
+  psychographic_segment: string | null;
+  brand_attitudes: string | null;
+  buying_triggers: string | null;
+  aspirational_identity: string | null;
+  digital_behavior: string | null;
   day_in_the_life: string | null;
   data_source: string;
   data_source_references: string[] | null;

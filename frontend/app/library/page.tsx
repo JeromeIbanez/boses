@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { BookMarked, Search, X } from "lucide-react";
-import { getLibraryPersonas, getLibraryPersona } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { BookMarked, Search, Trash2, X } from "lucide-react";
+import { getLibraryPersonas, getLibraryPersona, deleteLibraryPersona, deleteAllLibraryPersonas } from "@/lib/api";
 import type { LibraryPersona } from "@/types";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -140,9 +140,11 @@ function PersonaDetailModal({
 function LibraryPersonaCard({
   persona,
   onClick,
+  onDelete,
 }: {
   persona: LibraryPersona;
   onClick: () => void;
+  onDelete: () => void;
 }) {
   return (
     <Card onClick={onClick}>
@@ -154,6 +156,16 @@ function LibraryPersonaCard({
           <h3 className="text-sm font-medium text-zinc-900 truncate">{persona.full_name}</h3>
           <p className="text-xs text-zinc-400">{persona.age} · {persona.occupation}</p>
         </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm(`Delete ${persona.full_name} from the library?`)) onDelete();
+          }}
+          className="p-1 text-zinc-300 hover:text-red-500 transition-colors shrink-0"
+          title="Delete persona"
+        >
+          <Trash2 size={14} />
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-1 mb-3">
@@ -191,6 +203,17 @@ export default function LibraryPage() {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [activeFilters, setActiveFilters] = useState<Filters>(defaultFilters);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const qc = useQueryClient();
+
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteLibraryPersona(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["library-personas"] }),
+  });
+
+  const removeAll = useMutation({
+    mutationFn: () => deleteAllLibraryPersonas(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["library-personas"] }),
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["library-personas", activeFilters],
@@ -214,10 +237,23 @@ export default function LibraryPage() {
 
   return (
     <div className="px-8 py-8">
-      <PageHeader
-        title="Personas"
-        description="Persistent personas built across all projects. Reused automatically when demographics match."
-      />
+      <div className="flex items-start justify-between gap-4">
+        <PageHeader
+          title="Personas"
+          description="Persistent personas built across all projects. Reused automatically when demographics match."
+        />
+        {data && data.total > 0 && (
+          <button
+            onClick={() => {
+              if (confirm(`Permanently delete all ${data.total} persona(s) from the library?`)) removeAll.mutate();
+            }}
+            disabled={removeAll.isPending}
+            className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded-md px-3 py-1.5 transition-colors shrink-0 disabled:opacity-50"
+          >
+            <Trash2 size={13} /> Delete All
+          </button>
+        )}
+      </div>
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-end gap-3 mb-6 p-4 bg-zinc-50 border border-zinc-200 rounded-lg">
@@ -336,6 +372,7 @@ export default function LibraryPage() {
               key={p.id}
               persona={p}
               onClick={() => setSelectedId(p.id)}
+              onDelete={() => remove.mutate(p.id)}
             />
           ))}
         </div>

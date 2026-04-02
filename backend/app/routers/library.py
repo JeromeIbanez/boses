@@ -116,3 +116,34 @@ def retire_library_persona(
     db.commit()
     db.refresh(lp)
     return lp
+
+
+@router.delete("/personas/{library_persona_id}", status_code=204)
+def delete_library_persona(
+    library_persona_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _current_user: CurrentUser = Depends(get_current_user),
+):
+    lp = db.get(LibraryPersona, library_persona_id)
+    if not lp:
+        raise HTTPException(status_code=404, detail="Library persona not found")
+    # Null out denormalised FK on project personas
+    db.query(Persona).filter(Persona.library_persona_id == library_persona_id).update({"library_persona_id": None})
+    # Remove junction records
+    db.query(PersonaLibraryLink).filter(PersonaLibraryLink.library_persona_id == library_persona_id).delete()
+    db.delete(lp)
+    db.commit()
+
+
+@router.delete("/personas", status_code=204)
+def delete_all_library_personas(
+    db: Session = Depends(get_db),
+    _current_user: CurrentUser = Depends(get_current_user),
+):
+    # Null out all library persona references on project personas
+    db.query(Persona).filter(Persona.library_persona_id.isnot(None)).update({"library_persona_id": None})
+    # Remove all junction records
+    db.query(PersonaLibraryLink).delete()
+    # Delete all library personas
+    db.query(LibraryPersona).delete()
+    db.commit()

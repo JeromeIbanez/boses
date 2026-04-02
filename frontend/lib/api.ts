@@ -176,3 +176,9 @@ export const getLibraryPersonas = (params?: {
 
 export const getLibraryPersona = (id: string) =>
   request<LibraryPersona>(`/library/personas/${id}`);
+
+export const deleteLibraryPersona = (id: string) =>
+  request<void>(`/library/personas/${id}`, { method: "DELETE" });
+
+export const deleteAllLibraryPersonas = () =>
+  request<void>(`/library/personas`, { method: "DELETE" });

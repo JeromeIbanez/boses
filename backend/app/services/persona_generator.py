@@ -127,8 +127,11 @@ Return a JSON array of {group.persona_count} objects, each with:
         )
         raw = json.loads(response.choices[0].message.content or "{}")
         if isinstance(raw, dict):
-            return next(iter(raw.values()))
-        return raw
+            for v in raw.values():
+                if isinstance(v, list):
+                    return v
+            return []
+        return raw if isinstance(raw, list) else []
 
     def _expand_one_skeleton(
         self,
@@ -281,6 +284,10 @@ _SOURCES: dict[str, type[PersonaDataSource]] = {
 # Public entry point
 # ---------------------------------------------------------------------------
 
+def _trunc(value: str | None, max_len: int) -> str | None:
+    return value[:max_len] if value else value
+
+
 def _set_progress(db, group: PersonaGroup, current: int, total: int, current_name: str | None, completed: list[str]) -> None:
     """Write progress to DB and commit so the frontend polling can see it."""
     from sqlalchemy.orm.attributes import flag_modified
@@ -398,7 +405,7 @@ def generate_personas(group_id: str) -> None:
                         gender=profile.get("gender", group.gender),
                         location=profile.get("location", group.location),
                         occupation=profile.get("occupation", group.occupation),
-                        income_level=profile.get("income_level", group.income_level),
+                        income_level=_trunc(profile.get("income_level", group.income_level), 100),
                         educational_background=profile.get("educational_background"),
                         family_situation=profile.get("family_situation"),
                         personality_traits=profile.get("personality_traits"),
@@ -406,8 +413,8 @@ def generate_personas(group_id: str) -> None:
                         pain_points=profile.get("pain_points"),
                         media_consumption=profile.get("media_consumption"),
                         purchase_behavior=profile.get("purchase_behavior"),
-                        archetype_label=profile.get("archetype_label"),
-                        psychographic_segment=profile.get("psychographic_segment"),
+                        archetype_label=_trunc(profile.get("archetype_label"), 100),
+                        psychographic_segment=_trunc(profile.get("psychographic_segment"), 100),
                         brand_attitudes=profile.get("brand_attitudes"),
                         buying_triggers=profile.get("buying_triggers"),
                         aspirational_identity=profile.get("aspirational_identity"),
@@ -437,7 +444,7 @@ def generate_personas(group_id: str) -> None:
                         gender=profile.get("gender", group.gender),
                         location=profile.get("location", group.location),
                         occupation=profile.get("occupation", group.occupation),
-                        income_level=profile.get("income_level", group.income_level),
+                        income_level=_trunc(profile.get("income_level", group.income_level), 100),
                         educational_background=profile.get("educational_background"),
                         family_situation=profile.get("family_situation"),
                         personality_traits=profile.get("personality_traits"),
@@ -445,8 +452,8 @@ def generate_personas(group_id: str) -> None:
                         pain_points=profile.get("pain_points"),
                         media_consumption=profile.get("media_consumption"),
                         purchase_behavior=profile.get("purchase_behavior"),
-                        archetype_label=profile.get("archetype_label"),
-                        psychographic_segment=profile.get("psychographic_segment"),
+                        archetype_label=_trunc(profile.get("archetype_label"), 100),
+                        psychographic_segment=_trunc(profile.get("psychographic_segment"), 100),
                         brand_attitudes=profile.get("brand_attitudes"),
                         buying_triggers=profile.get("buying_triggers"),
                         aspirational_identity=profile.get("aspirational_identity"),

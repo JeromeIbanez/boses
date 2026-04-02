@@ -10,6 +10,7 @@ logging.basicConfig(
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -31,8 +32,9 @@ if settings.SENTRY_DSN:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure uploads directory exists
+    # Ensure uploads directory (and avatars subdir) exist
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    os.makedirs(os.path.join(settings.UPLOAD_DIR, "avatars"), exist_ok=True)
     yield
 
 
@@ -69,3 +71,6 @@ app.include_router(briefings.router, prefix="/api/v1")
 app.include_router(simulations.router, prefix="/api/v1")
 app.include_router(library.router, prefix="/api/v1")
 app.include_router(internal.router, prefix="/api/v1")
+
+# Serve uploaded files (avatars, briefings) as static assets
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")

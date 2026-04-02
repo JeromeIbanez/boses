@@ -23,6 +23,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.models.persona import Persona
 from app.models.persona_group import PersonaGroup
+from app.services.avatar_service import generate_avatar
 from app.services.grounding import format_grounding_context
 from app.services.library_matcher import find_library_matches, save_persona_to_library
 from app.services.reddit_grounding import fetch_reddit_signals
@@ -375,6 +376,7 @@ def generate_personas(group_id: str) -> None:
             )
             db.add(persona)
             db.flush()
+            persona.avatar_url = generate_avatar(client, persona)
             save_persona_to_library(db, persona, match_score=match_score, existing_library_id=lib_persona.id)
             used_library_ids.add(lib_persona.id)
             completed_names.append(name)
@@ -434,6 +436,7 @@ def generate_personas(group_id: str) -> None:
                     )
                     db.add(persona)
                     db.flush()
+                    persona.avatar_url = generate_avatar(client, persona)
                     save_persona_to_library(db, persona)
                     completed_names.append(profile.get("full_name", name))
                     personas_created += 1
@@ -473,6 +476,7 @@ def generate_personas(group_id: str) -> None:
                     )
                     db.add(persona)
                     db.flush()
+                    persona.avatar_url = generate_avatar(client, persona)
                     save_persona_to_library(db, persona)
                     personas_created += 1
 

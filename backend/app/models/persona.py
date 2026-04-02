@@ -36,6 +36,7 @@ class Persona(Base):
     digital_behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     persona_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     day_in_the_life: Mapped[str | None] = mapped_column(Text, nullable=True)
     data_source: Mapped[str] = mapped_column(String(50), default="synthetic", nullable=False)
     data_source_references: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)

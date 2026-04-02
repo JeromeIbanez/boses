@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Trash2 } from "lucide-react";
@@ -10,15 +9,10 @@ import Card from "@/components/ui/Card";
 import LibraryBadge from "@/components/ui/LibraryBadge";
 import PageHeader from "@/components/layout/PageHeader";
 import Spinner from "@/components/ui/Spinner";
-import PersonaDetailModal from "@/components/personas/PersonaDetailModal";
-import { Persona } from "@/types";
-
 export default function PersonaGroupPage() {
   const { projectId, groupId } = useParams<{ projectId: string; groupId: string }>();
   const router = useRouter();
   const qc = useQueryClient();
-
-  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
 
   const remove = useMutation({
     mutationFn: (personaId: string) => deletePersona(projectId, groupId, personaId),
@@ -160,7 +154,7 @@ export default function PersonaGroupPage() {
           {personas.map((p) => (
             <Card
               key={p.id}
-              onClick={() => setSelectedPersona(p)}
+              onClick={() => router.push(`/projects/${projectId}/personas/${groupId}/${p.id}`)}
             >
               <div className="flex items-start gap-3 mb-3">
                 <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
@@ -214,11 +208,6 @@ export default function PersonaGroupPage() {
         </div>
       )}
 
-      <PersonaDetailModal
-        persona={selectedPersona}
-        onClose={() => setSelectedPersona(null)}
-        onDelete={(id) => { remove.mutate(id); setSelectedPersona(null); }}
-      />
     </div>
   );
 }

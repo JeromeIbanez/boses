@@ -29,6 +29,12 @@ class LibraryPersona(Base):
     tech_savviness: Mapped[str | None] = mapped_column(String(100), nullable=True)
     media_consumption: Mapped[str | None] = mapped_column(Text, nullable=True)
     spending_habits: Mapped[str | None] = mapped_column(Text, nullable=True)
+    archetype_label: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    psychographic_segment: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    brand_attitudes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    buying_triggers: Mapped[str | None] = mapped_column(Text, nullable=True)
+    aspirational_identity: Mapped[str | None] = mapped_column(Text, nullable=True)
+    digital_behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
     day_in_the_life: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     data_source: Mapped[str] = mapped_column(String(50), nullable=False, default="synthetic")

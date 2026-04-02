@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Trash2 } from "lucide-react";
@@ -9,20 +10,42 @@ import Card from "@/components/ui/Card";
 import LibraryBadge from "@/components/ui/LibraryBadge";
 import PageHeader from "@/components/layout/PageHeader";
 import Spinner from "@/components/ui/Spinner";
+import PersonaDetailModal from "@/components/personas/PersonaDetailModal";
+import { Persona } from "@/types";
 
 export default function PersonaGroupPage() {
   const { projectId, groupId } = useParams<{ projectId: string; groupId: string }>();
   const router = useRouter();
   const qc = useQueryClient();
 
+  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
+
   const remove = useMutation({
     mutationFn: (personaId: string) => deletePersona(projectId, groupId, personaId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
+    onMutate: async (personaId) => {
+      await qc.cancelQueries({ queryKey: ["personas", groupId] });
+      const prev = qc.getQueryData<Persona[]>(["personas", groupId]);
+      if (prev) qc.setQueryData(["personas", groupId], prev.filter((p) => p.id !== personaId));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["personas", groupId], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
   });
 
   const removeAll = useMutation({
     mutationFn: () => deleteAllPersonas(projectId, groupId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["personas", groupId] });
+      const prev = qc.getQueryData<Persona[]>(["personas", groupId]);
+      qc.setQueryData(["personas", groupId], []);
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["personas", groupId], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["personas", groupId] }),
   });
 
   const { data: group } = useQuery({
@@ -80,9 +103,53 @@ export default function PersonaGroupPage() {
       </div>
 
       {group.generation_status === "generating" && (
-        <div className="flex items-center gap-3 text-sm text-zinc-500 mb-8 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
-          <Spinner className="border-amber-400 border-t-amber-700" />
-          Generating {group.persona_count} personas with AI… this takes about 15–30 seconds.
+        <div className="mb-8 bg-amber-50 border border-amber-100 rounded-lg px-4 py-4 space-y-3">
+          {group.generation_progress ? (
+            <>
+              <div className="flex items-center justify-between text-xs text-zinc-500">
+                <span className="flex items-center gap-2">
+                  <Spinner className="h-3 w-3 border-amber-400 border-t-amber-700" />
+                  {group.generation_progress.current_name
+                    ? `Generating ${group.generation_progress.current_name}…`
+                    : "Preparing personas…"}
+                </span>
+                <span className="font-medium text-zinc-700">
+                  {group.generation_progress.current} of {group.generation_progress.total}
+                </span>
+              </div>
+              <div className="w-full bg-amber-100 rounded-full h-1.5">
+                <div
+                  className="bg-amber-500 h-1.5 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${group.generation_progress.total > 0
+                      ? (group.generation_progress.current / group.generation_progress.total) * 100
+                      : 0}%`
+                  }}
+                />
+              </div>
+              {group.generation_progress.completed.length > 0 && (
+                <div className="space-y-1">
+                  {group.generation_progress.completed.map((name) => (
+                    <div key={name} className="flex items-center gap-2 text-xs text-zinc-500">
+                      <span className="text-emerald-500">✓</span>
+                      {name}
+                    </div>
+                  ))}
+                  {group.generation_progress.current_name && (
+                    <div className="flex items-center gap-2 text-xs text-zinc-700 font-medium">
+                      <Spinner className="h-3 w-3 border-zinc-300 border-t-zinc-600 shrink-0" />
+                      {group.generation_progress.current_name}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-3 text-sm text-zinc-500">
+              <Spinner className="border-amber-400 border-t-amber-700" />
+              Generating {group.persona_count} personas with AI…
+            </div>
+          )}
         </div>
       )}
 
@@ -91,7 +158,10 @@ export default function PersonaGroupPage() {
       {personas && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {personas.map((p) => (
-            <Card key={p.id}>
+            <Card
+              key={p.id}
+              onClick={() => setSelectedPersona(p)}
+            >
               <div className="flex items-start gap-3 mb-3">
                 <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
                   {p.full_name.charAt(0)}
@@ -102,10 +172,14 @@ export default function PersonaGroupPage() {
                     {p.library_persona_id && <LibraryBadge />}
                   </div>
                   <p className="text-xs text-zinc-400">{p.age} · {p.occupation}</p>
+                  {p.archetype_label && (
+                    <p className="text-[10px] text-zinc-400 italic">{p.archetype_label}</p>
+                  )}
                   <p className="text-[10px] font-mono text-zinc-300">#{p.persona_code}</p>
                 </div>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     if (confirm(`Delete ${p.full_name}?`)) remove.mutate(p.id);
                   }}
                   className="p-1 text-zinc-300 hover:text-red-500 transition-colors shrink-0"
@@ -139,6 +213,12 @@ export default function PersonaGroupPage() {
           ))}
         </div>
       )}
+
+      <PersonaDetailModal
+        persona={selectedPersona}
+        onClose={() => setSelectedPersona(null)}
+        onDelete={(id) => { remove.mutate(id); setSelectedPersona(null); }}
+      />
     </div>
   );
 }

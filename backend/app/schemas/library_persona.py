@@ -22,6 +22,12 @@ class LibraryPersonaResponse(BaseModel):
     tech_savviness: Optional[str]
     media_consumption: Optional[str]
     spending_habits: Optional[str]
+    archetype_label: Optional[str]
+    psychographic_segment: Optional[str]
+    brand_attitudes: Optional[str]
+    buying_triggers: Optional[str]
+    aspirational_identity: Optional[str]
+    digital_behavior: Optional[str]
     day_in_the_life: Optional[str]
     data_source: str
     data_source_references: Optional[list[str]]

@@ -54,6 +54,7 @@ export interface Persona {
   digital_behavior: string | null;
   day_in_the_life: string | null;
   persona_code: string;
+  avatar_url: string | null;
   data_source: string | null;
   data_source_references: string[] | null;
   library_persona_id: string | null;

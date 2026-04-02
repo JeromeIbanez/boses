@@ -29,6 +29,7 @@ class PersonaResponse(BaseModel):
     digital_behavior: Optional[str]
     day_in_the_life: Optional[str]
     persona_code: str
+    avatar_url: Optional[str]
     data_source: Optional[str]
     data_source_references: Optional[list[str]]
     library_persona_id: Optional[uuid.UUID]

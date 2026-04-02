@@ -37,6 +37,21 @@ def list_personas(
     ).scalars().all()
 
 
+@router.get("/{persona_id}", response_model=PersonaResponse)
+def get_persona(
+    project_id: str,
+    group_id: str,
+    persona_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_group_or_404(project_id, group_id, db, current_user.company_id)
+    persona = db.get(Persona, persona_id)
+    if not persona or str(persona.persona_group_id) != group_id:
+        raise HTTPException(status_code=404, detail="Persona not found")
+    return persona
+
+
 @router.delete("", status_code=204)
 def delete_all_personas(
     project_id: str,

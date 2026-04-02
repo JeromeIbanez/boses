@@ -9,6 +9,7 @@ from app.database import SessionLocal
 from app.models.persona import Persona
 from app.models.simulation import Simulation
 from app.models.simulation_result import SimulationResult
+from app.services.prompts import concept_test_system_prompt, concept_test_user_prompt, concept_test_aggregate_user_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -162,36 +163,8 @@ def run_simulation(simulation_id: str) -> None:
             }
             db.commit()
             try:
-                traits = ", ".join(persona.personality_traits or [])
-                system_prompt = (
-                    f"You are {persona.full_name}, a {persona.age}-year-old {persona.gender} from {persona.location}. "
-                    f"You work as {persona.occupation} and earn a {persona.income_level} income. "
-                    f"Background: {persona.educational_background or 'Not specified'}. "
-                    f"Family: {persona.family_situation or 'Not specified'}. "
-                    f"Personality: {traits or 'Not specified'}. "
-                    f"What drives you: {persona.values_and_motivations or 'Not specified'}. "
-                    f"Your frustrations: {persona.pain_points or 'Not specified'}. "
-                    f"Media habits: {persona.media_consumption or 'Not specified'}. "
-                    f"Purchase behavior: {persona.purchase_behavior or 'Not specified'}. "
-                    "You are participating in a market research exercise. Respond ONLY as this person would — "
-                    "in their authentic voice, with their real concerns, skepticism, or enthusiasm. "
-                    "Do not break character."
-                )
-
-                user_prompt = f"""Here is a product/campaign briefing:
-
----
-{briefing_text}
----
-
-Question: {simulation.prompt_question}
-
-Please respond in character. Structure your response EXACTLY as:
-1. REACTION: Your immediate gut response (2–3 sentences in first person)
-2. SENTIMENT: One word — Positive, Neutral, or Negative
-3. REASONING: Why you feel this way (3–5 sentences, citing specifics from the briefing)
-4. NOTABLE QUOTE: One sentence that best captures your opinion
-5. KEY THEMES: 3 comma-separated themes that came up for you"""
+                system_prompt = concept_test_system_prompt(persona)
+                user_prompt = concept_test_user_prompt(briefing_text, simulation.prompt_question)
 
                 response = client.chat.completions.create(
                     model=settings.OPENAI_MODEL,
@@ -239,19 +212,16 @@ Please respond in character. Structure your response EXACTLY as:
             for p, r in individual_results
         )
 
-        agg_prompt = f"""You are a senior market research analyst. Below are reactions from {len(individual_results)} consumers in the "{group.name}" demographic ({group.location}, {group.occupation}, ages {group.age_min}–{group.age_max}) to the following question: "{simulation.prompt_question}"
-
-INDIVIDUAL REACTIONS:
-{reactions_text}
-
-Please provide:
-1. OVERALL SENTIMENT: The dominant sentiment and confidence level
-2. SENTIMENT DISTRIBUTION: Count of Positive / Neutral / Negative (one per line, format: "Positive: N")
-3. TOP THEMES: The 3–5 most recurring themes across all responses (comma-separated)
-4. SUMMARY: A 2–3 paragraph narrative synthesizing what this group thinks and feels
-5. STRATEGIC RECOMMENDATIONS: 2–3 concrete, actionable suggestions for the marketing team
-
-Be specific. Reference actual responses. Be direct about what worked and what didn't."""
+        agg_prompt = concept_test_aggregate_user_prompt(
+            n=len(individual_results),
+            group_name=group.name,
+            group_location=group.location,
+            group_occupation=group.occupation,
+            age_min=group.age_min,
+            age_max=group.age_max,
+            prompt_question=simulation.prompt_question,
+            reactions_text=reactions_text,
+        )
 
         agg_response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,

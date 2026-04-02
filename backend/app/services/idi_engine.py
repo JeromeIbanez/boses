@@ -22,6 +22,7 @@ from app.models.idi_message import IDIMessage
 from app.models.persona import Persona
 from app.models.simulation import Simulation
 from app.models.simulation_result import SimulationResult
+from app.services.prompts import idi_system_prompt, idi_analyse_persona_user_prompt, idi_aggregate_user_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -30,28 +31,6 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _build_persona_system_prompt(persona: Persona, briefing_text: str) -> str:
-    traits = ", ".join(persona.personality_traits or [])
-    briefing_block = (
-        f"\n\nFor context, here is background material relevant to this interview:\n---\n{briefing_text}\n---"
-        if briefing_text else ""
-    )
-    return (
-        f"You are {persona.full_name}, a {persona.age}-year-old {persona.gender} from {persona.location}. "
-        f"You work as {persona.occupation} and earn a {persona.income_level} income. "
-        f"Background: {persona.educational_background or 'Not specified'}. "
-        f"Family: {persona.family_situation or 'Not specified'}. "
-        f"Personality: {traits or 'Not specified'}. "
-        f"What drives you: {persona.values_and_motivations or 'Not specified'}. "
-        f"Your frustrations: {persona.pain_points or 'Not specified'}. "
-        f"Media habits: {persona.media_consumption or 'Not specified'}. "
-        f"Purchase behavior: {persona.purchase_behavior or 'Not specified'}. "
-        "You are participating in a one-on-one research interview. "
-        "Respond naturally and authentically as this person. "
-        "Answer each question thoughtfully in your own voice — do not break character. "
-        "Keep answers conversational (3–6 sentences) unless a question calls for more depth."
-        f"{briefing_block}"
-    )
 
 
 def _parse_questions(script_text: str) -> list[str]:
@@ -75,20 +54,9 @@ def _format_transcript(questions: list[str], answers: list[str]) -> str:
 
 def _analyse_persona_transcript(client: OpenAI, persona: Persona, transcript: str) -> dict:
     """Ask GPT to analyse a single persona's interview transcript."""
-    prompt = f"""You are a qualitative research analyst. Below is an interview transcript with {persona.full_name} ({persona.age}, {persona.occupation}, {persona.location}).
-
-TRANSCRIPT:
-{transcript}
-
-Analyse this interview and respond in the following EXACT format:
-
-SENTIMENT: <Positive | Neutral | Negative>
-SUMMARY: <2-3 sentence summary of this person's overall perspective>
-KEY THEMES: <3-5 comma-separated themes that emerged>
-NOTABLE QUOTES:
-- "<verbatim quote from transcript>" — <1 sentence context>
-- "<verbatim quote from transcript>" — <1 sentence context>
-- "<verbatim quote from transcript>" — <1 sentence context>"""
+    prompt = idi_analyse_persona_user_prompt(
+        persona.full_name, persona.age, persona.occupation, persona.location, transcript
+    )
 
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
@@ -138,27 +106,7 @@ def _generate_aggregate_report(client: OpenAI, group_name: str, question_summary
         for a in persona_analyses
     )
 
-    prompt = f"""You are a senior qualitative research analyst. You have just completed in-depth interviews with {len(persona_analyses)} participants from the "{group_name}" segment.
-
-RESEARCH FOCUS:
-{question_summary}
-
-INDIVIDUAL INTERVIEW SUMMARIES:
-{per_persona_block}
-
-Write a professional IDI research report with the following EXACT sections:
-
-EXECUTIVE SUMMARY:
-<2-3 paragraphs synthesising the key findings across all respondents>
-
-CROSS-PERSONA THEMES:
-<List 3-5 themes that appeared across multiple interviews. For each theme, note which respondents held it. Format: "Theme name: description (held by: Name1, Name2)">
-
-PER-PERSONA HIGHLIGHTS:
-<One key takeaway per respondent that captures their unique perspective. Format: "Name: key takeaway">
-
-RECOMMENDATIONS:
-<3 concrete, actionable recommendations for the team based on these findings>"""
+    prompt = idi_aggregate_user_prompt(group_name, question_summary, per_persona_block, len(persona_analyses))
 
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
@@ -250,7 +198,7 @@ def run_idi_ai(simulation_id: str) -> None:
             }
             db.commit()
             try:
-                system_prompt = _build_persona_system_prompt(persona, briefing_text)
+                system_prompt = idi_system_prompt(persona, briefing_text)
                 messages = [{"role": "system", "content": system_prompt}]
                 answers = []
 

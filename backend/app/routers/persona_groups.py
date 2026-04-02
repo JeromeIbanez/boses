@@ -12,6 +12,7 @@ from app.models.persona_group import PersonaGroup
 from app.models.project import Project
 from app.schemas.persona_group import PersonaGroupCreate, PersonaGroupUpdate, PersonaGroupResponse
 from app.services.persona_generator import generate_personas
+from app.services.ethnography_service import should_refresh, refresh_market_context
 
 router = APIRouter(prefix="/projects/{project_id}/persona-groups", tags=["persona-groups"])
 
@@ -166,4 +167,14 @@ def generate_group_personas(
     group.generation_status = "generating"
     db.commit()
     background_tasks.add_task(generate_personas, group_id=str(group_id))
+
+    # Lazily refresh cultural context if this market's snapshot is missing or stale.
+    # The current generation uses whatever context already exists (could be None on
+    # first run). Future generations for this market will benefit from the refresh.
+    if should_refresh(group.location or ""):
+        from app.services.ethnography_service import _detect_market
+        market_code = _detect_market(group.location or "")
+        if market_code:
+            background_tasks.add_task(refresh_market_context, market_code)
+
     return {"status": "generating", "persona_count": group.persona_count}

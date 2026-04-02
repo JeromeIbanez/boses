@@ -64,6 +64,14 @@ class SyntheticPersonaSource(PersonaDataSource):
         if reddit_context:
             grounding_context = grounding_context + "\n" + reddit_context
 
+        # Append cultural context from automated web ethnography pipeline (ID/PH/VN only).
+        # Returns None for unsupported markets or when no active snapshot exists —
+        # in which case grounding_context is unchanged (safe fallback to existing behaviour).
+        from app.services.ethnography_service import get_cultural_context_block
+        cultural_ctx = get_cultural_context_block(group.location or "")
+        if cultural_ctx:
+            grounding_context = grounding_context + "\n\n" + cultural_ctx
+
         skeletons = self._pass1_skeletons(group, grounding_context)
         profiles = self._pass2_expand(group, skeletons, grounding_context, grounding_sources)
         return profiles

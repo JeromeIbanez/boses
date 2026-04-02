@@ -270,10 +270,9 @@ def run_simulation(simulation_id: str) -> None:
 
 
 def _trigger_post_completion_scoring(simulation_id: str) -> None:
-    """Fire-and-forget: score any reproducibility study or benchmark run linked to this simulation."""
+    """Fire-and-forget: score any reproducibility study linked to this simulation."""
     try:
-        from app.services.benchmarking_service import maybe_score_reproducibility, maybe_score_benchmark
+        from app.services.benchmarking_service import maybe_score_reproducibility
         maybe_score_reproducibility(simulation_id)
-        maybe_score_benchmark(simulation_id)
     except Exception as e:
         logger.warning(f"Post-completion scoring skipped for {simulation_id[:8]}: {e}")

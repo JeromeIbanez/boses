@@ -68,10 +68,12 @@ class SyntheticPersonaSource(PersonaDataSource):
         profiles = self._pass2_expand(group, skeletons, grounding_context, grounding_sources)
         return profiles
 
-    def _pass1_skeletons(self, group: PersonaGroup, grounding_context: str) -> list[dict]:
+    def _pass1_skeletons(self, group: PersonaGroup, grounding_context: str, count: int | None = None) -> list[dict]:
         """
         Pass 1: generate diverse skeleton stubs anchored to real demographic data.
         """
+        n = count if count is not None else group.persona_count
+
         system = (
             "You are a senior market research strategist. "
             "Your job is to define a diverse cast of consumer archetypes "
@@ -84,7 +86,7 @@ class SyntheticPersonaSource(PersonaDataSource):
 
         grounding_block = f"\n{grounding_context}\n" if grounding_context else ""
 
-        user = f"""{grounding_block}Create {group.persona_count} distinct consumer archetypes for this demographic:
+        user = f"""{grounding_block}Create {n} distinct consumer archetypes for this demographic:
 
 - Age range: {group.age_min}–{group.age_max}
 - Gender: {group.gender}
@@ -128,58 +130,54 @@ Return a JSON array of {group.persona_count} objects, each with:
             return next(iter(raw.values()))
         return raw
 
-    def _pass2_expand(
+    def _expand_one_skeleton(
         self,
+        skeleton: dict,
         group: PersonaGroup,
-        skeletons: list[dict],
         grounding_context: str,
         grounding_sources: list[str],
-    ) -> list[dict]:
-        """
-        Pass 2: expand each skeleton into a full profile grounded in real stats.
-        """
-        profiles = []
-        for skeleton in skeletons:
-            system = (
-                "You are a senior behavioral researcher and cultural anthropologist "
-                "writing ultra-specific consumer profiles for a marketing agency pitch deck.\n\n"
-                "CRITICAL RULES — violating any of these will make the output unusable:\n"
-                "1. NEVER write generic statements. Every sentence must contain a specific detail "
-                "that could only apply to this exact person.\n"
-                "   BAD: 'She enjoys spending time with family.'\n"
-                "   GOOD: 'She video-calls her mother in Cebu every Sunday at 8pm while making arroz caldo.'\n"
-                "2. personality_traits must include AT LEAST TWO negative traits or shadow sides "
-                "(e.g. 'avoids difficult conversations', 'prone to lifestyle inflation'). "
-                "Include 5–7 traits total — do not list only positive ones.\n"
-                "3. brand_attitudes must name AT LEAST ONE brand they actively distrust, with a specific reason "
-                "(a bad experience, a news story they read, a friend's warning).\n"
-                "4. pain_points must be systemic and concrete — not 'busy schedule' but "
-                "'spends 40 minutes daily in gridlock on EDSA and resents every minute of it.'\n"
-                "5. All currency amounts must be specific: not 'limited budget' but "
-                "'₱3,500 monthly discretionary spend after rent, utilities, and remittance.'\n"
-                "6. media_consumption must list exact platform names, content formats, specific creator types, "
-                "and usage windows — not 'uses social media' but "
-                "'scrolls TikTok for 45 minutes before sleeping, follows cooking and K-drama recap accounts, "
-                "skips all pre-roll ads.'\n"
-                "7. day_in_the_life must read like a scene from a novel: "
-                "Sentence 1 = morning routine with one sensory detail. "
-                "Sentence 2 = the central tension or trade-off of their workday. "
-                "Sentence 3 = evening wind-down with what they consume and how they feel.\n"
-                "8. When real demographic statistics are provided, treat them as ground truth — "
-                "behaviors, habits, and attitudes must be consistent with the actual data for this market.\n"
-                "9. Return only valid JSON."
-            )
+    ) -> dict:
+        """Expand a single skeleton into a full profile."""
+        system = (
+            "You are a senior behavioral researcher and cultural anthropologist "
+            "writing ultra-specific consumer profiles for a marketing agency pitch deck.\n\n"
+            "CRITICAL RULES — violating any of these will make the output unusable:\n"
+            "1. NEVER write generic statements. Every sentence must contain a specific detail "
+            "that could only apply to this exact person.\n"
+            "   BAD: 'She enjoys spending time with family.'\n"
+            "   GOOD: 'She video-calls her mother in Cebu every Sunday at 8pm while making arroz caldo.'\n"
+            "2. personality_traits must include AT LEAST TWO negative traits or shadow sides "
+            "(e.g. 'avoids difficult conversations', 'prone to lifestyle inflation'). "
+            "Include 5–7 traits total — do not list only positive ones.\n"
+            "3. brand_attitudes must name AT LEAST ONE brand they actively distrust, with a specific reason "
+            "(a bad experience, a news story they read, a friend's warning).\n"
+            "4. pain_points must be systemic and concrete — not 'busy schedule' but "
+            "'spends 40 minutes daily in gridlock on EDSA and resents every minute of it.'\n"
+            "5. All currency amounts must be specific: not 'limited budget' but "
+            "'₱3,500 monthly discretionary spend after rent, utilities, and remittance.'\n"
+            "6. media_consumption must list exact platform names, content formats, specific creator types, "
+            "and usage windows — not 'uses social media' but "
+            "'scrolls TikTok for 45 minutes before sleeping, follows cooking and K-drama recap accounts, "
+            "skips all pre-roll ads.'\n"
+            "7. day_in_the_life must read like a scene from a novel: "
+            "Sentence 1 = morning routine with one sensory detail. "
+            "Sentence 2 = the central tension or trade-off of their workday. "
+            "Sentence 3 = evening wind-down with what they consume and how they feel.\n"
+            "8. When real demographic statistics are provided, treat them as ground truth — "
+            "behaviors, habits, and attitudes must be consistent with the actual data for this market.\n"
+            "9. Return only valid JSON."
+        )
 
-            grounding_block = f"\n{grounding_context}\n" if grounding_context else ""
+        grounding_block = f"\n{grounding_context}\n" if grounding_context else ""
 
-            sources_instruction = (
-                "Include these verified sources in data_source_references (you may add others):\n"
-                + "\n".join(f'  - "{s}"' for s in grounding_sources)
-            ) if grounding_sources else (
-                "List the specific reports or studies that informed each field."
-            )
+        sources_instruction = (
+            "Include these verified sources in data_source_references (you may add others):\n"
+            + "\n".join(f'  - "{s}"' for s in grounding_sources)
+        ) if grounding_sources else (
+            "List the specific reports or studies that informed each field."
+        )
 
-            user = f"""{grounding_block}Expand this archetype into a full consumer profile:
+        user = f"""{grounding_block}Expand this archetype into a full consumer profile:
 
 Archetype: {skeleton.get('archetype_label')} — {skeleton.get('one_line_bio')}
 Name: {skeleton.get('full_name')}, Age: {skeleton.get('age')}, Gender: {skeleton.get('gender')}
@@ -218,28 +216,38 @@ Return a single JSON object with these exact fields:
 {sources_instruction}
 Be hyper-specific. Generic statements are not allowed."""
 
-            response = self.client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                response_format={"type": "json_object"},
-                temperature=1.0,
-                max_tokens=8192,
-            )
-            raw = json.loads(response.choices[0].message.content or "{}")
-            if isinstance(raw, dict) and "full_name" not in raw:
-                raw = next(iter(raw.values()))
+        response = self.client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            response_format={"type": "json_object"},
+            temperature=1.0,
+            max_tokens=8192,
+        )
+        raw = json.loads(response.choices[0].message.content or "{}")
+        if isinstance(raw, dict) and "full_name" not in raw:
+            raw = next(iter(raw.values()))
 
-            # Ensure grounding sources are always present in the references
-            existing_refs = raw.get("data_source_references") or []
-            merged_refs = list(dict.fromkeys(grounding_sources + existing_refs))  # deduplicate, preserve order
-            raw["data_source_references"] = merged_refs
+        # Ensure grounding sources are always present in the references
+        existing_refs = raw.get("data_source_references") or []
+        raw["data_source_references"] = list(dict.fromkeys(grounding_sources + existing_refs))
 
-            profiles.append(raw)
+        return raw
 
-        return profiles
+    def _pass2_expand(
+        self,
+        group: PersonaGroup,
+        skeletons: list[dict],
+        grounding_context: str,
+        grounding_sources: list[str],
+    ) -> list[dict]:
+        """Expand all skeletons — used by fetch() for non-progress callers."""
+        return [
+            self._expand_one_skeleton(s, group, grounding_context, grounding_sources)
+            for s in skeletons
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -273,6 +281,19 @@ _SOURCES: dict[str, type[PersonaDataSource]] = {
 # Public entry point
 # ---------------------------------------------------------------------------
 
+def _set_progress(db, group: PersonaGroup, current: int, total: int, current_name: str | None, completed: list[str]) -> None:
+    """Write progress to DB and commit so the frontend polling can see it."""
+    from sqlalchemy.orm.attributes import flag_modified
+    group.generation_progress = {
+        "current": current,
+        "total": total,
+        "current_name": current_name,
+        "completed": list(completed),
+    }
+    flag_modified(group, "generation_progress")
+    db.commit()
+
+
 def generate_personas(group_id: str) -> None:
     client = OpenAI(api_key=settings.openai_api_key)
     db = SessionLocal()
@@ -283,29 +304,37 @@ def generate_personas(group_id: str) -> None:
 
         source_key = getattr(group, "data_source", "synthetic") or "synthetic"
         source_class = _SOURCES.get(source_key, SyntheticPersonaSource)
+        total = group.persona_count
+        completed_names: list[str] = []
+        personas_created = 0
+
+        # Initialise progress
+        _set_progress(db, group, 0, total, None, [])
 
         if source_class is SyntheticPersonaSource:
             source = SyntheticPersonaSource(client)
         else:
             source = source_class()
 
-        # --- Step 1: try to fill from library first ---
-        library_matches = find_library_matches(db, group, limit=group.persona_count * 2)
+        # --- Step 1: fill from library ---
+        library_matches = find_library_matches(db, group, limit=total * 2)
         used_library_ids: set = set()
-        personas_created = 0
 
         for lib_persona, match_score in library_matches:
-            if personas_created >= group.persona_count:
+            if personas_created >= total:
                 break
             if lib_persona.id in used_library_ids:
                 continue
+
+            name = lib_persona.full_name
+            _set_progress(db, group, personas_created + 1, total, name, completed_names)
 
             _pid = _uuid.uuid4()
             persona = Persona(
                 id=_pid,
                 persona_code=str(_pid).replace('-', '')[:8].upper(),
                 persona_group_id=group_id,
-                full_name=lib_persona.full_name,
+                full_name=name,
                 age=lib_persona.age,
                 gender=lib_persona.gender,
                 location=lib_persona.location,
@@ -330,59 +359,112 @@ def generate_personas(group_id: str) -> None:
                 raw_profile_json=None,
             )
             db.add(persona)
-            db.flush()  # get persona.id
+            db.flush()
             save_persona_to_library(db, persona, match_score=match_score, existing_library_id=lib_persona.id)
             used_library_ids.add(lib_persona.id)
+            completed_names.append(name)
             personas_created += 1
+            _set_progress(db, group, personas_created, total, None, completed_names)
 
         logger.info(f"Filled {personas_created} persona(s) from library for group {group_id}")
 
         # --- Step 2: generate remaining synthetically ---
-        remaining = group.persona_count - personas_created
+        remaining = total - personas_created
         if remaining > 0:
-            # Temporarily override persona_count without mutating the DB row
-            group.persona_count = remaining
-            profiles = source.fetch(group)
-            group.persona_count = group.persona_count + personas_created  # restore
+            if source_class is SyntheticPersonaSource:
+                # Load grounding once
+                grounding_context, grounding_sources = format_grounding_context(group.location or "")
+                reddit_context = fetch_reddit_signals(group.location or "", group.psychographic_notes or "")
+                if reddit_context:
+                    grounding_context = grounding_context + "\n" + reddit_context
 
-            for profile in profiles:
-                _pid = _uuid.uuid4()
-                persona = Persona(
-                    id=_pid,
-                    persona_code=str(_pid).replace('-', '')[:8].upper(),
-                    persona_group_id=group_id,
-                    full_name=profile.get("full_name", "Unknown"),
-                    age=int(profile.get("age", group.age_min or 25)),
-                    gender=profile.get("gender", group.gender),
-                    location=profile.get("location", group.location),
-                    occupation=profile.get("occupation", group.occupation),
-                    income_level=profile.get("income_level", group.income_level),
-                    educational_background=profile.get("educational_background"),
-                    family_situation=profile.get("family_situation"),
-                    personality_traits=profile.get("personality_traits"),
-                    values_and_motivations=profile.get("values_and_motivations"),
-                    pain_points=profile.get("pain_points"),
-                    media_consumption=profile.get("media_consumption"),
-                    purchase_behavior=profile.get("purchase_behavior"),
-                    archetype_label=profile.get("archetype_label"),
-                    psychographic_segment=profile.get("psychographic_segment"),
-                    brand_attitudes=profile.get("brand_attitudes"),
-                    buying_triggers=profile.get("buying_triggers"),
-                    aspirational_identity=profile.get("aspirational_identity"),
-                    digital_behavior=profile.get("digital_behavior"),
-                    day_in_the_life=profile.get("day_in_the_life"),
-                    data_source=source_key,
-                    data_source_references=profile.get("data_source_references"),
-                    raw_profile_json=profile,
-                )
-                db.add(persona)
-                db.flush()
-                save_persona_to_library(db, persona)
-                personas_created += 1
+                # Pass 1: generate all skeletons at once (fast)
+                skeletons = source._pass1_skeletons(group, grounding_context, count=remaining)
 
-            logger.info(f"Generated {remaining} new persona(s) synthetically for group {group_id}")
+                # Pass 2: expand one skeleton at a time with per-persona progress commits
+                for skeleton in skeletons:
+                    name = skeleton.get("full_name", f"Persona {personas_created + 1}")
+                    _set_progress(db, group, personas_created + 1, total, name, completed_names)
+
+                    profile = source._expand_one_skeleton(skeleton, group, grounding_context, grounding_sources)
+
+                    _pid = _uuid.uuid4()
+                    persona = Persona(
+                        id=_pid,
+                        persona_code=str(_pid).replace('-', '')[:8].upper(),
+                        persona_group_id=group_id,
+                        full_name=profile.get("full_name", name),
+                        age=int(profile.get("age", group.age_min or 25)),
+                        gender=profile.get("gender", group.gender),
+                        location=profile.get("location", group.location),
+                        occupation=profile.get("occupation", group.occupation),
+                        income_level=profile.get("income_level", group.income_level),
+                        educational_background=profile.get("educational_background"),
+                        family_situation=profile.get("family_situation"),
+                        personality_traits=profile.get("personality_traits"),
+                        values_and_motivations=profile.get("values_and_motivations"),
+                        pain_points=profile.get("pain_points"),
+                        media_consumption=profile.get("media_consumption"),
+                        purchase_behavior=profile.get("purchase_behavior"),
+                        archetype_label=profile.get("archetype_label"),
+                        psychographic_segment=profile.get("psychographic_segment"),
+                        brand_attitudes=profile.get("brand_attitudes"),
+                        buying_triggers=profile.get("buying_triggers"),
+                        aspirational_identity=profile.get("aspirational_identity"),
+                        digital_behavior=profile.get("digital_behavior"),
+                        day_in_the_life=profile.get("day_in_the_life"),
+                        data_source=source_key,
+                        data_source_references=profile.get("data_source_references"),
+                        raw_profile_json=profile,
+                    )
+                    db.add(persona)
+                    db.flush()
+                    save_persona_to_library(db, persona)
+                    completed_names.append(profile.get("full_name", name))
+                    personas_created += 1
+                    _set_progress(db, group, personas_created, total, None, completed_names)
+            else:
+                # Non-synthetic sources: fetch all at once (no per-persona progress)
+                profiles = source.fetch(group)
+                for profile in profiles:
+                    _pid = _uuid.uuid4()
+                    persona = Persona(
+                        id=_pid,
+                        persona_code=str(_pid).replace('-', '')[:8].upper(),
+                        persona_group_id=group_id,
+                        full_name=profile.get("full_name", "Unknown"),
+                        age=int(profile.get("age", group.age_min or 25)),
+                        gender=profile.get("gender", group.gender),
+                        location=profile.get("location", group.location),
+                        occupation=profile.get("occupation", group.occupation),
+                        income_level=profile.get("income_level", group.income_level),
+                        educational_background=profile.get("educational_background"),
+                        family_situation=profile.get("family_situation"),
+                        personality_traits=profile.get("personality_traits"),
+                        values_and_motivations=profile.get("values_and_motivations"),
+                        pain_points=profile.get("pain_points"),
+                        media_consumption=profile.get("media_consumption"),
+                        purchase_behavior=profile.get("purchase_behavior"),
+                        archetype_label=profile.get("archetype_label"),
+                        psychographic_segment=profile.get("psychographic_segment"),
+                        brand_attitudes=profile.get("brand_attitudes"),
+                        buying_triggers=profile.get("buying_triggers"),
+                        aspirational_identity=profile.get("aspirational_identity"),
+                        digital_behavior=profile.get("digital_behavior"),
+                        day_in_the_life=profile.get("day_in_the_life"),
+                        data_source=source_key,
+                        data_source_references=profile.get("data_source_references"),
+                        raw_profile_json=profile,
+                    )
+                    db.add(persona)
+                    db.flush()
+                    save_persona_to_library(db, persona)
+                    personas_created += 1
+
+            logger.info(f"Generated {remaining} new persona(s) for group {group_id}")
 
         group.generation_status = "complete"
+        group.generation_progress = None
         db.commit()
         logger.info(f"Total {personas_created} personas for group {group_id} (source={source_key})")
 
@@ -392,6 +474,7 @@ def generate_personas(group_id: str) -> None:
             group = db.get(PersonaGroup, group_id)
             if group:
                 group.generation_status = "failed"
+                group.generation_progress = None
                 db.commit()
         except Exception:
             db.rollback()

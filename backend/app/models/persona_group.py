@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import String, Text, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 from app.database import Base
 
@@ -26,6 +26,7 @@ class PersonaGroup(Base):
 
     persona_count: Mapped[int] = mapped_column(Integer, default=5)
     generation_status: Mapped[str] = mapped_column(String(50), default="pending")
+    generation_progress: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

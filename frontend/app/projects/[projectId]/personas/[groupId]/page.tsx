@@ -103,9 +103,53 @@ export default function PersonaGroupPage() {
       </div>
 
       {group.generation_status === "generating" && (
-        <div className="flex items-center gap-3 text-sm text-zinc-500 mb-8 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
-          <Spinner className="border-amber-400 border-t-amber-700" />
-          Generating {group.persona_count} personas with AI… this takes about 15–30 seconds.
+        <div className="mb-8 bg-amber-50 border border-amber-100 rounded-lg px-4 py-4 space-y-3">
+          {group.generation_progress ? (
+            <>
+              <div className="flex items-center justify-between text-xs text-zinc-500">
+                <span className="flex items-center gap-2">
+                  <Spinner className="h-3 w-3 border-amber-400 border-t-amber-700" />
+                  {group.generation_progress.current_name
+                    ? `Generating ${group.generation_progress.current_name}…`
+                    : "Preparing personas…"}
+                </span>
+                <span className="font-medium text-zinc-700">
+                  {group.generation_progress.current} of {group.generation_progress.total}
+                </span>
+              </div>
+              <div className="w-full bg-amber-100 rounded-full h-1.5">
+                <div
+                  className="bg-amber-500 h-1.5 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${group.generation_progress.total > 0
+                      ? (group.generation_progress.current / group.generation_progress.total) * 100
+                      : 0}%`
+                  }}
+                />
+              </div>
+              {group.generation_progress.completed.length > 0 && (
+                <div className="space-y-1">
+                  {group.generation_progress.completed.map((name) => (
+                    <div key={name} className="flex items-center gap-2 text-xs text-zinc-500">
+                      <span className="text-emerald-500">✓</span>
+                      {name}
+                    </div>
+                  ))}
+                  {group.generation_progress.current_name && (
+                    <div className="flex items-center gap-2 text-xs text-zinc-700 font-medium">
+                      <Spinner className="h-3 w-3 border-zinc-300 border-t-zinc-600 shrink-0" />
+                      {group.generation_progress.current_name}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-3 text-sm text-zinc-500">
+              <Spinner className="border-amber-400 border-t-amber-700" />
+              Generating {group.persona_count} personas with AI…
+            </div>
+          )}
         </div>
       )}
 

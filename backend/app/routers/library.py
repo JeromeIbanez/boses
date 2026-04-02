@@ -128,9 +128,16 @@ def delete_library_persona(
     if not lp:
         raise HTTPException(status_code=404, detail="Library persona not found")
     # Null out denormalised FK on project personas
-    db.query(Persona).filter(Persona.library_persona_id == library_persona_id).update({"library_persona_id": None})
-    # Remove junction records
-    db.query(PersonaLibraryLink).filter(PersonaLibraryLink.library_persona_id == library_persona_id).delete()
+    db.query(Persona).filter(Persona.library_persona_id == library_persona_id).update(
+        {"library_persona_id": None}, synchronize_session=False
+    )
+    # Remove junction records — use synchronize_session=False so the session does not
+    # try to SET NULL library_persona_id (which is NOT NULL) on the ORM objects
+    db.query(PersonaLibraryLink).filter(
+        PersonaLibraryLink.library_persona_id == library_persona_id
+    ).delete(synchronize_session=False)
+    # Expire lp so SQLAlchemy re-checks the (now empty) links collection before deletion
+    db.expire(lp)
     db.delete(lp)
     db.commit()
 
@@ -141,9 +148,11 @@ def delete_all_library_personas(
     _current_user: CurrentUser = Depends(get_current_user),
 ):
     # Null out all library persona references on project personas
-    db.query(Persona).filter(Persona.library_persona_id.isnot(None)).update({"library_persona_id": None})
-    # Remove all junction records
-    db.query(PersonaLibraryLink).delete()
+    db.query(Persona).filter(Persona.library_persona_id.isnot(None)).update(
+        {"library_persona_id": None}, synchronize_session=False
+    )
+    # Remove all junction records first (library_persona_id is NOT NULL — must delete before parent)
+    db.query(PersonaLibraryLink).delete(synchronize_session=False)
     # Delete all library personas
-    db.query(LibraryPersona).delete()
+    db.query(LibraryPersona).delete(synchronize_session=False)
     db.commit()

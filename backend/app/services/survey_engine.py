@@ -17,31 +17,14 @@ from app.database import SessionLocal
 from app.models.persona import Persona
 from app.models.simulation import Simulation
 from app.models.simulation_result import SimulationResult
+from app.services.prompts import survey_system_prompt, survey_user_prompt, survey_aggregate_user_prompt
 
 logger = logging.getLogger(__name__)
 
 
 def _build_survey_prompt(persona: "Persona", briefing_text: str, questions: list[dict]) -> tuple[str, str]:
     """Return (system_prompt, user_prompt) for a persona filling out the survey."""
-    traits = ", ".join(persona.personality_traits or [])
-    briefing_block = (
-        f"\n\nFor context, here is background material relevant to this survey:\n---\n{briefing_text}\n---"
-        if briefing_text else ""
-    )
-    system_prompt = (
-        f"You are {persona.full_name}, a {persona.age}-year-old {persona.gender} from {persona.location}. "
-        f"You work as {persona.occupation} and earn a {persona.income_level} income. "
-        f"Background: {persona.educational_background or 'Not specified'}. "
-        f"Family: {persona.family_situation or 'Not specified'}. "
-        f"Personality: {traits or 'Not specified'}. "
-        f"What drives you: {persona.values_and_motivations or 'Not specified'}. "
-        f"Your frustrations: {persona.pain_points or 'Not specified'}. "
-        f"Media habits: {persona.media_consumption or 'Not specified'}. "
-        f"Purchase behavior: {persona.purchase_behavior or 'Not specified'}. "
-        "You are filling out a market research survey. Answer authentically as this person — "
-        "in their real voice, with their genuine opinions and concerns. Do not break character."
-        f"{briefing_block}"
-    )
+    sys_prompt = survey_system_prompt(persona, briefing_text)
 
     question_lines = []
     for q in questions:
@@ -62,16 +45,7 @@ def _build_survey_prompt(persona: "Persona", briefing_text: str, questions: list
                 f'- id: "{q["id"]}", type: open_ended\n  Question: {q["text"]}'
             )
 
-    user_prompt = (
-        "Please fill out the following survey questions as yourself. "
-        "Return ONLY a valid JSON array — no markdown, no explanation. "
-        "Each element: {\"id\": \"<question id>\", \"answer\": <value>}.\n"
-        "For likert: answer is an integer.\n"
-        "For multiple_choice: answer is the exact option string.\n"
-        "For open_ended: answer is a string (2–4 sentences).\n\n"
-        "QUESTIONS:\n" + "\n".join(question_lines)
-    )
-    return system_prompt, user_prompt
+    return sys_prompt, survey_user_prompt(question_lines)
 
 
 def run_survey(simulation_id: str) -> None:
@@ -277,11 +251,11 @@ def run_survey(simulation_id: str) -> None:
                 messages=[{
                     "role": "user",
                     "content": (
-                        f"You are a senior market researcher. {len(individual_results)} respondents "
-                        f"from the '{group.name}' group ({group.location}, {group.occupation}, ages {group.age_min}–{group.age_max}) "
-                        f"completed a survey. Here are the results per question:\n\n{summary_context}\n\n"
-                        "Return ONLY valid JSON (no markdown):\n"
-                        '{"executive_summary": "2–3 paragraph narrative", "recommendations": "2–3 actionable bullet points"}'
+                        survey_aggregate_user_prompt(
+                            group.name, group.location, group.occupation,
+                            group.age_min, group.age_max,
+                            len(individual_results), summary_context,
+                        )
                     ),
                 }],
                 temperature=0.7,

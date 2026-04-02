@@ -26,6 +26,7 @@ from app.database import SessionLocal
 from app.models.persona import Persona
 from app.models.simulation import Simulation
 from app.models.simulation_result import SimulationResult
+from app.services.prompts import conjoint_system_prompt, conjoint_user_prompt, conjoint_narrative_user_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -74,25 +75,6 @@ def _generate_choice_sets(
 # Persona system prompt
 # ---------------------------------------------------------------------------
 
-def _build_persona_system_prompt(persona: Persona, briefing_text: str) -> str:
-    traits = ", ".join(persona.personality_traits or [])
-    briefing_block = (
-        f"\n\nProduct context:\n---\n{briefing_text}\n---"
-        if briefing_text else ""
-    )
-    return (
-        f"You are {persona.full_name}, a {persona.age}-year-old {persona.gender} from {persona.location}. "
-        f"You work as {persona.occupation} and earn a {persona.income_level} income. "
-        f"Background: {persona.educational_background or 'Not specified'}. "
-        f"Family: {persona.family_situation or 'Not specified'}. "
-        f"Personality: {traits or 'Not specified'}. "
-        f"What drives you: {persona.values_and_motivations or 'Not specified'}. "
-        f"Your frustrations: {persona.pain_points or 'Not specified'}. "
-        f"Purchase behavior: {persona.purchase_behavior or 'Not specified'}. "
-        "You are making real purchasing decisions. Choose based on your actual priorities, "
-        "values, and budget — not what seems 'objectively best'. Stay in character."
-        f"{briefing_block}"
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -118,13 +100,7 @@ def _run_persona_tasks(
         lines.append(f"TASK {i}:\n  Option A: {a_str}\n  Option B: {b_str}")
     tasks_text = "\n\n".join(lines)
 
-    user_prompt = (
-        f"You are choosing between options for: {category}.\n\n"
-        "For each task below, you MUST choose either A or B — you cannot choose both or neither.\n"
-        "Return ONLY a valid JSON array with no markdown, no code blocks, no explanation:\n"
-        '[{"task": 1, "chosen": "A", "reasoning": "<1-2 sentences in first person why you chose this>"}, ...]\n\n'
-        f"{tasks_text}"
-    )
+    user_prompt = conjoint_user_prompt(category, tasks_text)
 
     for temperature in (0.85, 0.0):
         try:
@@ -324,15 +300,16 @@ def _generate_narrative(
             reasonings.append(f'- {r["persona_name"]}: "{tasks[0]["reasoning"]}"')
     reasoning_block = "\n".join(reasonings) if reasonings else "No verbatim data available."
 
-    prompt = (
-        f"You are a senior market research analyst. {len(individual_results)} consumers from "
-        f"the '{group.name}' group ({group.location}, {group.occupation}, "
-        f"ages {group.age_min}–{group.age_max}) completed a conjoint trade-off study on: {category}\n\n"
-        f"ATTRIBUTE IMPORTANCE (what actually drives their choices):\n{importance_lines}\n\n"
-        f"SAMPLE VERBATIM REASONING:\n{reasoning_block}\n\n"
-        "Return ONLY valid JSON (no markdown, no code fences):\n"
-        '{"executive_summary": "2-3 paragraph narrative of what drives choices and what this means for the product team", '
-        '"recommendations": "2-3 concrete product or pricing recommendations based on these trade-off preferences"}'
+    prompt = conjoint_narrative_user_prompt(
+        category=category,
+        group_name=group.name,
+        group_location=group.location,
+        group_occupation=group.occupation,
+        age_min=group.age_min,
+        age_max=group.age_max,
+        n=len(individual_results),
+        importance_lines=importance_lines,
+        reasoning_block=reasoning_block,
     )
     try:
         response = client.chat.completions.create(
@@ -409,7 +386,7 @@ def run_conjoint(simulation_id: str) -> None:
             logger.info(f"[conjoint:{sim_ref}] Persona {i}/{total}: {persona.full_name}")
 
             try:
-                system_prompt = _build_persona_system_prompt(persona, briefing_text)
+                system_prompt = conjoint_system_prompt(persona, briefing_text)
                 task_responses = _run_persona_tasks(client, system_prompt, category, tasks)
                 utilities = _compute_utilities(task_responses, tasks, attributes)
 

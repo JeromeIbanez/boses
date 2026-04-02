@@ -23,53 +23,29 @@ from app.database import SessionLocal
 from app.models.persona import Persona
 from app.models.simulation import Simulation
 from app.models.simulation_result import SimulationResult
+from app.services.prompts import (
+    focus_group_system_prompt,
+    focus_group_round2_user_prompt,
+    FOCUS_GROUP_MODERATOR_SYSTEM_PROMPT,
+    focus_group_moderator_opening_user_prompt,
+    focus_group_moderator_bridge_user_prompt,
+    focus_group_aggregate_user_prompt,
+)
 
 logger = logging.getLogger(__name__)
 
 SENTIMENT_SCORES = {"Positive": 1.0, "Neutral": 0.0, "Negative": -1.0}
 
 
-def _build_persona_system_prompt(persona: Persona, briefing_text: str) -> str:
-    traits = ", ".join(persona.personality_traits or [])
-    briefing_block = (
-        f"\n\nBackground material for context:\n---\n{briefing_text}\n---"
-        if briefing_text else ""
-    )
-    return (
-        f"You are {persona.full_name}, a {persona.age}-year-old {persona.gender} from {persona.location}. "
-        f"You work as {persona.occupation} and earn a {persona.income_level} income. "
-        f"Background: {persona.educational_background or 'Not specified'}. "
-        f"Family: {persona.family_situation or 'Not specified'}. "
-        f"Personality: {traits or 'Not specified'}. "
-        f"What drives you: {persona.values_and_motivations or 'Not specified'}. "
-        f"Your frustrations: {persona.pain_points or 'Not specified'}. "
-        f"Media habits: {persona.media_consumption or 'Not specified'}. "
-        f"Purchase behavior: {persona.purchase_behavior or 'Not specified'}. "
-        "You are participating in a focus group discussion with other consumers. "
-        "Speak in your own authentic voice — be direct, natural, and stay in character. "
-        "Do not break character or refer to yourself as an AI."
-        f"{briefing_block}"
-    )
 
 
 def _moderator_opening(client: OpenAI, topic: str, briefing_text: str, n_participants: int) -> str:
     """Generate the moderator's opening statement and first question."""
-    context_block = f"\n\nBriefing context:\n---\n{briefing_text}\n---" if briefing_text else ""
-    prompt = (
-        f"You are facilitating a focus group with {n_participants} consumer participants. "
-        f"The research topic is: \"{topic}\"\n"
-        f"{context_block}\n\n"
-        "Write a brief, professional opening for the focus group (2–3 sentences) that:\n"
-        "- Welcomes participants and sets a comfortable, open tone\n"
-        "- States the topic clearly without leading the group\n"
-        "- Ends with a clear, open-ended first question to kick off discussion\n\n"
-        "Write only the moderator's spoken words. No stage directions, no labels."
-    )
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=[
-            {"role": "system", "content": "You are a professional qualitative research moderator. Keep your language neutral, warm, and concise."},
-            {"role": "user", "content": prompt},
+            {"role": "system", "content": FOCUS_GROUP_MODERATOR_SYSTEM_PROMPT},
+            {"role": "user", "content": focus_group_moderator_opening_user_prompt(topic, briefing_text, n_participants)},
         ],
         temperature=0.7,
     )
@@ -78,23 +54,11 @@ def _moderator_opening(client: OpenAI, topic: str, briefing_text: str, n_partici
 
 def _moderator_bridge(client: OpenAI, topic: str, round1_entries: list[dict]) -> str:
     """Generate the moderator's bridge between Round 1 and Round 2."""
-    responses_block = "\n".join(
-        f"- {e['speaker']}: {e['text']}" for e in round1_entries
-    )
-    prompt = (
-        f"Topic: \"{topic}\"\n\n"
-        f"Here are the initial responses from focus group participants:\n{responses_block}\n\n"
-        "As the moderator, write a brief bridge (2–3 sentences) that:\n"
-        "- Acknowledges what you heard (without judging or agreeing)\n"
-        "- Highlights any emerging tensions or interesting differences\n"
-        "- Poses a follow-up question that invites participants to respond to each other or dig deeper\n\n"
-        "Write only the moderator's spoken words. No stage directions, no labels."
-    )
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=[
-            {"role": "system", "content": "You are a professional qualitative research moderator. Keep your language neutral, warm, and concise."},
-            {"role": "user", "content": prompt},
+            {"role": "system", "content": FOCUS_GROUP_MODERATOR_SYSTEM_PROMPT},
+            {"role": "user", "content": focus_group_moderator_bridge_user_prompt(topic, round1_entries)},
         ],
         temperature=0.7,
     )
@@ -124,14 +88,7 @@ def _persona_round2_response(
     # Present Round 1 responses from *other* participants
     others = [e for e in round1_entries if e["speaker"] != persona_name]
     others_block = "\n".join(f"- {e['speaker']}: {e['text']}" for e in others)
-
-    user_prompt = (
-        f"The moderator opened with:\n{opening}\n\n"
-        f"Other participants said:\n{others_block}\n\n"
-        f"The moderator then asked:\n{bridge}\n\n"
-        "Now respond as yourself — you can agree, disagree, build on what others said, or bring up something new. "
-        "Keep your response conversational (3–5 sentences)."
-    )
+    user_prompt = focus_group_round2_user_prompt(opening, others_block, bridge)
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=[
@@ -155,25 +112,7 @@ def _generate_aggregate_report(
         for e in transcript
     )
 
-    prompt = f"""You are a senior qualitative research analyst. Below is the full transcript of a focus group on the topic: "{topic}"
-
-GROUP: {group_name}
-
-TRANSCRIPT:
-{transcript_text}
-
-Provide a structured analysis with the following sections — use the exact labels shown:
-
-MODERATOR SUMMARY: A 2–3 paragraph narrative of how the discussion unfolded, key dynamics, and overall group sentiment.
-CONSENSUS THEMES: The 3–5 themes that most participants agreed on (comma-separated).
-DISAGREEMENTS: The 2–4 points where participants meaningfully diverged (comma-separated).
-SENTIMENT DISTRIBUTION:
-Positive: N
-Neutral: N
-Negative: N
-RECOMMENDATIONS: 2–3 concrete, actionable recommendations for the research team based on the discussion.
-
-Be specific. Reference what participants actually said."""
+    prompt = focus_group_aggregate_user_prompt(topic, transcript_text, group_name)
 
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
@@ -301,7 +240,7 @@ def run_focus_group(simulation_id: str) -> None:
             logger.info(f"[fg:{sim_ref}] Round 1 — {persona.full_name} ({i}/{total_personas})")
 
             try:
-                system_prompt = _build_persona_system_prompt(persona, briefing_text)
+                system_prompt = focus_group_system_prompt(persona, briefing_text)
                 text = _persona_round1_response(client, system_prompt, opening)
                 entry = {"speaker": persona.full_name, "persona_id": str(persona.id), "round": 1, "text": text}
                 round1_entries.append(entry)
@@ -356,7 +295,7 @@ def run_focus_group(simulation_id: str) -> None:
                 logger.info(f"[fg:{sim_ref}] Round 2 — {persona.full_name} ({i}/{total_personas})")
 
                 try:
-                    system_prompt = _build_persona_system_prompt(persona, briefing_text)
+                    system_prompt = focus_group_system_prompt(persona, briefing_text)
                     text = _persona_round2_response(
                         client, system_prompt, opening, round1_entries, bridge, persona.full_name
                     )

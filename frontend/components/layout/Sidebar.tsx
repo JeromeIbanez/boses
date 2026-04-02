@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/projects", icon: FolderOpen },
-  { label: "Personas", href: "/library", icon: BookMarked },
+  { label: "Personas", href: "/personas", icon: BookMarked },
 ];
 
 export default function Sidebar() {

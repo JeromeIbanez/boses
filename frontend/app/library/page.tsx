@@ -207,12 +207,38 @@ export default function LibraryPage() {
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteLibraryPersona(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["library-personas"] }),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["library-personas"] });
+      const prev = qc.getQueryData<LibraryPersonaListResponse>(["library-personas", activeFilters]);
+      if (prev) {
+        qc.setQueryData(["library-personas", activeFilters], {
+          ...prev,
+          items: prev.items.filter((p) => p.id !== id),
+          total: prev.total - 1,
+        });
+      }
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["library-personas", activeFilters], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["library-personas"] }),
   });
 
   const removeAll = useMutation({
     mutationFn: () => deleteAllLibraryPersonas(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["library-personas"] }),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["library-personas"] });
+      const prev = qc.getQueryData<LibraryPersonaListResponse>(["library-personas", activeFilters]);
+      if (prev) {
+        qc.setQueryData(["library-personas", activeFilters], { ...prev, items: [], total: 0 });
+      }
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["library-personas", activeFilters], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["library-personas"] }),
   });
 
   const { data, isLoading } = useQuery({

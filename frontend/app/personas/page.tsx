@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { BookMarked, Search, Trash2, X } from "lucide-react";
-import { getLibraryPersonas, getLibraryPersona, deleteLibraryPersona, deleteAllLibraryPersonas } from "@/lib/api";
+import { getLibraryPersonas, deleteLibraryPersona, deleteAllLibraryPersonas } from "@/lib/api";
 import type { LibraryPersona, LibraryPersonaListResponse } from "@/types";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import Modal from "@/components/ui/Modal";
 import PageHeader from "@/components/layout/PageHeader";
 import Spinner from "@/components/ui/Spinner";
 
@@ -30,108 +30,6 @@ const defaultFilters: Filters = {
   age_min: "",
   age_max: "",
 };
-
-// ---------------------------------------------------------------------------
-// Persona detail modal
-// ---------------------------------------------------------------------------
-
-function PersonaDetailModal({
-  personaId,
-  onClose,
-}: {
-  personaId: string;
-  onClose: () => void;
-}) {
-  const { data: p, isLoading } = useQuery({
-    queryKey: ["library-persona", personaId],
-    queryFn: () => getLibraryPersona(personaId),
-  });
-
-  return (
-    <Modal open onClose={onClose} title={p?.full_name ?? "Loading…"} width="max-w-2xl">
-      {isLoading && (
-        <div className="flex justify-center py-8">
-          <Spinner />
-        </div>
-      )}
-      {p && (
-        <div className="space-y-4 text-sm">
-          {/* Header row */}
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="default">{p.age} yrs</Badge>
-            <Badge variant="default">{p.gender}</Badge>
-            <Badge variant="default">{p.occupation}</Badge>
-            <Badge variant="default">{p.location}</Badge>
-            <Badge variant="default">{p.income_level}</Badge>
-            {p.simulation_count > 0 && (
-              <Badge variant="success">Used in {p.simulation_count} simulation{p.simulation_count !== 1 ? "s" : ""}</Badge>
-            )}
-          </div>
-
-          {/* Traits */}
-          {p.personality_traits && p.personality_traits.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">Personality</p>
-              <div className="flex flex-wrap gap-1">
-                {p.personality_traits.map((t) => (
-                  <Badge key={t} variant="default">{t}</Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Background */}
-          {p.background && (
-            <div>
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">Background</p>
-              <p className="text-zinc-600 leading-relaxed">{p.background}</p>
-            </div>
-          )}
-
-          {/* Pain points */}
-          {p.pain_points && (
-            <div>
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">Pain Points</p>
-              <p className="text-zinc-600 leading-relaxed">{p.pain_points}</p>
-            </div>
-          )}
-
-          {/* Media */}
-          {p.media_consumption && (
-            <div>
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">Media Consumption</p>
-              <p className="text-zinc-600 leading-relaxed">{p.media_consumption}</p>
-            </div>
-          )}
-
-          {/* Day in the life */}
-          {p.day_in_the_life && (
-            <div>
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">A Day in the Life</p>
-              <p className="text-zinc-600 leading-relaxed italic">{p.day_in_the_life}</p>
-            </div>
-          )}
-
-          {/* Source citations */}
-          {p.data_source_references && p.data_source_references.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">Sources</p>
-              <ul className="list-disc list-inside space-y-0.5">
-                {p.data_source_references.map((ref, i) => (
-                  <li key={i} className="text-xs text-zinc-400">{ref}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <p className="text-xs text-zinc-300 pt-2 border-t border-zinc-100">
-            Added {new Date(p.created_at).toLocaleDateString()}
-          </p>
-        </div>
-      )}
-    </Modal>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Persona card
@@ -202,7 +100,7 @@ function LibraryPersonaCard({
 export default function LibraryPage() {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [activeFilters, setActiveFilters] = useState<Filters>(defaultFilters);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const router = useRouter();
   const qc = useQueryClient();
 
   const remove = useMutation({
@@ -397,19 +295,13 @@ export default function LibraryPage() {
             <LibraryPersonaCard
               key={p.id}
               persona={p}
-              onClick={() => setSelectedId(p.id)}
+              onClick={() => router.push(`/personas/${p.id}`)}
               onDelete={() => remove.mutate(p.id)}
             />
           ))}
         </div>
       )}
 
-      {selectedId && (
-        <PersonaDetailModal
-          personaId={selectedId}
-          onClose={() => setSelectedId(null)}
-        />
-      )}
     </div>
   );
 }

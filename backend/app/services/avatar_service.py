@@ -140,7 +140,11 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
 
 
 def _generate_and_save(client: OpenAI, persona_id: str) -> None:
-    """Worker run in a thread: generate avatar and write avatar_url to DB."""
+    """
+    Worker run in a thread: generate avatar, write to project persona,
+    and propagate to the linked LibraryPersona if one exists.
+    """
+    from app.models.library_persona import LibraryPersona
     from app.models.persona import Persona
     db = SessionLocal()
     try:
@@ -150,6 +154,11 @@ def _generate_and_save(client: OpenAI, persona_id: str) -> None:
         url = generate_avatar(client, persona)
         if url:
             persona.avatar_url = url
+            # Propagate to the library record so the library page shows the same avatar
+            if persona.library_persona_id:
+                lib = db.get(LibraryPersona, persona.library_persona_id)
+                if lib:
+                    lib.avatar_url = url
             db.commit()
     except Exception as e:
         logger.warning(f"Background avatar worker failed for {persona_id}: {e}")

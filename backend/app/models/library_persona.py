@@ -37,6 +37,7 @@ class LibraryPersona(Base):
     digital_behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
     day_in_the_life: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     data_source: Mapped[str] = mapped_column(String(50), nullable=False, default="synthetic")
     data_source_references: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
 

@@ -85,6 +85,7 @@ export interface LibraryPersona {
   aspirational_identity: string | null;
   digital_behavior: string | null;
   day_in_the_life: string | null;
+  avatar_url: string | null;
   data_source: string;
   data_source_references: string[] | null;
   simulation_count: number;

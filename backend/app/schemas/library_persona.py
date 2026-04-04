@@ -29,6 +29,7 @@ class LibraryPersonaResponse(BaseModel):
     aspirational_identity: Optional[str]
     digital_behavior: Optional[str]
     day_in_the_life: Optional[str]
+    avatar_url: Optional[str]
     data_source: str
     data_source_references: Optional[list[str]]
     simulation_count: int

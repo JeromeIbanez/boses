@@ -30,23 +30,76 @@ _GENDER_MAP = {
     "Female": "woman",
 }
 
+# Maps location keywords to ethnic/cultural descriptors so each market
+# produces visually distinct, culturally accurate portraits.
+_ETHNICITY_HINTS: list[tuple[list[str], str]] = [
+    (["philippines", "manila", "cebu", "davao", "quezon", "makati", "bgc", "ortigas"], "Filipino"),
+    (["indonesia", "jakarta", "bali", "surabaya", "bandung", "yogyakarta"], "Indonesian"),
+    (["vietnam", "ho chi minh", "hanoi", "saigon", "da nang", "hue"], "Vietnamese"),
+    (["thailand", "bangkok", "chiang mai", "phuket"], "Thai"),
+    (["malaysia", "kuala lumpur", "kl", "penang", "johor"], "Malaysian"),
+    (["singapore"], "Singaporean"),
+    (["india", "mumbai", "delhi", "bangalore", "chennai", "hyderabad"], "South Asian Indian"),
+]
+
+
+def _ethnicity_hint(location: str) -> str:
+    loc = location.lower()
+    for keywords, descriptor in _ETHNICITY_HINTS:
+        if any(kw in loc for kw in keywords):
+            return descriptor
+    return ""
+
 
 def _build_prompt(persona) -> str:
     gender_word = _GENDER_MAP.get(persona.gender, "person")
-    traits = ""
-    if persona.personality_traits:
-        # Take up to 2 positive-sounding traits for the visual prompt
-        traits = ", ".join(persona.personality_traits[:2])
-        traits = f" {traits}."
+    ethnicity = _ethnicity_hint(persona.location or "")
 
-    return (
-        f"Professional photorealistic headshot portrait of a {persona.age}-year-old {gender_word} "
-        f"from {persona.location}, working as a {persona.occupation}.{traits} "
-        f"Natural soft lighting, neutral light grey background, upper body framing, "
-        f"looking directly at camera, high-quality photography, "
-        f"appearance consistent with {persona.income_level} income level. "
-        f"No text, no watermarks, no graphics."
+    # ── Subject ───────────────────────────────────────────────────────────────
+    ethnicity_clause = f"{ethnicity} " if ethnicity else ""
+    subject = f"Photorealistic portrait of a {ethnicity_clause}{gender_word}, {persona.age} years old."
+
+    # ── Income → grooming and clothing quality ────────────────────────────────
+    income_map = {
+        "low": "modest, simple clothing",
+        "lower-middle": "neat everyday clothing",
+        "middle": "clean smart-casual clothing",
+        "upper-middle": "polished professional attire",
+        "high": "refined, well-tailored clothing",
+    }
+    income_key = (persona.income_level or "").lower().replace(" ", "-").replace("_", "-")
+    clothing = income_map.get(income_key, "smart-casual clothing")
+    clothing_line = f"Wearing {clothing}."
+
+    # ── Personality traits → expression keywords ──────────────────────────────
+    # Use pure adjectives — no label-colon patterns that DALL-E may render as text
+    expression_line = ""
+    if persona.personality_traits:
+        traits = ", ".join(persona.personality_traits[:4])
+        expression_line = f"Facial expression is {traits}."
+
+    # ── Archetype → energy and bearing ───────────────────────────────────────
+    archetype_line = ""
+    if persona.archetype_label:
+        archetype_line = f"Posture and energy embodies {persona.archetype_label}."
+
+    # ── VALS segment → posture hint ───────────────────────────────────────────
+    vals_line = ""
+    if persona.psychographic_segment:
+        vals_line = f"Demeanor reflects {persona.psychographic_segment} sensibility."
+
+    # ── Shot style — strictly no text or overlays ─────────────────────────────
+    style = (
+        "IMPORTANT: This image must contain absolutely NO text, NO letters, NO words, "
+        "NO numbers, NO watermarks, NO captions, NO overlays, NO labels of any kind. "
+        "Pure photographic portrait only. "
+        "Plain studio portrait, neutral solid light grey background, "
+        "soft natural lighting, upper body shot, looking directly at camera, "
+        "sharp focus on face, photorealistic, high resolution, no props, nothing in background."
     )
+
+    parts = [subject, clothing_line, expression_line, archetype_line, vals_line, style]
+    return " ".join(p for p in parts if p)
 
 
 def generate_avatar(client: OpenAI, persona) -> str | None:
@@ -89,7 +142,11 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
 
 
 def _generate_and_save(client: OpenAI, persona_id: str) -> None:
-    """Worker run in a thread: generate avatar and write avatar_url to DB."""
+    """
+    Worker run in a thread: generate avatar, write to project persona,
+    and propagate to the linked LibraryPersona if one exists.
+    """
+    from app.models.library_persona import LibraryPersona
     from app.models.persona import Persona
     db = SessionLocal()
     try:
@@ -99,6 +156,11 @@ def _generate_and_save(client: OpenAI, persona_id: str) -> None:
         url = generate_avatar(client, persona)
         if url:
             persona.avatar_url = url
+            # Propagate to the library record so the library page shows the same avatar
+            if persona.library_persona_id:
+                lib = db.get(LibraryPersona, persona.library_persona_id)
+                if lib:
+                    lib.avatar_url = url
             db.commit()
     except Exception as e:
         logger.warning(f"Background avatar worker failed for {persona_id}: {e}")

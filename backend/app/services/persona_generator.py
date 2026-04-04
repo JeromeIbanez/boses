@@ -23,7 +23,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.models.persona import Persona
 from app.models.persona_group import PersonaGroup
-from app.services.avatar_service import generate_avatar
+from app.services.avatar_service import generate_avatars_for_group
 from app.services.grounding import format_grounding_context
 from app.services.library_matcher import find_library_matches, save_persona_to_library
 from app.services.reddit_grounding import fetch_reddit_signals
@@ -323,6 +323,7 @@ def generate_personas(group_id: str) -> None:
         total = group.persona_count
         completed_names: list[str] = []
         personas_created = 0
+        created_persona_ids: list[str] = []
 
         # Initialise progress
         _set_progress(db, group, 0, total, None, [])
@@ -376,7 +377,7 @@ def generate_personas(group_id: str) -> None:
             )
             db.add(persona)
             db.flush()
-            persona.avatar_url = generate_avatar(client, persona)
+            created_persona_ids.append(str(persona.id))
             save_persona_to_library(db, persona, match_score=match_score, existing_library_id=lib_persona.id)
             used_library_ids.add(lib_persona.id)
             completed_names.append(name)
@@ -436,7 +437,7 @@ def generate_personas(group_id: str) -> None:
                     )
                     db.add(persona)
                     db.flush()
-                    persona.avatar_url = generate_avatar(client, persona)
+                    created_persona_ids.append(str(persona.id))
                     save_persona_to_library(db, persona)
                     completed_names.append(profile.get("full_name", name))
                     personas_created += 1
@@ -476,7 +477,7 @@ def generate_personas(group_id: str) -> None:
                     )
                     db.add(persona)
                     db.flush()
-                    persona.avatar_url = generate_avatar(client, persona)
+                    created_persona_ids.append(str(persona.id))
                     save_persona_to_library(db, persona)
                     personas_created += 1
 
@@ -486,6 +487,10 @@ def generate_personas(group_id: str) -> None:
         group.generation_progress = None
         db.commit()
         logger.info(f"Total {personas_created} personas for group {group_id} (source={source_key})")
+
+        # Generate avatars concurrently — all DALL-E calls run in parallel after
+        # text generation is complete so persona creation speed is unaffected.
+        generate_avatars_for_group(client, created_persona_ids)
 
     except Exception as e:
         logger.error(f"Persona generation failed for group {group_id}: {e}")

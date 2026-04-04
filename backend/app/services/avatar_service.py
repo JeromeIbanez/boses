@@ -12,10 +12,13 @@ TODO: replace local file storage with S3 for production deployments.
 import base64
 import logging
 import os
+import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from openai import OpenAI
 
 from app.config import settings
+from app.database import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -83,3 +86,41 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
     except Exception as e:
         logger.warning(f"Avatar generation failed for persona {persona.id}: {e}")
         return None
+
+
+def _generate_and_save(client: OpenAI, persona_id: str) -> None:
+    """Worker run in a thread: generate avatar and write avatar_url to DB."""
+    from app.models.persona import Persona
+    db = SessionLocal()
+    try:
+        persona = db.get(Persona, uuid.UUID(persona_id))
+        if not persona:
+            return
+        url = generate_avatar(client, persona)
+        if url:
+            persona.avatar_url = url
+            db.commit()
+    except Exception as e:
+        logger.warning(f"Background avatar worker failed for {persona_id}: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def generate_avatars_for_group(client: OpenAI, persona_ids: list[str]) -> None:
+    """
+    Generate avatars concurrently for a list of persona IDs.
+    Called after group text generation is complete — does not block the main flow.
+    Uses one thread per persona so all DALL-E calls run in parallel.
+    """
+    if not persona_ids:
+        return
+    with ThreadPoolExecutor(max_workers=len(persona_ids)) as pool:
+        futures = {pool.submit(_generate_and_save, client, pid): pid for pid in persona_ids}
+        for future in as_completed(futures):
+            pid = futures[future]
+            try:
+                future.result()
+                logger.info(f"Avatar ready for persona {pid}")
+            except Exception as e:
+                logger.warning(f"Avatar future failed for {pid}: {e}")

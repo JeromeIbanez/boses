@@ -32,9 +32,6 @@ if settings.SENTRY_DSN:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure uploads directory (and avatars subdir) exist
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    os.makedirs(os.path.join(settings.UPLOAD_DIR, "avatars"), exist_ok=True)
     yield
 
 
@@ -72,5 +69,6 @@ app.include_router(simulations.router, prefix="/api/v1")
 app.include_router(library.router, prefix="/api/v1")
 app.include_router(internal.router, prefix="/api/v1")
 
-# Serve uploaded files (avatars, briefings) as static assets
+# Ensure uploads/avatars dirs exist before mounting — StaticFiles checks at import time
+os.makedirs(os.path.join(settings.UPLOAD_DIR, "avatars"), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")

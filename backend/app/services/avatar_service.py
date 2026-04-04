@@ -30,23 +30,83 @@ _GENDER_MAP = {
     "Female": "woman",
 }
 
+# Maps location keywords to ethnic/cultural descriptors so each market
+# produces visually distinct, culturally accurate portraits.
+_ETHNICITY_HINTS: list[tuple[list[str], str]] = [
+    (["philippines", "manila", "cebu", "davao", "quezon", "makati", "bgc", "ortigas"], "Filipino"),
+    (["indonesia", "jakarta", "bali", "surabaya", "bandung", "yogyakarta"], "Indonesian"),
+    (["vietnam", "ho chi minh", "hanoi", "saigon", "da nang", "hue"], "Vietnamese"),
+    (["thailand", "bangkok", "chiang mai", "phuket"], "Thai"),
+    (["malaysia", "kuala lumpur", "kl", "penang", "johor"], "Malaysian"),
+    (["singapore"], "Singaporean"),
+    (["india", "mumbai", "delhi", "bangalore", "chennai", "hyderabad"], "South Asian Indian"),
+]
+
+
+def _ethnicity_hint(location: str) -> str:
+    loc = location.lower()
+    for keywords, descriptor in _ETHNICITY_HINTS:
+        if any(kw in loc for kw in keywords):
+            return descriptor
+    return ""
+
 
 def _build_prompt(persona) -> str:
     gender_word = _GENDER_MAP.get(persona.gender, "person")
-    traits = ""
-    if persona.personality_traits:
-        # Take up to 2 positive-sounding traits for the visual prompt
-        traits = ", ".join(persona.personality_traits[:2])
-        traits = f" {traits}."
+    ethnicity = _ethnicity_hint(persona.location or "")
 
-    return (
-        f"Professional photorealistic headshot portrait of a {persona.age}-year-old {gender_word} "
-        f"from {persona.location}, working as a {persona.occupation}.{traits} "
-        f"Natural soft lighting, neutral light grey background, upper body framing, "
-        f"looking directly at camera, high-quality photography, "
-        f"appearance consistent with {persona.income_level} income level. "
-        f"No text, no watermarks, no graphics."
+    # ── Subject line ──────────────────────────────────────────────────────────
+    ethnicity_clause = f"{ethnicity} " if ethnicity else ""
+    subject = (
+        f"Plain portrait photograph of a {ethnicity_clause}{gender_word}, "
+        f"{persona.age} years old, from {persona.location}. "
+        f"Name: {persona.full_name}. "          # anchors uniqueness per person
+        f"Unique individual — distinct from any other portrait."
     )
+
+    # ── Occupation & income — shapes grooming, clothing, bearing ─────────────
+    occupation_line = f"Works as: {persona.occupation}. Income level: {persona.income_level}."
+
+    # ── Psychographic & archetype — shapes expression and energy ─────────────
+    psycho_parts = []
+    if persona.archetype_label:
+        psycho_parts.append(f"archetype: {persona.archetype_label}")
+    if persona.psychographic_segment:
+        psycho_parts.append(f"VALS segment: {persona.psychographic_segment}")
+    psycho_line = f"Consumer profile — {', '.join(psycho_parts)}." if psycho_parts else ""
+
+    # ── Personality traits — facial expression and mood ──────────────────────
+    trait_line = ""
+    if persona.personality_traits:
+        trait_line = f"Personality: {', '.join(persona.personality_traits)}."
+
+    # ── Aspirational identity — how they present themselves ──────────────────
+    aspiration_line = ""
+    if persona.aspirational_identity:
+        # Keep it short — first sentence only
+        first_sentence = persona.aspirational_identity.split(".")[0].strip()
+        if first_sentence:
+            aspiration_line = f"Self-image: {first_sentence}."
+
+    # ── Family situation — age and life-stage visual cues ────────────────────
+    family_line = ""
+    if persona.family_situation:
+        first_sentence = persona.family_situation.split(".")[0].strip()
+        if first_sentence:
+            family_line = f"Life stage: {first_sentence}."
+
+    # ── Shot style — always plain portrait, never illustrative ───────────────
+    style = (
+        "Plain, photorealistic portrait. "
+        "Neutral solid light grey background. "
+        "Natural soft studio lighting. "
+        "Upper body, looking directly at camera. "
+        "No props, no text, no watermarks, no logos, no graphic elements. "
+        "High-quality photography, sharp focus on face."
+    )
+
+    parts = [subject, occupation_line, psycho_line, trait_line, aspiration_line, family_line, style]
+    return " ".join(p for p in parts if p)
 
 
 def generate_avatar(client: OpenAI, persona) -> str | None:

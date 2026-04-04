@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Trash2, MessageSquare } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { getPersona, deletePersona } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
 import LibraryBadge from "@/components/ui/LibraryBadge";
@@ -193,27 +193,18 @@ export default function PersonaProfilePage() {
 
           {/* Actions */}
           <Card>
-            <div className="space-y-2">
-              <button
-                onClick={() => router.push(`/projects/${projectId}/simulations/new?personaId=${persona.id}&type=idi_manual`)}
-                className="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-700 text-white text-xs font-medium py-2 rounded-lg transition-colors"
-              >
-                <MessageSquare size={13} />
-                Start IDI with {persona.full_name.split(" ")[0]}
-              </button>
-              <button
-                onClick={() => {
-                  if (confirm(`Delete ${persona.full_name}? This cannot be undone.`)) {
-                    remove.mutate();
-                  }
-                }}
-                disabled={remove.isPending}
-                className="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-600 text-xs font-medium py-1.5 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <Trash2 size={13} />
-                Delete Persona
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                if (confirm(`Delete ${persona.full_name}? This cannot be undone.`)) {
+                  remove.mutate();
+                }
+              }}
+              disabled={remove.isPending}
+              className="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-600 text-xs font-medium py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <Trash2 size={13} />
+              Delete Persona
+            </button>
           </Card>
         </div>
 

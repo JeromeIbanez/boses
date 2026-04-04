@@ -55,57 +55,48 @@ def _build_prompt(persona) -> str:
     gender_word = _GENDER_MAP.get(persona.gender, "person")
     ethnicity = _ethnicity_hint(persona.location or "")
 
-    # ── Subject line ──────────────────────────────────────────────────────────
+    # ── Subject ───────────────────────────────────────────────────────────────
     ethnicity_clause = f"{ethnicity} " if ethnicity else ""
-    subject = (
-        f"Plain portrait photograph of a {ethnicity_clause}{gender_word}, "
-        f"{persona.age} years old, from {persona.location}. "
-        f"Name: {persona.full_name}. "          # anchors uniqueness per person
-        f"Unique individual — distinct from any other portrait."
-    )
+    subject = f"Photorealistic portrait of a {ethnicity_clause}{gender_word}, {persona.age} years old."
 
-    # ── Occupation & income — shapes grooming, clothing, bearing ─────────────
-    occupation_line = f"Works as: {persona.occupation}. Income level: {persona.income_level}."
+    # ── Income → grooming and clothing quality ────────────────────────────────
+    income_map = {
+        "low": "modest, simple clothing",
+        "lower-middle": "neat everyday clothing",
+        "middle": "clean smart-casual clothing",
+        "upper-middle": "polished professional attire",
+        "high": "refined, well-tailored clothing",
+    }
+    income_key = (persona.income_level or "").lower().replace(" ", "-").replace("_", "-")
+    clothing = income_map.get(income_key, "smart-casual clothing")
+    clothing_line = f"Wearing {clothing}."
 
-    # ── Psychographic & archetype — shapes expression and energy ─────────────
-    psycho_parts = []
-    if persona.archetype_label:
-        psycho_parts.append(f"archetype: {persona.archetype_label}")
-    if persona.psychographic_segment:
-        psycho_parts.append(f"VALS segment: {persona.psychographic_segment}")
-    psycho_line = f"Consumer profile — {', '.join(psycho_parts)}." if psycho_parts else ""
-
-    # ── Personality traits — facial expression and mood ──────────────────────
-    trait_line = ""
+    # ── Personality traits → expression keywords ──────────────────────────────
+    # Translate traits into visual descriptors rather than labels DALL-E might render as text
+    expression_line = ""
     if persona.personality_traits:
-        trait_line = f"Personality: {', '.join(persona.personality_traits)}."
+        expression_line = f"Expression conveys: {', '.join(persona.personality_traits[:4])}."
 
-    # ── Aspirational identity — how they present themselves ──────────────────
-    aspiration_line = ""
-    if persona.aspirational_identity:
-        # Keep it short — first sentence only
-        first_sentence = persona.aspirational_identity.split(".")[0].strip()
-        if first_sentence:
-            aspiration_line = f"Self-image: {first_sentence}."
+    # ── Archetype → energy and bearing ───────────────────────────────────────
+    archetype_line = ""
+    if persona.archetype_label:
+        archetype_line = f"Overall bearing: {persona.archetype_label}."
 
-    # ── Family situation — age and life-stage visual cues ────────────────────
-    family_line = ""
-    if persona.family_situation:
-        first_sentence = persona.family_situation.split(".")[0].strip()
-        if first_sentence:
-            family_line = f"Life stage: {first_sentence}."
+    # ── VALS segment → posture hint ───────────────────────────────────────────
+    vals_line = ""
+    if persona.psychographic_segment:
+        vals_line = f"Carries themselves as a {persona.psychographic_segment} type."
 
-    # ── Shot style — always plain portrait, never illustrative ───────────────
+    # ── Shot style — strictly no text or overlays ─────────────────────────────
     style = (
-        "Plain, photorealistic portrait. "
-        "Neutral solid light grey background. "
-        "Natural soft studio lighting. "
-        "Upper body, looking directly at camera. "
-        "No props, no text, no watermarks, no logos, no graphic elements. "
-        "High-quality photography, sharp focus on face."
+        "Plain studio portrait, neutral solid light grey background, "
+        "soft natural lighting, upper body shot, looking directly at camera, "
+        "sharp focus on face, photorealistic, high resolution. "
+        "Absolutely no text, no watermarks, no overlays, no captions, "
+        "no graphics, no props, no objects in background."
     )
 
-    parts = [subject, occupation_line, psycho_line, trait_line, aspiration_line, family_line, style]
+    parts = [subject, clothing_line, expression_line, archetype_line, vals_line, style]
     return " ".join(p for p in parts if p)
 
 

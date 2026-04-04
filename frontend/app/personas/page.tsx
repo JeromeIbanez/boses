@@ -11,6 +11,33 @@ import Badge from "@/components/ui/Badge";
 import PageHeader from "@/components/layout/PageHeader";
 import Spinner from "@/components/ui/Spinner";
 
+const API_ROOT = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace("/api/v1", "");
+
+function avatarSrc(url: string | null | undefined): string | null {
+  if (!url) return null;
+  return url.startsWith("http") ? url : API_ROOT + url;
+}
+
+function LibraryPersonaAvatar({ persona }: { persona: LibraryPersona }) {
+  const [err, setErr] = useState(false);
+  const src = !err ? avatarSrc(persona.avatar_url) : null;
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={persona.full_name}
+        onError={() => setErr(true)}
+        className="w-9 h-9 rounded-full object-cover shrink-0"
+      />
+    );
+  }
+  return (
+    <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
+      {persona.full_name.charAt(0)}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Filters
 // ---------------------------------------------------------------------------
@@ -47,9 +74,7 @@ function LibraryPersonaCard({
   return (
     <Card onClick={onClick}>
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
-          {persona.full_name.charAt(0)}
-        </div>
+        <LibraryPersonaAvatar persona={persona} />
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium text-zinc-900 truncate">{persona.full_name}</h3>
           <p className="text-xs text-zinc-400">{persona.age} · {persona.occupation}</p>

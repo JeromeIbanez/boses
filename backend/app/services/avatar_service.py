@@ -72,28 +72,30 @@ def _build_prompt(persona) -> str:
     clothing_line = f"Wearing {clothing}."
 
     # ── Personality traits → expression keywords ──────────────────────────────
-    # Translate traits into visual descriptors rather than labels DALL-E might render as text
+    # Use pure adjectives — no label-colon patterns that DALL-E may render as text
     expression_line = ""
     if persona.personality_traits:
-        expression_line = f"Expression conveys: {', '.join(persona.personality_traits[:4])}."
+        traits = ", ".join(persona.personality_traits[:4])
+        expression_line = f"Facial expression is {traits}."
 
     # ── Archetype → energy and bearing ───────────────────────────────────────
     archetype_line = ""
     if persona.archetype_label:
-        archetype_line = f"Overall bearing: {persona.archetype_label}."
+        archetype_line = f"Posture and energy embodies {persona.archetype_label}."
 
     # ── VALS segment → posture hint ───────────────────────────────────────────
     vals_line = ""
     if persona.psychographic_segment:
-        vals_line = f"Carries themselves as a {persona.psychographic_segment} type."
+        vals_line = f"Demeanor reflects {persona.psychographic_segment} sensibility."
 
     # ── Shot style — strictly no text or overlays ─────────────────────────────
     style = (
+        "IMPORTANT: This image must contain absolutely NO text, NO letters, NO words, "
+        "NO numbers, NO watermarks, NO captions, NO overlays, NO labels of any kind. "
+        "Pure photographic portrait only. "
         "Plain studio portrait, neutral solid light grey background, "
         "soft natural lighting, upper body shot, looking directly at camera, "
-        "sharp focus on face, photorealistic, high resolution. "
-        "Absolutely no text, no watermarks, no overlays, no captions, "
-        "no graphics, no props, no objects in background."
+        "sharp focus on face, photorealistic, high resolution, no props, nothing in background."
     )
 
     parts = [subject, clothing_line, expression_line, archetype_line, vals_line, style]

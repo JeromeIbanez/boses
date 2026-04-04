@@ -1,10 +1,37 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { getPersonaGroup, getPersonas, deletePersona, deleteAllPersonas } from "@/lib/api";
 import { Persona } from "@/types";
+
+const API_ROOT = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace("/api/v1", "");
+function avatarSrc(url: string | null | undefined) {
+  if (!url) return null;
+  return url.startsWith("http") ? url : API_ROOT + url;
+}
+
+function PersonaAvatar({ persona }: { persona: Persona }) {
+  const [err, setErr] = useState(false);
+  const src = !err ? avatarSrc(persona.avatar_url) : null;
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={persona.full_name}
+        onError={() => setErr(true)}
+        className="w-9 h-9 rounded-full object-cover shrink-0"
+      />
+    );
+  }
+  return (
+    <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
+      {persona.full_name.charAt(0)}
+    </div>
+  );
+}
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import LibraryBadge from "@/components/ui/LibraryBadge";
@@ -159,9 +186,7 @@ export default function PersonaGroupPage() {
               onClick={() => router.push(`/projects/${projectId}/personas/${groupId}/${p.id}`)}
             >
               <div className="flex items-start gap-3 mb-3">
-                <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
-                  {p.full_name.charAt(0)}
-                </div>
+                <PersonaAvatar persona={p} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-sm font-medium text-zinc-900">{p.full_name}</h3>

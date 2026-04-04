@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Trash2, MessageSquare, BookMarked, User } from "lucide-react";
+import { ArrowLeft, Trash2, MessageSquare } from "lucide-react";
 import { getPersona, deletePersona } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
 import LibraryBadge from "@/components/ui/LibraryBadge";

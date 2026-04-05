@@ -31,6 +31,12 @@ services:
         value: gpt-4o
       - key: UPLOAD_DIR
         value: /tmp/uploads
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_AVATARS_BUCKET
+        value: avatars
     domains:
       - api.temujintechnologies.com
 
@@ -55,6 +61,12 @@ services:
         value: gpt-4o
       - key: UPLOAD_DIR
         value: /tmp/uploads
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_AVATARS_BUCKET
+        value: avatars
     domains:
       - api-staging.temujintechnologies.com
 

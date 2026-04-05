@@ -110,6 +110,27 @@ def score_persona(library_persona: LibraryPersona, group: PersonaGroup) -> float
 # Public API
 # ---------------------------------------------------------------------------
 
+def _get_library_ids_used_in_project(db: Session, project_id: str) -> set[uuid.UUID]:
+    """
+    Return the set of library_persona_ids already used by any persona group
+    belonging to this project. Used to prevent the same library persona from
+    appearing in multiple groups within the same project.
+    """
+    from app.models.persona_group import PersonaGroup as PG
+    from app.models.persona import Persona as P
+
+    rows = (
+        db.query(P.library_persona_id)
+        .join(PG, P.persona_group_id == PG.id)
+        .filter(
+            PG.project_id == project_id,
+            P.library_persona_id.isnot(None),
+        )
+        .all()
+    )
+    return {row[0] for row in rows}
+
+
 def find_library_matches(
     db: Session,
     group: PersonaGroup,
@@ -118,6 +139,9 @@ def find_library_matches(
     """
     Return (LibraryPersona, score) pairs that score >= MATCH_THRESHOLD,
     ordered by score descending.
+
+    Library personas already used by another group in the same project are
+    excluded — each project gets fresh, non-repeating personas.
     """
     if not USE_LIBRARY:
         return []
@@ -125,17 +149,24 @@ def find_library_matches(
     age_min = (group.age_min or 0) - 5
     age_max = (group.age_max or 120) + 5
 
+    # Exclude library entries already used within this project
+    already_used: set[uuid.UUID] = set()
+    if getattr(group, "project_id", None):
+        already_used = _get_library_ids_used_in_project(db, str(group.project_id))
+
     # Pre-filter in SQL to narrow candidates before Python scoring
-    candidates: list[LibraryPersona] = (
+    query = (
         db.query(LibraryPersona)
         .filter(
             LibraryPersona.is_retired == False,  # noqa: E712
             LibraryPersona.age >= age_min,
             LibraryPersona.age <= age_max,
         )
-        .limit(500)  # hard cap to keep scoring fast
-        .all()
     )
+    if already_used:
+        query = query.filter(LibraryPersona.id.notin_(already_used))
+
+    candidates: list[LibraryPersona] = query.limit(500).all()
 
     scored = [
         (lp, score_persona(lp, group))

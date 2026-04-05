@@ -18,6 +18,15 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # Supabase Storage (for persistent avatar hosting)
+    SUPABASE_URL: str = ""           # e.g. https://xxxx.supabase.co
+    SUPABASE_SERVICE_KEY: str = ""   # service_role key (not anon key)
+    SUPABASE_AVATARS_BUCKET: str = "avatars"
+
+    @property
+    def supabase_configured(self) -> bool:
+        return bool(self.SUPABASE_URL and self.SUPABASE_SERVICE_KEY)
+
     @property
     def openai_api_key(self) -> str:
         return self.OPENAI_API_KEY.strip()

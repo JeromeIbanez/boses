@@ -87,6 +87,8 @@ export const uploadBriefing = (projectId: string, formData: FormData) =>
     if (!r.ok) throw new Error("Upload failed");
     return r.json() as Promise<Briefing>;
   });
+export const updateBriefing = (projectId: string, briefingId: string, body: { title: string; description?: string | null }) =>
+  request<Briefing>(`/projects/${projectId}/briefings/${briefingId}`, { method: "PATCH", body: JSON.stringify(body) });
 export const deleteBriefing = (projectId: string, briefingId: string) =>
   request<void>(`/projects/${projectId}/briefings/${briefingId}`, { method: "DELETE" });
 

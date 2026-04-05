@@ -2,8 +2,9 @@
 
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText, Upload } from "lucide-react";
-import { getBriefings, uploadBriefing } from "@/lib/api";
+import { Plus, FileText, Upload, Pencil, Trash2 } from "lucide-react";
+import { getBriefings, uploadBriefing, updateBriefing, deleteBriefing } from "@/lib/api";
+import { Briefing } from "@/types";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
@@ -23,6 +24,11 @@ export default function BriefingsTab({ projectId }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const [editing, setEditing] = useState<Briefing | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: briefings, isLoading } = useQuery({
     queryKey: ["briefings", projectId],
@@ -45,6 +51,28 @@ export default function BriefingsTab({ projectId }: Props) {
       setFile(null);
     },
   });
+
+  const rename = useMutation({
+    mutationFn: () => updateBriefing(projectId, editing!.id, { title: editTitle, description: editDescription || null }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["briefings", projectId] });
+      setEditing(null);
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteBriefing(projectId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["briefings", projectId] });
+      setDeletingId(null);
+    },
+  });
+
+  const openEdit = (b: Briefing) => {
+    setEditing(b);
+    setEditTitle(b.title);
+    setEditDescription(b.description ?? "");
+  };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -82,11 +110,44 @@ export default function BriefingsTab({ projectId }: Props) {
                   {b.description && <p className="text-xs text-zinc-400 mt-0.5">{b.description}</p>}
                   <p className="text-xs text-zinc-300 mt-1">{formatDate(b.created_at)}</p>
                 </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => openEdit(b)} className="p-1.5 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors">
+                    <Pencil size={13} />
+                  </button>
+                  <button onClick={() => setDeletingId(b.id)} className="p-1.5 rounded hover:bg-red-50 text-zinc-400 hover:text-red-500 transition-colors">
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             </Card>
           ))}
         </div>
       )}
+
+      <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit Briefing">
+        <div className="space-y-4">
+          <Input label="Title" value={editTitle} onChange={e => setEditTitle(e.target.value)} />
+          <Textarea label="Description (optional)" rows={2} value={editDescription} onChange={e => setEditDescription(e.target.value)} />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button onClick={() => rename.mutate()} disabled={!editTitle || rename.isPending}>
+              {rename.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!deletingId} onClose={() => setDeletingId(null)} title="Delete Briefing">
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-600">This will permanently delete the briefing. Any simulations that used it will keep their existing results.</p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setDeletingId(null)}>Cancel</Button>
+            <Button variant="danger" onClick={() => remove.mutate(deletingId!)} disabled={remove.isPending}>
+              {remove.isPending ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Upload Briefing">
         <div className="space-y-4">

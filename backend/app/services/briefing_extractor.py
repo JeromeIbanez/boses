@@ -1,5 +1,7 @@
 import base64
 import os
+import re
+import shutil
 import subprocess
 import tempfile
 
@@ -7,6 +9,9 @@ from openai import OpenAI
 from pdfminer.high_level import extract_text as pdf_extract_text
 
 from app.config import settings
+
+# Resolved once at import time; None if ffmpeg is not installed.
+_FFMPEG = shutil.which("ffmpeg")
 
 _MIME_TYPES = {
     "jpg": "image/jpeg",
@@ -56,25 +61,31 @@ def _transcribe_audio(file_path: str) -> str:
 
 
 def _analyze_video(file_path: str) -> str:
+    if not _FFMPEG:
+        raise RuntimeError("ffmpeg not found — install it with: brew install ffmpeg (Mac) or apt-get install ffmpeg (Linux)")
     client = OpenAI(api_key=settings.openai_api_key)
     frames_b64: list[str] = []
     transcript = ""
 
-    # Extract key frames using ffmpeg
+    # Extract key frames using system ffmpeg
     try:
+        # Parse duration from ffmpeg's stderr output (no ffprobe needed)
         probe = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=noprint_wrappers=1:nokey=1", file_path],
+            [_FFMPEG, "-i", file_path],
             capture_output=True, text=True, timeout=30,
         )
-        duration = float(probe.stdout.strip())
+        match = re.search(r"Duration:\s*(\d+):(\d+):([\d.]+)", probe.stderr)
+        if not match:
+            raise ValueError("Could not parse video duration")
+        h, m, s = int(match.group(1)), int(match.group(2)), float(match.group(3))
+        duration = h * 3600 + m * 60 + s
         with tempfile.TemporaryDirectory() as tmpdir:
             num_frames = 4
             for i in range(num_frames):
                 t = duration * (i + 1) / (num_frames + 1)
                 frame_path = os.path.join(tmpdir, f"frame_{i}.jpg")
                 subprocess.run(
-                    ["ffmpeg", "-ss", str(t), "-i", file_path,
+                    [_FFMPEG, "-ss", str(t), "-i", file_path,
                      "-vframes", "1", "-q:v", "2", frame_path, "-y"],
                     capture_output=True, timeout=30,
                 )
@@ -90,7 +101,7 @@ def _analyze_video(file_path: str) -> str:
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
             audio_tmp = tmp.name
         subprocess.run(
-            ["ffmpeg", "-i", file_path, "-vn", "-ar", "16000", "-ac", "1",
+            [_FFMPEG, "-i", file_path, "-vn", "-ar", "16000", "-ac", "1",
              "-b:a", "64k", audio_tmp, "-y"],
             capture_output=True, timeout=60,
         )

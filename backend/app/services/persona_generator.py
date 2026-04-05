@@ -148,6 +148,7 @@ Return a JSON array of {group.persona_count} objects, each with:
         group: PersonaGroup,
         grounding_context: str,
         grounding_sources: list[str],
+        peer_skeletons: list[dict] | None = None,
     ) -> dict:
         """Expand a single skeleton into a full profile."""
         system = (
@@ -189,7 +190,26 @@ Return a JSON array of {group.persona_count} objects, each with:
             "List the specific reports or studies that informed each field."
         )
 
-        user = f"""{grounding_block}Expand this archetype into a full consumer profile:
+        # Build peer awareness block — show the other skeletons in this batch so
+        # Pass 2 can actively diverge in routine, habits, and texture.
+        peers = [p for p in (peer_skeletons or []) if p.get("full_name") != skeleton.get("full_name")]
+        if peers:
+            peer_lines = "\n".join(
+                f'  - {p.get("full_name")}, {p.get("age")}, {p.get("gender")} | '
+                f'{p.get("archetype_label")} | {p.get("psychographic_segment")} | '
+                f'Brand stance: {p.get("dominant_brand_stance")}'
+                for p in peers
+            )
+            peer_block = (
+                f"\nOTHER PERSONAS IN THIS BATCH (do not duplicate their routines, "
+                f"habits, schedules, or day-in-the-life details):\n{peer_lines}\n"
+                f"Ensure this persona's day_in_the_life, digital_behavior, and "
+                f"media_consumption are meaningfully distinct from every person above.\n"
+            )
+        else:
+            peer_block = ""
+
+        user = f"""{grounding_block}{peer_block}Expand this archetype into a full consumer profile:
 
 Archetype: {skeleton.get('archetype_label')} — {skeleton.get('one_line_bio')}
 Name: {skeleton.get('full_name')}, Age: {skeleton.get('age')}, Gender: {skeleton.get('gender')}
@@ -257,7 +277,7 @@ Be hyper-specific. Generic statements are not allowed."""
     ) -> list[dict]:
         """Expand all skeletons — used by fetch() for non-progress callers."""
         return [
-            self._expand_one_skeleton(s, group, grounding_context, grounding_sources)
+            self._expand_one_skeleton(s, group, grounding_context, grounding_sources, peer_skeletons=skeletons)
             for s in skeletons
         ]
 
@@ -404,7 +424,10 @@ def generate_personas(group_id: str) -> None:
                     name = skeleton.get("full_name", f"Persona {personas_created + 1}")
                     _set_progress(db, group, personas_created + 1, total, name, completed_names)
 
-                    profile = source._expand_one_skeleton(skeleton, group, grounding_context, grounding_sources)
+                    profile = source._expand_one_skeleton(
+                        skeleton, group, grounding_context, grounding_sources,
+                        peer_skeletons=skeletons,
+                    )
 
                     _pid = _uuid.uuid4()
                     persona = Persona(

@@ -1,8 +1,8 @@
-_Last updated: 2026-04-01_
+_Last updated: 2026-04-05_
 
 # Frontend
 
-Built with Next.js 16.2.1 using the App Router. TypeScript throughout.
+Built with Next.js 16.2.1 using the App Router. TypeScript throughout. Sentry error tracking via `@sentry/nextjs`.
 
 ## Route Tree
 
@@ -15,13 +15,16 @@ graph TD
     FORGOT["/forgot-password"]
     RESET["/reset-password"]
     DASH["/dashboard"]
-    LIB["/library"]
     PROJ["/projects"]
     PROJ_ID["/projects/:projectId"]
     PERSONA_GRP["/projects/:projectId/personas/:groupId"]
+    PERSONA_DETAIL["/projects/:projectId/personas/:groupId/:personaId"]
     SIM_ID["/projects/:projectId/simulations/:simulationId"]
     SIM_CHAT["/projects/:projectId/simulations/:simulationId/chat"]
     SIM_TRANSCRIPT["/projects/:projectId/simulations/:simulationId/transcript"]
+    SIM_SURVEY_EXPORT["/projects/:projectId/simulations/:simulationId/survey-export"]
+    PERSONAS_LIB["/personas"]
+    PERSONA_LIB_DETAIL["/personas/:id"]
 
     ROOT -->|"authenticated"| DASH
     ROOT -->|"unauthenticated"| LOGIN
@@ -32,12 +35,14 @@ graph TD
     AUTH_GROUP --> RESET
 
     DASH --> PROJ
-    DASH --> LIB
     PROJ --> PROJ_ID
     PROJ_ID -->|"Personas tab"| PERSONA_GRP
+    PERSONA_GRP --> PERSONA_DETAIL
     PROJ_ID -->|"Simulations tab"| SIM_ID
     SIM_ID --> SIM_CHAT
     SIM_ID --> SIM_TRANSCRIPT
+    SIM_ID --> SIM_SURVEY_EXPORT
+    PERSONAS_LIB --> PERSONA_LIB_DETAIL
 ```
 
 ## Auth Redirect Logic (middleware.ts)
@@ -62,11 +67,14 @@ Public paths (no auth required): `/login`, `/signup`, `/forgot-password`, `/rese
 | `/dashboard` | `app/dashboard/page.tsx` | Project cards overview |
 | `/projects` | `app/projects/page.tsx` | Project list |
 | `/projects/:projectId` | `app/projects/[projectId]/page.tsx` | Tabbed: Briefings, Personas, Simulations |
-| `/projects/:projectId/personas/:groupId` | `app/projects/[projectId]/personas/[groupId]/page.tsx` | Persona detail |
+| `/projects/:projectId/personas/:groupId` | `app/projects/[projectId]/personas/[groupId]/page.tsx` | Persona group detail + list |
+| `/projects/:projectId/personas/:groupId/:personaId` | `app/projects/[projectId]/personas/[groupId]/[personaId]/page.tsx` | Individual persona detail |
 | `/projects/:projectId/simulations/:simulationId` | `app/projects/[projectId]/simulations/[simulationId]/page.tsx` | Results / status |
 | `/projects/:projectId/simulations/:simulationId/chat` | `.../chat/page.tsx` | Manual IDI chat interface |
 | `/projects/:projectId/simulations/:simulationId/transcript` | `.../transcript/page.tsx` | IDI transcript view |
-| `/library` | `app/library/page.tsx` | Persona library browser |
+| `/projects/:projectId/simulations/:simulationId/survey-export` | `.../survey-export/page.tsx` | Survey results export view |
+| `/personas` | `app/personas/page.tsx` | Persona library browser |
+| `/personas/:id` | `app/personas/[id]/page.tsx` | Library persona detail |
 
 ## API Client
 
@@ -86,3 +94,11 @@ TanStack Query (`@tanstack/react-query` v5) handles all server state:
 - Polling for simulation status (until `status === "complete"` or `"failed"`)
 
 Auth state is managed via `AuthContext` (`frontend/contexts/AuthContext.tsx`), which stores the current user and exposes login/logout functions.
+
+## Observability
+
+Sentry is configured via three instrumentation files:
+- `frontend/instrumentation.ts` — server-side
+- `frontend/sentry.client.config.ts` — browser
+- `frontend/sentry.edge.config.ts` — edge runtime
+- `frontend/sentry.server.config.ts` — Node.js server

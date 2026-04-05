@@ -53,7 +53,19 @@ async def upload_briefing(
 
     filename = file.filename or "upload"
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "txt"
-    file_type = "pdf" if ext == "pdf" else ("image" if ext in ("png", "jpg", "jpeg", "webp", "gif") else "text")
+    _IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
+    _VIDEO_EXTS = {"mp4", "mov", "avi", "mkv", "webm"}
+    _AUDIO_EXTS = {"mp3", "wav", "m4a", "aac", "ogg", "flac"}
+    if ext == "pdf":
+        file_type = "pdf"
+    elif ext in _IMAGE_EXTS:
+        file_type = "image"
+    elif ext in _VIDEO_EXTS:
+        file_type = "video"
+    elif ext in _AUDIO_EXTS:
+        file_type = "audio"
+    else:
+        file_type = "text"
 
     save_dir = os.path.join(settings.UPLOAD_DIR, project_id)
     os.makedirs(save_dir, exist_ok=True)

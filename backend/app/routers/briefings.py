@@ -2,7 +2,7 @@ import os
 import shutil
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -89,6 +89,26 @@ def get_briefing(
     briefing = db.get(Briefing, briefing_id)
     if not briefing or str(briefing.project_id) != project_id:
         raise HTTPException(status_code=404, detail="Briefing not found")
+    return briefing
+
+
+@router.patch("/{briefing_id}", response_model=BriefingResponse)
+def update_briefing(
+    project_id: str,
+    briefing_id: str,
+    title: str = Body(...),
+    description: str | None = Body(None),
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
+    briefing = db.get(Briefing, briefing_id)
+    if not briefing or str(briefing.project_id) != project_id:
+        raise HTTPException(status_code=404, detail="Briefing not found")
+    briefing.title = title
+    briefing.description = description
+    db.commit()
+    db.refresh(briefing)
     return briefing
 
 

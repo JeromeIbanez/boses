@@ -1,4 +1,4 @@
-_Last updated: 2026-04-01_
+_Last updated: 2026-04-05_
 
 # API Reference
 
@@ -39,14 +39,16 @@ All authenticated endpoints require a valid `access_token` httpOnly cookie. Toke
 | GET | `/persona-groups/{group_id}` | Yes | Get persona group |
 | PATCH | `/persona-groups/{group_id}` | Yes | Update persona group |
 | DELETE | `/persona-groups/{group_id}` | Yes | Delete persona group (cascades) |
-| POST | `/persona-groups/{group_id}/generate` | Yes | Generate personas (background task, returns 202) |
+| POST | `/persona-groups/{group_id}/generate` | Yes | Generate personas (background task, returns 202); also lazily queues a cultural context refresh |
 
 ## Personas (`/projects/{project_id}/persona-groups/{group_id}/personas`)
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/personas` | Yes | List personas in group |
-| DELETE | `/personas/{persona_id}` | Yes | Delete persona |
+| GET | `/personas/{persona_id}` | Yes | Get single persona |
+| DELETE | `/personas` | Yes | Delete all personas in group |
+| DELETE | `/personas/{persona_id}` | Yes | Delete single persona |
 
 ## Briefings (`/projects/{project_id}/briefings`)
 
@@ -67,10 +69,16 @@ All authenticated endpoints require a valid `access_token` httpOnly cookie. Toke
 | POST | `/simulations/{simulation_id}/abort` | Yes | Abort a running simulation |
 | DELETE | `/simulations/{simulation_id}` | Yes | Delete simulation |
 | GET | `/simulations/{simulation_id}/results` | Yes | Get simulation results |
-| POST | `/simulations/{simulation_id}/script` | Yes | Upload IDI script (.txt or .docx) |
+| POST | `/simulations/{simulation_id}/script` | Yes | Upload IDI script (.txt or .docx); LLM-extracts questions; auto-starts idi_ai |
 | GET | `/simulations/{simulation_id}/messages` | Yes | Get IDI chat messages |
 | POST | `/simulations/{simulation_id}/messages` | Yes | Send message in manual IDI session |
-| POST | `/simulations/{simulation_id}/end` | Yes | End manual IDI and generate report |
+| POST | `/simulations/{simulation_id}/end` | Yes | End manual IDI session and trigger report generation |
+| POST | `/simulations/{simulation_id}/survey` | Yes | Upload survey file (.txt or .docx); LLM-parses into survey_schema; does NOT start run |
+| POST | `/simulations/{simulation_id}/run` | Yes | Confirm parsed survey questions and start survey simulation |
+| POST | `/simulations/{simulation_id}/conjoint-design` | Yes | Submit conjoint attribute/level design and start simulation |
+| GET | `/simulations/convergence` | Yes | Cross-simulation convergence scores (query params: persona_group_id, briefing_id?) |
+| POST | `/simulations/{simulation_id}/reliability-check` | Yes | Kick off N repeat runs to compute a confidence score |
+| GET | `/simulations/{simulation_id}/reliability-check` | Yes | Get latest reliability study for a simulation |
 
 ### Simulation Types
 
@@ -79,10 +87,15 @@ All authenticated endpoints require a valid `access_token` httpOnly cookie. Toke
 | `concept_test` | Runs all personas against a briefing; generates individual + aggregate results |
 | `idi_ai` | Automated multi-turn interview of each persona using a script |
 | `idi_manual` | User chats interactively with a single AI persona |
+| `focus_group` | Multi-turn group discussion across 2 rounds with a moderator LLM |
+| `survey` | Each persona fills out a structured survey (likert, multiple_choice, open_ended) |
+| `conjoint` | Choice-based conjoint analysis — personas choose between product attribute profiles |
 
 ### Simulation Status Values
 
-`pending` → `running` → `complete` | `failed` | `aborted`
+`pending` → `running` → `generating_report` → `complete` | `failed` | `aborted`
+
+`active` — used by `idi_manual` sessions while the interview is in progress.
 
 ## Library (`/library`)
 
@@ -92,6 +105,16 @@ All authenticated endpoints require a valid `access_token` httpOnly cookie. Toke
 | GET | `/library/personas/{id}` | Yes | Get library persona details |
 | GET | `/library/personas/{id}/projects` | Yes | Find projects using this persona |
 | POST | `/library/personas/{id}/retire` | Yes | Mark persona as retired |
+| DELETE | `/library/personas/{id}` | Yes | Hard-delete a library persona |
+| DELETE | `/library/personas` | Yes | Hard-delete all library personas |
+
+## Internal (`/internal`)
+
+These endpoints are disabled in production (`is_production=True`). Available in development and staging only.
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/internal/ethnography/refresh/{market_code}` | No | Manually trigger a cultural context refresh for a market (ID / PH / VN). Returns 202 immediately; runs as a background task. |
 
 ## Health
 

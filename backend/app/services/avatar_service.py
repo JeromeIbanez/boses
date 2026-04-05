@@ -1,13 +1,14 @@
 """
 Avatar generation service.
 
-Generates a photorealistic headshot for each persona using DALL-E 3,
-saves it to disk, and returns a path suitable for serving as a static file.
+Generates a photorealistic headshot for each persona using DALL-E 3 and
+stores it persistently, returning a URL for the image.
 
-Storage: {UPLOAD_DIR}/avatars/{persona_id}.png
-Served at: /uploads/avatars/{persona_id}.png
+Storage (production): Supabase Storage bucket — avatars/{persona_id}.png
+  Public URL: {SUPABASE_URL}/storage/v1/object/public/{bucket}/avatars/{persona_id}.png
 
-TODO: replace local file storage with S3 for production deployments.
+Storage (local dev fallback): {UPLOAD_DIR}/avatars/{persona_id}.png
+  Served at: /uploads/avatars/{persona_id}.png
 """
 import base64
 import logging
@@ -127,14 +128,24 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
 
         image_bytes = base64.b64decode(b64_data)
 
-        avatars_dir = os.path.join(settings.UPLOAD_DIR, "avatars")
-        os.makedirs(avatars_dir, exist_ok=True)
-        file_path = os.path.join(avatars_dir, f"{persona.id}.png")
-
-        with open(file_path, "wb") as f:
-            f.write(image_bytes)
-
-        return f"/uploads/avatars/{persona.id}.png"
+        if settings.supabase_configured:
+            import httpx
+            key = f"avatars/{persona.id}.png"
+            upload_url = f"{settings.SUPABASE_URL}/storage/v1/object/{settings.SUPABASE_AVATARS_BUCKET}/{key}"
+            headers = {
+                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+                "Content-Type": "image/png",
+            }
+            resp = httpx.put(upload_url, content=image_bytes, headers=headers)
+            resp.raise_for_status()
+            return f"{settings.SUPABASE_URL}/storage/v1/object/public/{settings.SUPABASE_AVATARS_BUCKET}/{key}"
+        else:
+            avatars_dir = os.path.join(settings.UPLOAD_DIR, "avatars")
+            os.makedirs(avatars_dir, exist_ok=True)
+            file_path = os.path.join(avatars_dir, f"{persona.id}.png")
+            with open(file_path, "wb") as f:
+                f.write(image_bytes)
+            return f"/uploads/avatars/{persona.id}.png"
 
     except Exception as e:
         logger.warning(f"Avatar generation failed for persona {persona.id}: {e}")

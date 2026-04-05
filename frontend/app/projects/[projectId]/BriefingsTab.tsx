@@ -112,7 +112,7 @@ export default function BriefingsTab({ projectId }: Props) {
   };
 
   const fileTypeVariant = (t: string) =>
-    t === "pdf" ? "error" : t === "image" ? "info" : "default";
+    t === "pdf" ? "error" : t === "image" ? "info" : t === "video" ? "warning" : t === "audio" ? "success" : "default";
 
   return (
     <>
@@ -190,6 +190,46 @@ export default function BriefingsTab({ projectId }: Props) {
                 <div className="text-xs text-zinc-400">Could not load PDF.</div>
               )}
             </div>
+          ) : previewing?.file_type === "video" ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center min-h-[200px] bg-zinc-50 rounded-lg border border-zinc-100">
+                {blobLoading ? (
+                  <div className="text-xs text-zinc-400">Loading video…</div>
+                ) : blobUrl ? (
+                  <video src={blobUrl} controls className="max-h-[50vh] max-w-full rounded" />
+                ) : (
+                  <div className="text-xs text-zinc-400">Could not load video.</div>
+                )}
+              </div>
+              {previewing.extracted_text && (
+                <div>
+                  <p className="text-xs font-medium text-zinc-500 mb-2">AI Analysis</p>
+                  <div className="max-h-[20vh] overflow-y-auto rounded-lg bg-zinc-50 border border-zinc-100 p-3">
+                    <p className="text-xs text-zinc-700 leading-relaxed">{previewing.extracted_text}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : previewing?.file_type === "audio" ? (
+            <div className="space-y-4">
+              <div className="bg-zinc-50 rounded-lg border border-zinc-100 p-6 flex items-center justify-center">
+                {blobLoading ? (
+                  <div className="text-xs text-zinc-400">Loading audio…</div>
+                ) : blobUrl ? (
+                  <audio src={blobUrl} controls className="w-full" />
+                ) : (
+                  <div className="text-xs text-zinc-400">Could not load audio.</div>
+                )}
+              </div>
+              {previewing.extracted_text && (
+                <div>
+                  <p className="text-xs font-medium text-zinc-500 mb-2">Transcript</p>
+                  <div className="max-h-[30vh] overflow-y-auto rounded-lg bg-zinc-50 border border-zinc-100 p-3">
+                    <p className="text-xs text-zinc-700 leading-relaxed">{previewing.extracted_text}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : null}
         </div>
       </Modal>
@@ -240,10 +280,10 @@ export default function BriefingsTab({ projectId }: Props) {
               ) : (
                 <>
                   <p className="text-sm text-zinc-500">Drop a file here or <span className="text-zinc-800 font-medium">browse</span></p>
-                  <p className="text-xs text-zinc-300 mt-1">PDF, images, or plain text</p>
+                  <p className="text-xs text-zinc-300 mt-1">PDF, images, video, audio, or plain text</p>
                 </>
               )}
-              <input ref={fileRef} type="file" className="hidden" accept=".pdf,.txt,.png,.jpg,.jpeg,.webp" onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); }} />
+              <input ref={fileRef} type="file" className="hidden" accept=".pdf,.txt,.png,.jpg,.jpeg,.webp,.mp4,.mov,.mp3,.wav,.m4a" onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); }} />
             </div>
           </div>
 

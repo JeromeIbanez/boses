@@ -1,4 +1,4 @@
-_Last updated: 2026-04-01_
+_Last updated: 2026-04-05_
 
 # Deployment
 
@@ -31,6 +31,10 @@ graph LR
         QA_AGENT["temujin-qa-agent\nPlaywright + orchestrate.py"]
     end
 
+    subgraph Ext["External"]
+        SUPA["Supabase Storage\navatars bucket"]
+    end
+
     MAIN -->|"auto-deploy"| FE_PROD
     MAIN -->|"auto-deploy"| BE_PROD
     STAGING -->|"auto-deploy"| FE_STG
@@ -41,6 +45,8 @@ graph LR
     QA_AGENT -->|"e2e tests"| BE_STG
     BE_PROD --- DB_PROD
     BE_STG --- DB_STG
+    BE_PROD -->|"avatar storage"| SUPA
+    BE_STG -->|"avatar storage"| SUPA
 ```
 
 ## Services
@@ -63,11 +69,17 @@ graph LR
 | backend-prod | JWT_SECRET | Secret (manual) |
 | backend-prod | OPENAI_MODEL | gpt-4o |
 | backend-prod | UPLOAD_DIR | /tmp/uploads |
+| backend-prod | SUPABASE_URL | Secret (manual) |
+| backend-prod | SUPABASE_SERVICE_KEY | Secret (manual) |
+| backend-prod | SUPABASE_AVATARS_BUCKET | avatars |
 | backend-staging | DATABASE_URL | fromDatabase: boses-db-staging |
 | backend-staging | OPENAI_API_KEY | Secret (manual) |
 | backend-staging | JWT_SECRET | Secret (manual) |
 | backend-staging | OPENAI_MODEL | gpt-4o |
 | backend-staging | UPLOAD_DIR | /tmp/uploads |
+| backend-staging | SUPABASE_URL | Secret (manual) |
+| backend-staging | SUPABASE_SERVICE_KEY | Secret (manual) |
+| backend-staging | SUPABASE_AVATARS_BUCKET | avatars |
 | frontend-prod | NEXT_PUBLIC_API_URL | https://api.temujintechnologies.com/api/v1 |
 | frontend-staging | NEXT_PUBLIC_API_URL | https://api-staging.temujintechnologies.com/api/v1 |
 
@@ -118,3 +130,5 @@ npm run dev
 ```
 
 Local URLs: frontend `http://localhost:3000`, backend `http://localhost:8000`, pgAdmin `http://localhost:5050`
+
+Avatar storage falls back to local filesystem (`{UPLOAD_DIR}/avatars/`) when `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` are not set. Avatars are served at `/uploads/avatars/{persona_id}.png`.

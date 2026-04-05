@@ -1,8 +1,10 @@
+import mimetypes
 import os
 import shutil
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -90,6 +92,23 @@ def get_briefing(
     if not briefing or str(briefing.project_id) != project_id:
         raise HTTPException(status_code=404, detail="Briefing not found")
     return briefing
+
+
+@router.get("/{briefing_id}/file")
+def get_briefing_file(
+    project_id: str,
+    briefing_id: str,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    _get_project_or_404(project_id, db, current_user.company_id)
+    briefing = db.get(Briefing, briefing_id)
+    if not briefing or str(briefing.project_id) != project_id:
+        raise HTTPException(status_code=404, detail="Briefing not found")
+    if not os.path.exists(briefing.file_path):
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    mime, _ = mimetypes.guess_type(briefing.file_name)
+    return FileResponse(briefing.file_path, media_type=mime or "application/octet-stream", filename=briefing.file_name)
 
 
 @router.patch("/{briefing_id}", response_model=BriefingResponse)

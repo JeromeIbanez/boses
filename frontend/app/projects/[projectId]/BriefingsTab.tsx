@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, FileText, Upload, Pencil, Trash2 } from "lucide-react";
 import { getBriefings, uploadBriefing, updateBriefing, deleteBriefing } from "@/lib/api";
@@ -29,6 +29,36 @@ export default function BriefingsTab({ projectId }: Props) {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [previewing, setPreviewing] = useState<Briefing | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [blobLoading, setBlobLoading] = useState(false);
+
+  useEffect(() => {
+    if (!previewing || previewing.file_type === "text") {
+      setBlobUrl(null);
+      return;
+    }
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    setBlobLoading(true);
+    setBlobUrl(null);
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    fetch(`${base}/projects/${projectId}/briefings/${previewing.id}/file`, { credentials: "include" })
+      .then(r => r.blob())
+      .then(blob => {
+        if (!cancelled) {
+          objectUrl = URL.createObjectURL(blob);
+          setBlobUrl(objectUrl);
+          setBlobLoading(false);
+        }
+      })
+      .catch(() => { if (!cancelled) setBlobLoading(false); });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [previewing?.id]);
 
   const { data: briefings, isLoading } = useQuery({
     queryKey: ["briefings", projectId],
@@ -97,7 +127,7 @@ export default function BriefingsTab({ projectId }: Props) {
       ) : (
         <div className="space-y-3">
           {briefings.map(b => (
-            <Card key={b.id}>
+            <Card key={b.id} onClick={() => setPreviewing(b)}>
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
                   <FileText size={14} className="text-zinc-500" strokeWidth={1.5} />
@@ -111,10 +141,10 @@ export default function BriefingsTab({ projectId }: Props) {
                   <p className="text-xs text-zinc-300 mt-1">{formatDate(b.created_at)}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => openEdit(b)} className="p-1.5 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors">
+                  <button onClick={e => { e.stopPropagation(); openEdit(b); }} className="p-1.5 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors">
                     <Pencil size={13} />
                   </button>
-                  <button onClick={() => setDeletingId(b.id)} className="p-1.5 rounded hover:bg-red-50 text-zinc-400 hover:text-red-500 transition-colors">
+                  <button onClick={e => { e.stopPropagation(); setDeletingId(b.id); }} className="p-1.5 rounded hover:bg-red-50 text-zinc-400 hover:text-red-500 transition-colors">
                     <Trash2 size={13} />
                   </button>
                 </div>
@@ -123,6 +153,46 @@ export default function BriefingsTab({ projectId }: Props) {
           ))}
         </div>
       )}
+
+      <Modal open={!!previewing} onClose={() => setPreviewing(null)} title={previewing?.title ?? ""} width="max-w-3xl">
+        <div>
+          {previewing?.file_type === "text" ? (
+            <div className="max-h-[60vh] overflow-y-auto rounded-lg bg-zinc-50 border border-zinc-100 p-4">
+              <pre className="text-xs text-zinc-700 whitespace-pre-wrap font-mono leading-relaxed">{previewing.extracted_text || "No text extracted."}</pre>
+            </div>
+          ) : previewing?.file_type === "image" ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center min-h-[200px] bg-zinc-50 rounded-lg border border-zinc-100">
+                {blobLoading ? (
+                  <div className="text-xs text-zinc-400">Loading image…</div>
+                ) : blobUrl ? (
+                  <img src={blobUrl} alt={previewing.title} className="max-h-[50vh] max-w-full rounded object-contain" />
+                ) : (
+                  <div className="text-xs text-zinc-400">Could not load image.</div>
+                )}
+              </div>
+              {previewing.extracted_text && (
+                <div>
+                  <p className="text-xs font-medium text-zinc-500 mb-2">AI Analysis</p>
+                  <div className="max-h-[20vh] overflow-y-auto rounded-lg bg-zinc-50 border border-zinc-100 p-3">
+                    <p className="text-xs text-zinc-700 leading-relaxed">{previewing.extracted_text}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : previewing?.file_type === "pdf" ? (
+            <div className="min-h-[60vh] bg-zinc-50 rounded-lg border border-zinc-100 flex items-center justify-center">
+              {blobLoading ? (
+                <div className="text-xs text-zinc-400">Loading PDF…</div>
+              ) : blobUrl ? (
+                <iframe src={blobUrl} className="w-full h-[60vh] rounded-lg" title={previewing.title} />
+              ) : (
+                <div className="text-xs text-zinc-400">Could not load PDF.</div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </Modal>
 
       <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit Briefing">
         <div className="space-y-4">

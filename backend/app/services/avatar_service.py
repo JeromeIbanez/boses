@@ -56,9 +56,15 @@ def _build_prompt(persona) -> str:
     gender_word = _GENDER_MAP.get(persona.gender, "person")
     ethnicity = _ethnicity_hint(persona.location or "")
 
+    # ── No-text constraint first — DALL-E 3 weights early tokens more heavily ──
+    no_text = (
+        "A photorealistic studio portrait photograph. "
+        "No text, no words, no letters, no labels, no watermarks, no overlays of any kind anywhere in the image."
+    )
+
     # ── Subject ───────────────────────────────────────────────────────────────
     ethnicity_clause = f"{ethnicity} " if ethnicity else ""
-    subject = f"Photorealistic portrait of a {ethnicity_clause}{gender_word}, {persona.age} years old."
+    subject = f"Subject is a {ethnicity_clause}{gender_word}, {persona.age} years old."
 
     # ── Income → grooming and clothing quality ────────────────────────────────
     income_map = {
@@ -89,17 +95,14 @@ def _build_prompt(persona) -> str:
     if persona.psychographic_segment:
         vals_line = f"Demeanor reflects {persona.psychographic_segment} sensibility."
 
-    # ── Shot style — strictly no text or overlays ─────────────────────────────
+    # ── Shot style ────────────────────────────────────────────────────────────
     style = (
-        "IMPORTANT: This image must contain absolutely NO text, NO letters, NO words, "
-        "NO numbers, NO watermarks, NO captions, NO overlays, NO labels of any kind. "
-        "Pure photographic portrait only. "
-        "Plain studio portrait, neutral solid light grey background, "
-        "soft natural lighting, upper body shot, looking directly at camera, "
-        "sharp focus on face, photorealistic, high resolution, no props, nothing in background."
+        "Neutral solid light grey background, soft natural lighting, "
+        "upper body shot, subject looking directly at camera, sharp focus on face, "
+        "photorealistic, high resolution, no props, nothing in background."
     )
 
-    parts = [subject, clothing_line, expression_line, archetype_line, vals_line, style]
+    parts = [no_text, subject, clothing_line, expression_line, archetype_line, vals_line, style]
     return " ".join(p for p in parts if p)
 
 
@@ -117,6 +120,7 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
             prompt=prompt,
             size="1024x1024",
             quality="standard",
+            style="natural",
             response_format="b64_json",
             n=1,
         )

@@ -48,12 +48,6 @@
       ]
     },
     {
-      "group": "Integrations",
-      "pages": [
-        "integrations/slack"
-      ]
-    },
-    {
       "group": "API Reference",
       "pages": [
         "api-reference/overview",

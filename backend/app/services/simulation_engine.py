@@ -277,8 +277,3 @@ def _trigger_post_completion_scoring(simulation_id: str) -> None:
         maybe_score_reproducibility(simulation_id)
     except Exception as e:
         logger.warning(f"Post-completion scoring skipped for {simulation_id[:8]}: {e}")
-    try:
-        from app.services.slack_notifier import notify_simulation_complete
-        notify_simulation_complete(simulation_id)
-    except Exception as e:
-        logger.warning(f"Slack notification skipped for {simulation_id[:8]}: {e}")

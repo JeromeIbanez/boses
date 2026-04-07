@@ -35,7 +35,32 @@
       "Bash(python -c \":*)",
       "Bash(ps eww:*)",
       "Bash(alembic upgrade:*)",
-      "Bash(pkill -f \"uvicorn app.main:app\")"
+      "Bash(pkill -f \"uvicorn app.main:app\")",
+      "Bash(gh issue:*)",
+      "Bash(/usr/local/bin/gh issue:*)",
+      "Bash(/opt/homebrew/bin/gh issue:*)",
+      "Bash(xargs ls:*)",
+      "Bash(grep -n \"simulation\\\\|briefing\" /Users/jeromeibanez/Desktop/Boses/frontend/app/projects/[projectId]/BriefingsTab.tsx)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(find . -name alembic -not -path */node_modules/*)",
+      "Bash(venv/bin/alembic upgrade:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git -C /Users/jeromeibanez/Desktop/Boses remote get-url origin)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(brew list:*)",
+      "Bash(echo $PATH)",
+      "Read(//opt/homebrew/Cellar/gh/2.89.0/bin/**)",
+      "Bash(python -c \"from app.services.ethnography_service import refresh_market_context, _crawl_shopee_reviews, _crawl_play_store_reviews; print\\(''ethnography_service OK''\\)\")",
+      "Bash(python3 -c \"from app.services.ethnography_service import refresh_market_context, _crawl_shopee_reviews, _crawl_play_store_reviews; print\\(''ethnography_service OK''\\)\")",
+      "Bash(python3 -c \"from app.routers.internal import router; print\\(''internal router OK''\\)\")",
+      "Bash(python3 -c \"from app.routers.persona_groups import router; print\\(''persona_groups router OK''\\)\")",
+      "Bash(find /Users/jeromeibanez/Desktop/Boses -name activate -path */bin/activate)",
+      "Bash(python3 -m py_compile app/routers/persona_groups.py)",
+      "Bash(grep -n \"status.*=.*\"\"complete\\\\|status.*=.*\"\"failed\" /Users/jeromeibanez/Desktop/Boses/backend/app/services/*.py)"
     ]
   }
 }

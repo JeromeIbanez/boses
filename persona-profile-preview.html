@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Persona Profile — Design Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .trait-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 500;
+      background: #f4f4f5;
+      color: #52525b;
+    }
+    .section-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #a1a1aa;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .avatar-ring {
+      background: conic-gradient(#18181b 0deg, #3f3f46 60deg, #71717a 120deg, #3f3f46 180deg, #18181b 360deg);
+    }
+    .stat-box {
+      background: #fafafa;
+      border: 1px solid #f4f4f5;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    blockquote {
+      border-left: 3px solid #e4e4e7;
+      padding-left: 14px;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="bg-zinc-50 min-h-screen">
+
+  <!-- Top nav bar -->
+  <div class="bg-white border-b border-zinc-100 px-6 py-3 flex items-center gap-3">
+    <button class="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Urban Millennials — Manila
+    </button>
+    <span class="text-zinc-200">/</span>
+    <span class="text-xs text-zinc-700 font-medium">Maria Santos</span>
+    <div class="ml-auto flex items-center gap-2">
+      <span class="font-mono text-[11px] text-zinc-300 bg-zinc-50 border border-zinc-100 px-2 py-0.5 rounded">#PH4A2C91</span>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto px-6 py-8 flex gap-7">
+
+    <!-- ─── LEFT SIDEBAR ─── -->
+    <div class="w-64 shrink-0 space-y-4">
+
+      <!-- Profile photo card -->
+      <div class="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+        <!-- Photo area -->
+        <div class="relative aspect-square bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+          <!-- Placeholder avatar — in real app, this is the DALL-E image -->
+          <div class="w-28 h-28 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-800 flex items-center justify-center text-5xl font-semibold text-white shadow-xl">
+            M
+          </div>
+          <!-- Generate photo button overlaid at bottom -->
+          <div class="absolute bottom-3 left-0 right-0 flex justify-center">
+            <button class="flex items-center gap-1.5 bg-white/90 hover:bg-white text-zinc-700 text-[11px] font-medium px-3 py-1.5 rounded-full shadow-sm transition-all border border-zinc-200">
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              Generate photo
+            </button>
+          </div>
+        </div>
+
+        <!-- Name + code -->
+        <div class="px-4 pt-4 pb-1">
+          <h1 class="text-base font-semibold text-zinc-900 leading-tight">Maria Santos</h1>
+          <p class="text-[11px] text-zinc-400 mt-0.5">28 · Female · Manila, Philippines</p>
+          <div class="flex items-center gap-1.5 mt-2">
+            <span class="bg-zinc-900 text-zinc-300 text-[10px] font-mono px-2 py-0.5 rounded-md tracking-wider">#PH4A2C91</span>
+          </div>
+        </div>
+
+        <!-- Archetype badges -->
+        <div class="px-4 py-3 flex flex-wrap gap-1.5">
+          <span class="trait-badge bg-violet-50 text-violet-700">The Achiever</span>
+          <span class="trait-badge bg-blue-50 text-blue-700">Urban Professional</span>
+        </div>
+      </div>
+
+      <!-- Quick stats -->
+      <div class="bg-white border border-zinc-100 rounded-xl p-4 space-y-3">
+        <p class="section-label">At a Glance</p>
+
+        <div class="space-y-2.5">
+          <div class="flex justify-between items-baseline">
+            <span class="text-xs text-zinc-400">Occupation</span>
+            <span class="text-xs text-zinc-700 font-medium text-right max-w-[130px] leading-tight">Marketing Manager</span>
+          </div>
+          <div class="flex justify-between items-baseline">
+            <span class="text-xs text-zinc-400">Income</span>
+            <span class="text-xs text-zinc-700 font-medium">Upper-middle</span>
+          </div>
+          <div class="flex justify-between items-baseline">
+            <span class="text-xs text-zinc-400">Education</span>
+            <span class="text-xs text-zinc-700 font-medium text-right max-w-[130px] leading-tight">BS Business Admin, UP Diliman</span>
+          </div>
+          <div class="flex justify-between items-baseline">
+            <span class="text-xs text-zinc-400">Family</span>
+            <span class="text-xs text-zinc-700 font-medium text-right max-w-[130px] leading-tight">Single, lives with parents</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personality traits -->
+      <div class="bg-white border border-zinc-100 rounded-xl p-4">
+        <p class="section-label">Personality</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="trait-badge">Ambitious</span>
+          <span class="trait-badge">Brand-conscious</span>
+          <span class="trait-badge">Social</span>
+          <span class="trait-badge">Pragmatic</span>
+          <span class="trait-badge">Family-oriented</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="bg-white border border-zinc-100 rounded-xl p-4 space-y-2">
+        <button class="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-700 text-white text-xs font-medium py-2 rounded-lg transition-colors">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          Start IDI with Maria
+        </button>
+        <button class="w-full flex items-center justify-center gap-2 border border-zinc-200 hover:border-zinc-400 text-zinc-600 text-xs font-medium py-2 rounded-lg transition-colors">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1-4l-3 3m0 0l-3-3m3 3V1"/></svg>
+          Save to Library
+        </button>
+        <button class="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-600 text-xs font-medium py-2 rounded-lg transition-colors">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Delete Persona
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ─── MAIN CONTENT ─── -->
+    <div class="flex-1 min-w-0 space-y-4">
+
+      <!-- What Drives Her -->
+      <div class="bg-white border border-zinc-100 rounded-xl p-5">
+        <p class="section-label">What Drives Her</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-[11px] font-medium text-zinc-400 mb-1">Values & Motivations</p>
+            <p class="text-xs text-zinc-600 leading-relaxed">Career advancement and financial independence. Wants to buy her own condo before 30. Deeply values her family's opinion but yearns for personal autonomy.</p>
+          </div>
+          <div>
+            <p class="text-[11px] font-medium text-zinc-400 mb-1">Aspirational Identity</p>
+            <p class="text-xs text-zinc-600 leading-relaxed">Sees herself as a future CMO. Aspires to the lifestyle of the Filipino professionals she follows on Instagram — tasteful, modern, and successful without being flashy.</p>
+          </div>
+          <div>
+            <p class="text-[11px] font-medium text-zinc-400 mb-1">Pain Points</p>
+            <p class="text-xs text-zinc-600 leading-relaxed">OFW guilt — her father works abroad and she feels pressure to justify his sacrifice. Overwhelmed by the cost of living in BGC. Anxious about job security post-pandemic.</p>
+          </div>
+          <div>
+            <p class="text-[11px] font-medium text-zinc-400 mb-1">Buying Triggers</p>
+            <p class="text-xs text-zinc-600 leading-relaxed">Peer validation ("my officemates all have it"), Shopee flash sales, brand reputation for quality. Rarely impulse-buys — she researches for days before committing.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Brands & Digital Life -->
+      <div class="bg-white border border-zinc-100 rounded-xl p-5">
+        <p class="section-label">Brands & Digital Life</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-[11px] font-medium text-zinc-400 mb-1">Brand Attitudes</p>
+            <p class="text-xs text-zinc-600 leading-relaxed">Trusts homegrown Filipino brands that feel premium (BENCH/, Kiehl's). Suspicious of no-name Chinese imports despite lower prices. Loyal once trust is established.</p>
+          </div>
+          <div>
+            <p class="text-[11px] font-medium text-zinc-400 mb-1">Digital Behavior</p>
+            <p class="text-xs text-zinc-600 leading-relaxed">Heavy TikTok + Instagram user (2-3 hrs/day). Uses GCash for everything. Shops on Shopee 3-4x/month. Facebook is "for family groups only." LinkedIn active for career.</p>
+          </div>
+          <div>
+            <p class="text-[11px] font-medium text-zinc-400 mb-1">Media Consumption</p>
+            <p class="text-xs text-zinc-600 leading-relaxed">Netflix binge-watcher (K-dramas, PH indie films). Listens to OPM on Spotify during commute. Follows local lifestyle creators over international ones.</p>
+          </div>
+          <div>
+            <p class="text-[11px] font-medium text-zinc-400 mb-1">Purchase Behavior</p>
+            <p class="text-xs text-zinc-600 leading-relaxed">Research-heavy buyer. Reads 10+ reviews before purchasing anything over PHP 500. Prefers COD or GCash — skeptical of credit card use online. SM Mall is her weekend ritual.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- A Day in Her Life -->
+      <div class="bg-white border border-zinc-100 rounded-xl p-5">
+        <p class="section-label">A Day in Her Life</p>
+        <blockquote>
+          <p class="text-sm text-zinc-600 leading-relaxed italic">
+            "6 AM: alarm, GCash balance check, scroll TikTok for 20 minutes before getting up. Commute from Quezon City to BGC takes 90 minutes by bus — she listens to a business podcast and catches up on Instagram. Lunch is usually a packed meal from home (her mom insists). Afternoon is back-to-back meetings; she handles the brand's social content schedule. By 8 PM she's home, tired but scrolling Shopee for next month's 'invest-in-yourself' purchase — probably skincare. Sundays are SM Megamall with cousins, always ending at Jollibee."
+          </p>
+        </blockquote>
+      </div>
+
+      <!-- Data Sources -->
+      <div class="bg-white border border-zinc-100 rounded-xl p-5">
+        <p class="section-label">Grounding Sources</p>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="flex items-center gap-2 p-2.5 bg-zinc-50 rounded-lg border border-zinc-100">
+            <div class="w-6 h-6 rounded-md bg-orange-100 flex items-center justify-center text-orange-500 text-[10px] font-bold shrink-0">R</div>
+            <div>
+              <p class="text-[11px] font-medium text-zinc-700">r/Philippines</p>
+              <p class="text-[10px] text-zinc-400">347 posts analysed</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 p-2.5 bg-zinc-50 rounded-lg border border-zinc-100">
+            <div class="w-6 h-6 rounded-md bg-red-100 flex items-center justify-center text-red-500 text-[10px] font-bold shrink-0">S</div>
+            <div>
+              <p class="text-[11px] font-medium text-zinc-700">Shopee PH reviews</p>
+              <p class="text-[10px] text-zinc-400">Coming soon</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 p-2.5 bg-zinc-50 rounded-lg border border-zinc-100">
+            <div class="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center text-blue-500 text-[10px] font-bold shrink-0">G</div>
+            <div>
+              <p class="text-[11px] font-medium text-zinc-700">GCash Play reviews</p>
+              <p class="text-[10px] text-zinc-400">Coming soon</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 p-2.5 bg-zinc-50 rounded-lg border border-zinc-100">
+            <div class="w-6 h-6 rounded-md bg-zinc-200 flex items-center justify-center text-zinc-500 text-[10px] font-bold shrink-0">~</div>
+            <div>
+              <p class="text-[11px] font-medium text-zinc-700">Cultural context v1</p>
+              <p class="text-[10px] text-zinc-400">PH · score 1.0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Separator / note -->
+  <div class="max-w-5xl mx-auto px-6 pb-8">
+    <p class="text-center text-[10px] text-zinc-300">— Design preview only · not live data —</p>
+  </div>
+
+</body>
+</html>

@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # Email (Resend)
+    RESEND_API_KEY: str = ""
+
     # Supabase Storage (for persistent avatar hosting)
     SUPABASE_URL: str = ""           # e.g. https://xxxx.supabase.co
     SUPABASE_SERVICE_KEY: str = ""   # service_role key (not anon key)

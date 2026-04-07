@@ -280,6 +280,7 @@ def _trigger_post_completion_scoring(simulation_id: str) -> None:
 
     try:
         from app.services.slack_notifier import maybe_notify_slack
+        from app.services.email_notifier import maybe_notify_email
         from app.database import SessionLocal
         from app.models.simulation import Simulation as _Sim
         _db = SessionLocal()
@@ -289,5 +290,6 @@ def _trigger_post_completion_scoring(simulation_id: str) -> None:
         finally:
             _db.close()
         maybe_notify_slack(simulation_id, _status)
+        maybe_notify_email(simulation_id, _status)
     except Exception as e:
-        logger.warning(f"Slack notification skipped for {simulation_id[:8]}: {e}")
+        logger.warning(f"Notifications skipped for {simulation_id[:8]}: {e}")

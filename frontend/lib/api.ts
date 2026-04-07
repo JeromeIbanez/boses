@@ -209,3 +209,12 @@ export const getConvergence = (projectId: string, personaGroupId: string, briefi
 // Settings
 export const getCompanySettings = () => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company");
 export const updateCompanySettings = (body: { slack_webhook_url?: string | null }) => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company", { method: "PATCH", body: JSON.stringify(body) });
+
+
+// Share
+export const generateShareLink = (projectId: string, simId: string) =>
+  request<Simulation>(`/projects/${projectId}/simulations/${simId}/share`, { method: "POST" });
+export const revokeShareLink = (projectId: string, simId: string) =>
+  request<Simulation>(`/projects/${projectId}/simulations/${simId}/share`, { method: "DELETE" });
+export const getSharedSimulation = (shareToken: string) =>
+  request<Simulation & { project_name: string; results: SimulationResult[] }>(`/share/${shareToken}`);

@@ -147,6 +147,7 @@ export interface Simulation {
     failed: string[];
     stage: "interviewing" | "round_1" | "moderator_bridge" | "round_2" | "choice_tasks" | "generating_report";
   } | null;
+  share_token: string | null;
   created_at: string;
   completed_at: string | null;
 }

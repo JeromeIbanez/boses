@@ -11,7 +11,7 @@ Endpoints:
         Useful for: forcing a refresh before a demo, diagnosing stale context,
         or triggering from an external cron scheduler.
 """
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
 from app.config import settings
 from app.services.ethnography_service import refresh_market_context
@@ -37,19 +37,28 @@ def _check_internal_access() -> None:
 def trigger_ethnography_refresh(
     market_code: str,
     background_tasks: BackgroundTasks,
+    vertical: str | None = Query(
+        default=None,
+        description=(
+            "Optional vertical keyword to focus the crawl (e.g. 'fintech', 'beauty', 'food delivery'). "
+            "When set, Reddit and Shopee sources search for this keyword instead of fetching generic top content. "
+            "Useful for priming the market snapshot before running a category-specific simulation."
+        ),
+    ),
 ):
     """
     Manually trigger a cultural context refresh for a market.
 
     market_code must be one of: ID, PH, VN
 
+    Sources crawled: Reddit (country subreddit), Shopee product reviews,
+    Google Play Store reviews (Gojek/GCash/MoMo per market).
+
     The refresh runs as a background task. To check results:
-        SELECT status, quality_score, signals_json
+        SELECT status, quality_score, signals_json, raw_sources
         FROM cultural_context_snapshots
         WHERE market_code = '{market_code}'
         ORDER BY created_at DESC LIMIT 1;
-
-    See verification steps in the plan for a full testing walkthrough.
     """
     _check_internal_access()
 
@@ -60,5 +69,5 @@ def trigger_ethnography_refresh(
             detail=f"Unsupported market code '{market_code}'. Must be one of: {', '.join(sorted(_SUPPORTED_MARKETS))}",
         )
 
-    background_tasks.add_task(refresh_market_context, market_code)
-    return {"status": "queued", "market_code": market_code}
+    background_tasks.add_task(refresh_market_context, market_code, vertical)
+    return {"status": "queued", "market_code": market_code, "vertical": vertical}

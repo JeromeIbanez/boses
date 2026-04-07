@@ -93,6 +93,7 @@ def list_persona_groups(
 def create_persona_group(
     project_id: str,
     body: PersonaGroupCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
@@ -101,6 +102,17 @@ def create_persona_group(
     db.add(group)
     db.commit()
     db.refresh(group)
+
+    # Trigger an early cultural context refresh as soon as we know the location.
+    # This gives the background crawl (Reddit + Shopee + Play Store) a head start
+    # before the user hits "generate", so the snapshot is more likely to be ready
+    # in time. The generate endpoint checks again as a belt-and-suspenders fallback.
+    if should_refresh(group.location or ""):
+        from app.services.ethnography_service import _detect_market
+        market_code = _detect_market(group.location or "")
+        if market_code:
+            background_tasks.add_task(refresh_market_context, market_code)
+
     return group
 
 
@@ -168,9 +180,10 @@ def generate_group_personas(
     db.commit()
     background_tasks.add_task(generate_personas, group_id=str(group_id))
 
-    # Lazily refresh cultural context if this market's snapshot is missing or stale.
-    # The current generation uses whatever context already exists (could be None on
-    # first run). Future generations for this market will benefit from the refresh.
+    # Belt-and-suspenders: refresh if the snapshot is still stale by the time the
+    # user clicks generate (e.g. they created the group days ago, or the early
+    # refresh at group creation failed). should_refresh() is a no-op if the snapshot
+    # is already fresh, so this never double-triggers.
     if should_refresh(group.location or ""):
         from app.services.ethnography_service import _detect_market
         market_code = _detect_market(group.location or "")

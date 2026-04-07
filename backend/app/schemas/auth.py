@@ -30,6 +30,7 @@ class CompanyResponse(BaseModel):
     id: uuid.UUID
     name: str
     slug: str
+    slack_webhook_url: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

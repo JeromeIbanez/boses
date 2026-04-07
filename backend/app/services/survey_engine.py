@@ -70,7 +70,8 @@ def run_survey(simulation_id: str) -> None:
         if not questions:
             raise ValueError("No questions found in survey schema.")
 
-        briefing_text = simulation.briefing.extracted_text or "" if simulation.briefing else ""
+        from app.services.briefing_utils import combine_briefing_texts
+        briefing_text = combine_briefing_texts(simulation.briefings)
         individual_results = []
         failed_personas = []
         sim_ref = simulation_id[:8]

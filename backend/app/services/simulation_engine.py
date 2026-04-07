@@ -145,7 +145,8 @@ def run_simulation(simulation_id: str) -> None:
         if not personas:
             raise ValueError("No personas found for this group. Please generate personas first.")
 
-        briefing_text = simulation.briefing.extracted_text or ""
+        from app.services.briefing_utils import combine_briefing_texts
+        briefing_text = combine_briefing_texts(simulation.briefings)
         individual_results = []
         failed_personas = []
         sim_ref = simulation_id[:8]

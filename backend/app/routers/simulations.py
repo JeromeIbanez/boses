@@ -15,6 +15,7 @@ from app.database import get_db
 from app.models.idi_message import IDIMessage
 from app.models.persona import Persona
 from app.models.simulation import Simulation
+from app.models.simulation_briefing import SimulationBriefing
 from app.models.simulation_result import SimulationResult
 from app.models.project import Project
 from app.schemas.simulation import (
@@ -63,8 +64,8 @@ def create_simulation(
 
     # Validate based on type
     if body.simulation_type == "concept_test":
-        if not body.briefing_id:
-            raise HTTPException(status_code=422, detail="briefing_id is required for concept tests")
+        if not body.briefing_ids:
+            raise HTTPException(status_code=422, detail="At least one briefing is required for concept tests")
         if not body.prompt_question or not body.prompt_question.strip():
             raise HTTPException(status_code=422, detail="prompt_question is required for concept tests")
 
@@ -89,7 +90,6 @@ def create_simulation(
     simulation = Simulation(
         project_id=project_id,
         persona_group_id=body.persona_group_id,
-        briefing_id=body.briefing_id,
         prompt_question=body.prompt_question,
         simulation_type=body.simulation_type,
         idi_script_text=body.idi_script_text,
@@ -98,6 +98,20 @@ def create_simulation(
         status=initial_status,
     )
     db.add(simulation)
+    db.flush()
+
+    if body.briefing_ids:
+        from app.models.briefing import Briefing as BriefingModel
+        briefings = db.execute(
+            select(BriefingModel).where(BriefingModel.id.in_(body.briefing_ids))
+        ).scalars().all()
+        if len(briefings) != len(body.briefing_ids):
+            raise HTTPException(status_code=422, detail="One or more briefing IDs not found")
+        for b in briefings:
+            if str(b.project_id) != project_id:
+                raise HTTPException(status_code=403, detail="Briefing does not belong to this project")
+        simulation.briefings = briefings
+
     db.commit()
     db.refresh(simulation)
 
@@ -327,7 +341,8 @@ def send_idi_message(
         .order_by(IDIMessage.created_at)
     ).scalars().all()
 
-    briefing_text = simulation.briefing.extracted_text if simulation.briefing else ""
+    from app.services.briefing_utils import combine_briefing_texts
+    briefing_text = combine_briefing_texts(simulation.briefings)
     system_prompt = _build_persona_system_prompt(persona, briefing_text)
 
     # Build script context block if available
@@ -571,7 +586,6 @@ def create_reliability_check(
         repeat_sim = SimModel(
             project_id=str(source.project_id),
             persona_group_id=source.persona_group_id,
-            briefing_id=source.briefing_id,
             prompt_question=source.prompt_question,
             simulation_type=source.simulation_type,
             idi_script_text=source.idi_script_text,
@@ -580,6 +594,7 @@ def create_reliability_check(
         )
         db.add(repeat_sim)
         db.flush()
+        repeat_sim.briefings = list(source.briefings)
 
         repro_run = ReproducibilityRun(
             study_id=study.id,

@@ -22,4 +22,6 @@ class Briefing(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     project: Mapped["Project"] = relationship(back_populates="briefings")
-    simulations: Mapped[list["Simulation"]] = relationship(back_populates="briefing", passive_deletes=True)
+    simulations: Mapped[list["Simulation"]] = relationship(
+        "Simulation", secondary="simulation_briefings", back_populates="briefings"
+    )

@@ -271,9 +271,23 @@ def run_simulation(simulation_id: str) -> None:
 
 
 def _trigger_post_completion_scoring(simulation_id: str) -> None:
-    """Fire-and-forget: score any reproducibility study linked to this simulation."""
+    """Fire-and-forget: score reproducibility + send Slack notification."""
     try:
         from app.services.benchmarking_service import maybe_score_reproducibility
         maybe_score_reproducibility(simulation_id)
     except Exception as e:
         logger.warning(f"Post-completion scoring skipped for {simulation_id[:8]}: {e}")
+
+    try:
+        from app.services.slack_notifier import maybe_notify_slack
+        from app.database import SessionLocal
+        from app.models.simulation import Simulation as _Sim
+        _db = SessionLocal()
+        try:
+            _sim = _db.get(_Sim, simulation_id)
+            _status = _sim.status if _sim else "failed"
+        finally:
+            _db.close()
+        maybe_notify_slack(simulation_id, _status)
+    except Exception as e:
+        logger.warning(f"Slack notification skipped for {simulation_id[:8]}: {e}")

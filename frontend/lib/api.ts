@@ -205,3 +205,7 @@ export const getConvergence = (projectId: string, personaGroupId: string, briefi
   if (briefingId) qs.set("briefing_id", briefingId);
   return request<ConvergenceResult>(`/projects/${projectId}/simulations/convergence?${qs}`);
 };
+
+// Settings
+export const getCompanySettings = () => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company");
+export const updateCompanySettings = (body: { slack_webhook_url?: string | null }) => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company", { method: "PATCH", body: JSON.stringify(body) });

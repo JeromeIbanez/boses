@@ -37,6 +37,8 @@ services:
         sync: false
       - key: SUPABASE_AVATARS_BUCKET
         value: avatars
+      - key: RESEND_API_KEY
+        sync: false
     domains:
       - api.temujintechnologies.com
 
@@ -67,6 +69,8 @@ services:
         sync: false
       - key: SUPABASE_AVATARS_BUCKET
         value: avatars
+      - key: RESEND_API_KEY
+        sync: false
     domains:
       - api-staging.temujintechnologies.com
 

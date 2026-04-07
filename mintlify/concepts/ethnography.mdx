@@ -1,0 +1,61 @@
+---
+title: Ethnography Pipeline
+description: How Boses crawls real consumer signals to ground persona generation
+---
+
+The **ethnography pipeline** is what separates Boses personas from generic AI-generated archetypes. It continuously pulls real consumer signals from public sources and distills them into a cultural context snapshot for each market.
+
+---
+
+## Sources
+
+| Source | What it captures |
+|--------|-----------------|
+| **Reddit** (`r/Philippines`, `r/indonesia`, `r/VietNam`) | Current consumer discourse — trending concerns, product sentiment, cultural moments |
+| **Shopee reviews** | Real product purchase opinions, price sensitivity, brand preferences |
+| **Google Play Store** (`GCash` / `Gojek` / `MoMo`) | Digital service trust, UX pain points, fintech/super-app attitudes |
+
+---
+
+## Signal extraction
+
+Raw content from all sources is passed to an LLM which extracts structured signals:
+
+- `trusted_brands` — brands consumers speak positively about
+- `distrusted_brands` — brands with active negative sentiment
+- `digital_habits` — how people use apps, payment methods, social platforms
+- `price_sensitivity_signals` — expressions of value-consciousness or aspirational spending
+- `cultural_moments` — current events or trends shaping consumer mood
+
+---
+
+## Quality gate
+
+Each snapshot receives a `quality_score` (0.0–1.0). Only snapshots scoring above the threshold are activated. A failed crawl (all sources down) will not overwrite a healthy snapshot.
+
+---
+
+## Vertical targeting
+
+When running simulations for a specific industry, you can prime the snapshot with a vertical keyword before generating personas:
+
+```bash
+POST /api/v1/internal/ethnography/refresh/PH?vertical=beauty
+```
+
+This switches Reddit from generic top posts to keyword search (`r/Philippines/search?q=beauty`), and Shopee from bestseller defaults to the keyword. The `vertical` is stored in the snapshot metadata.
+
+Supported verticals: any keyword — `fintech`, `beauty`, `food delivery`, `telco`, `gaming`, etc.
+
+---
+
+## Refresh schedule
+
+Snapshots refresh automatically when:
+1. A new persona group is created for a market (background trigger)
+2. The active snapshot is older than 7 days when a persona group is created (staleness check)
+3. You manually trigger via the internal endpoint
+
+<Warning>
+The internal `/ethnography/refresh` endpoint is disabled in production by default. Use it in staging, or call it from your own scheduled task via the internal API key pattern.
+</Warning>

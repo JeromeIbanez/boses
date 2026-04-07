@@ -1,0 +1,121 @@
+---
+title: Quickstart
+description: Run your first simulation in under 5 minutes
+---
+
+This guide walks you through the full flow: create a project, define a persona group, generate personas, and run a concept test.
+
+<Steps>
+
+<Step title="Log in and get your access token">
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@company.com", "password": "your-password"}'
+```
+
+Save the `access_token` from the response — you'll use it in every subsequent call.
+
+</Step>
+
+<Step title="Create a project">
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/projects \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Q3 Snack Relaunch", "description": "Testing new packaging and messaging"}'
+```
+
+Save the `id` from the response as `PROJECT_ID`.
+
+</Step>
+
+<Step title="Define a persona group">
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/projects/<PROJECT_ID>/persona-groups \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Metro Manila Millennials",
+    "age_min": 25,
+    "age_max": 35,
+    "gender": "All",
+    "location": "Manila, Philippines",
+    "income_level": "Middle",
+    "occupation": "Office worker",
+    "persona_count": 5
+  }'
+```
+
+Save the `id` as `GROUP_ID`.
+
+</Step>
+
+<Step title="Generate personas">
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/projects/<PROJECT_ID>/persona-groups/<GROUP_ID>/generate \
+  -H "Authorization: Bearer <token>"
+```
+
+This returns `{"status": "generating"}`. Poll `GET /persona-groups/<GROUP_ID>` until `generation_status` is `"complete"` (usually 20–40 seconds).
+
+</Step>
+
+<Step title="Run a concept test">
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/projects/<PROJECT_ID>/simulations \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "persona_group_id": "<GROUP_ID>",
+    "simulation_type": "concept_test",
+    "prompt_question": "We are relaunching our corn chips with a new chili-lime flavour and eco-friendly packaging. How would you respond to this?"
+  }'
+```
+
+Save the simulation `id` as `SIM_ID`. The simulation runs in the background.
+
+</Step>
+
+<Step title="Get your results">
+
+```bash
+curl https://api.temujintechnologies.com/api/v1/projects/<PROJECT_ID>/simulations/<SIM_ID> \
+  -H "Authorization: Bearer <token>"
+```
+
+Poll until `status` is `"complete"`. Then fetch the results:
+
+```bash
+curl https://api.temujintechnologies.com/api/v1/projects/<PROJECT_ID>/simulations/<SIM_ID>/results \
+  -H "Authorization: Bearer <token>"
+```
+
+You'll get per-persona reactions, sentiment scores, key themes, and an aggregate recommendation.
+
+</Step>
+
+</Steps>
+
+---
+
+## Simulation Types
+
+| Type | `simulation_type` value | Best for |
+|------|------------------------|----------|
+| Concept Test | `concept_test` | Testing a product idea or campaign concept |
+| Survey | `survey` | Structured questionnaire with multiple questions |
+| Focus Group | `focus_group` | Group discussion dynamics and emergent themes |
+| In-Depth Interview (AI) | `idi_ai` | Deep one-on-one exploration of attitudes |
+| In-Depth Interview (Manual) | `idi_manual` | Guided interview with a specific persona |
+| Conjoint Analysis | `conjoint` | Feature preference trade-offs and willingness to pay |
+
+<Tip>
+Use the **parse-prompt** endpoint to auto-fill persona group fields from a natural language description:
+`POST /api/v1/projects/{project_id}/persona-groups/parse-prompt`
+</Tip>

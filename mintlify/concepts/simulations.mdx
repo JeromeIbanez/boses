@@ -1,0 +1,67 @@
+---
+title: Simulations
+description: Understanding Boses simulation types and how they work
+---
+
+A **simulation** is a research study run against a persona group. Boses supports six simulation types, each modelling a different qualitative or quantitative research method.
+
+---
+
+## Simulation lifecycle
+
+```
+pending → running → complete
+                 → failed
+```
+
+All simulations run as background tasks. After creating one, poll `GET /simulations/{id}` for status updates. The `progress` field shows live per-persona progress during long runs.
+
+---
+
+## Simulation types
+
+### Concept Test
+The most common starting point. Each persona reads your prompt and responds with:
+- A **reaction** (in their own voice)
+- A **sentiment** (Positive / Neutral / Negative)
+- **Key themes** they noticed
+- A **notable quote** you can use in presentations
+
+The aggregate result includes a sentiment distribution, top themes across the group, and strategic recommendations.
+
+### Survey
+Structured questionnaire. You define questions in a `survey_schema` and each persona answers every question independently. Good for quantifiable preference data.
+
+### Focus Group
+Personas interact as a group in multiple rounds. Captures emergent consensus, disagreement, and social dynamics that individual interviews miss.
+
+### In-Depth Interview (AI)
+A free-form one-on-one exploration. The AI moderates the conversation, probing for depth. Best for uncovering unarticulated needs or emotional responses.
+
+### In-Depth Interview (Manual)
+You drive the conversation with a specific persona. Use this when you want to explore a hypothesis or follow an unexpected thread from a previous simulation.
+
+### Conjoint Analysis
+Attribute trade-off analysis. Personas evaluate product configurations and reveal which features drive choice — and at what price point.
+
+---
+
+## Result structure
+
+Every simulation produces:
+- **Per-persona results** — individual reactions, sentiments, quotes
+- **Aggregate result** — synthesised themes, sentiment distribution, recommendations
+
+Access them at `GET /simulations/{id}/results`.
+
+---
+
+## Tips
+
+<Tip>
+Run a concept test first. It's the fastest way to get a directional read. Use focus groups or IDIs to go deeper on specific findings.
+</Tip>
+
+<Tip>
+The richer your `prompt_question`, the richer the persona responses. Include price points, visuals descriptions, and competitive context.
+</Tip>

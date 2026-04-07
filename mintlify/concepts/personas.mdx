@@ -1,0 +1,59 @@
+---
+title: Personas
+description: How Boses generates and uses AI consumer personas
+---
+
+A **persona** is an AI-generated individual within a persona group. Each one has a consistent identity, backstory, purchasing habits, and cultural context — and responds to simulations in character.
+
+---
+
+## What makes Boses personas different
+
+Most AI personas are generic archetypes ("a 28-year-old female office worker in Manila"). Boses personas are grounded in real, current consumer signals from:
+
+- **Reddit** — top posts from country-specific subreddits (r/Philippines, r/indonesia, r/VietNam)
+- **Shopee** — product reviews from actual shoppers in each market
+- **Google Play Store** — app reviews for dominant consumer apps (GCash/PH, Gojek/ID, MoMo/VN)
+
+These signals are distilled into a **cultural context snapshot** per market, which is injected into every persona's generation prompt. This means personas carry real attitudes about specific products, pricing, trust, and digital habits — not generic cultural platitudes.
+
+---
+
+## Persona fields
+
+Each persona includes:
+- Full name and age
+- Occupation and income level
+- Personality traits and psychographic notes
+- Trusted and distrusted brands
+- Digital habits and preferred platforms
+- Price sensitivity signals
+- A profile photo (AI-generated avatar)
+
+---
+
+## Generating personas
+
+```bash
+POST /api/v1/projects/{project_id}/persona-groups/{group_id}/generate
+```
+
+Generation runs as a background task (20–40 seconds for a group of 5). The persona group's `generation_status` transitions from `pending` → `generating` → `complete`.
+
+---
+
+## Cultural snapshots
+
+The ethnography pipeline runs automatically before persona generation. It crawls public sources, extracts signals via LLM, and stores a quality-gated snapshot per market.
+
+You can also manually trigger a refresh — useful before a demo or when you want to prime the snapshot for a specific industry:
+
+```bash
+POST /api/v1/internal/ethnography/refresh/PH?vertical=fintech
+```
+
+Supported markets: `ID`, `PH`, `VN`.
+
+<Note>
+Snapshots are shared across all projects in the same market. They refresh automatically when a new persona group is created for that market.
+</Note>

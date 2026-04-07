@@ -1,0 +1,122 @@
+---
+title: Simulations
+description: Run and manage AI research simulations
+---
+
+Simulations are the core output of Boses. They run a research method (concept test, survey, focus group, etc.) against a persona group and produce structured results.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/projects/{project_id}/simulations` | List simulations in a project |
+| `POST` | `/api/v1/projects/{project_id}/simulations` | Create and start a simulation |
+| `GET` | `/api/v1/projects/{project_id}/simulations/{simulation_id}` | Get simulation status and progress |
+| `DELETE` | `/api/v1/projects/{project_id}/simulations/{simulation_id}` | Delete a simulation |
+| `POST` | `/api/v1/projects/{project_id}/simulations/{simulation_id}/abort` | Abort a running simulation |
+| `GET` | `/api/v1/projects/{project_id}/simulations/{simulation_id}/results` | Fetch results |
+
+### Survey-specific
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `.../{simulation_id}/survey` | Submit survey schema and start run |
+
+### IDI-specific
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `.../{simulation_id}/script` | Set IDI script for AI-moderated interview |
+| `GET` | `.../{simulation_id}/messages` | Get conversation transcript |
+| `POST` | `.../{simulation_id}/messages` | Send a message in a manual IDI |
+| `POST` | `.../{simulation_id}/end` | End a manual IDI session |
+
+### Conjoint-specific
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `.../{simulation_id}/conjoint-design` | Set attributes and levels, trigger design generation |
+| `POST` | `.../{simulation_id}/run` | Run the conjoint after design is ready |
+
+---
+
+## Create a simulation
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/projects/{project_id}/simulations \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "persona_group_id": "<group_id>",
+    "simulation_type": "concept_test",
+    "prompt_question": "We are launching a chili-lime snack at PHP 35. How do you respond?",
+    "briefing_ids": []
+  }'
+```
+
+Returns `201 Created` with the simulation object. The simulation runs immediately in the background.
+
+---
+
+## Poll for completion
+
+```bash
+curl https://api.temujintechnologies.com/api/v1/projects/{project_id}/simulations/{simulation_id} \
+  -H "Authorization: Bearer <token>"
+```
+
+| `status` | Meaning |
+|----------|---------|
+| `pending` | Queued, not yet started |
+| `running` | In progress — see `progress` field |
+| `complete` | Done — fetch results |
+| `failed` | Failed — see `error_message` |
+
+The `progress` field during a run:
+```json
+{
+  "current": 3,
+  "total": 5,
+  "current_name": "Maria Santos",
+  "completed": ["Juan dela Cruz", "Ana Reyes"],
+  "failed": []
+}
+```
+
+---
+
+## Fetch results
+
+```bash
+curl https://api.temujintechnologies.com/api/v1/projects/{project_id}/simulations/{simulation_id}/results \
+  -H "Authorization: Bearer <token>"
+```
+
+Returns a list of result objects. One record per persona, plus one `result_type: "aggregate"` record summarising the group.
+
+```json
+[
+  {
+    "id": "...",
+    "result_type": "individual",
+    "persona_id": "...",
+    "summary_text": "Maria is excited about the chili-lime flavour...",
+    "sentiment": "Positive",
+    "notable_quote": "This reminds me of the spicy snacks we eat at the office!",
+    "key_themes": ["Bold flavour", "Affordable price", "Eco packaging appeal"]
+  },
+  {
+    "result_type": "aggregate",
+    "persona_id": null,
+    "summary_text": "4 out of 5 personas responded positively...",
+    "sentiment_distribution": {"Positive": 4, "Neutral": 1, "Negative": 0},
+    "top_themes": ["Flavour novelty", "Value for money", "Eco packaging"],
+    "recommendations": "Lead with the bold flavour in comms; the eco angle resonates but shouldn't be primary..."
+  }
+]
+```
+
+---
+
+## Slack notifications
+
+If `SLACK_WEBHOOK_URL` is configured on your deployment, a notification is automatically sent to your Slack channel when a simulation completes or fails — no polling required.
+
+See [Integrations → Slack](/integrations/slack) for setup instructions.

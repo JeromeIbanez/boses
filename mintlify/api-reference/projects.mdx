@@ -1,0 +1,45 @@
+---
+title: Projects
+description: Create and manage research projects
+openapi: "GET /api/v1/projects"
+---
+
+Projects are the top-level containers in Boses. Everything — persona groups, briefings, simulations — lives inside a project.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/projects` | List all projects for your company |
+| `POST` | `/api/v1/projects` | Create a new project |
+| `GET` | `/api/v1/projects/{project_id}` | Get a single project |
+| `PATCH` | `/api/v1/projects/{project_id}` | Update project name or description |
+| `DELETE` | `/api/v1/projects/{project_id}` | Delete a project and all its resources |
+
+## Create a project
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/projects \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Q3 Snack Relaunch",
+    "description": "Testing new packaging and messaging for the PH market"
+  }'
+```
+
+```json
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "name": "Q3 Snack Relaunch",
+  "description": "Testing new packaging and messaging for the PH market",
+  "company_id": "...",
+  "created_at": "2026-04-07T08:30:00",
+  "simulation_count": 0,
+  "persona_group_count": 0
+}
+```
+
+<Warning>
+Deleting a project permanently removes all persona groups, personas, briefings, and simulations inside it. This action cannot be undone.
+</Warning>

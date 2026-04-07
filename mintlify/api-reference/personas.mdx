@@ -1,0 +1,49 @@
+---
+title: Personas
+description: Access and manage individual AI personas
+---
+
+**Personas** are the individual AI consumers generated within a persona group. Each has a consistent identity, backstory, and cultural grounding that persists across simulations.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/projects/{project_id}/persona-groups/{group_id}/personas` | List all personas in a group |
+| `GET` | `/api/v1/projects/{project_id}/persona-groups/{group_id}/personas/{persona_id}` | Get a single persona |
+| `DELETE` | `/api/v1/projects/{project_id}/persona-groups/{group_id}/personas` | Delete all personas in a group |
+| `DELETE` | `/api/v1/projects/{project_id}/persona-groups/{group_id}/personas/{persona_id}` | Delete a specific persona |
+
+---
+
+## Persona fields
+
+```json
+{
+  "id": "...",
+  "full_name": "Maria Santos",
+  "age": 28,
+  "gender": "Female",
+  "occupation": "Marketing coordinator",
+  "location": "Quezon City, Philippines",
+  "income_level": "Middle",
+  "personality_traits": ["Practical", "Brand-conscious", "Socially connected"],
+  "trusted_brands": ["Jollibee", "SM", "GCash"],
+  "distrusted_brands": ["Overpriced foreign brands"],
+  "digital_habits": "Heavy TikTok and Shopee user; pays mostly via GCash",
+  "price_sensitivity": "Looks for promos and free shipping; will trade quality for price on everyday items",
+  "psychographic_notes": "...",
+  "avatar_url": "https://...",
+  "library_persona_id": null
+}
+```
+
+---
+
+## Personas and the Library
+
+When a persona is consistently high-performing across simulations, it can be promoted to the **Library** — a reusable pool of cross-project personas. See [Library](/api-reference/library) for details.
+
+<Note>
+Deleting personas from a group does not affect simulation results already recorded — past responses are preserved.
+</Note>

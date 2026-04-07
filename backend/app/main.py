@@ -35,7 +35,32 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Boses API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(
+    title="Boses API",
+    version="1.0.0",
+    description=(
+        "**Boses** is an AI-powered market simulation platform built for Southeast Asia. "
+        "It generates culturally grounded consumer personas (ID, PH, VN) and runs simulated "
+        "research studies — concept tests, surveys, focus groups, in-depth interviews, and "
+        "conjoint analyses — entirely with AI personas.\n\n"
+        "### Authentication\n"
+        "All endpoints (except `/health` and `/api/v1/auth/*`) require a JWT bearer token.\n"
+        "Obtain one via `POST /api/v1/auth/login`, then pass it as:\n"
+        "```\nAuthorization: Bearer <token>\n```\n\n"
+        "### Base URL\n"
+        "Production: `https://api.temujintechnologies.com`\n\n"
+        "Staging: `https://api-staging.temujintechnologies.com`"
+    ),
+    contact={
+        "name": "Temujin Technologies",
+        "url": "https://temujintechnologies.com",
+        "email": "hello@temujintechnologies.com",
+    },
+    license_info={
+        "name": "Proprietary",
+    },
+    lifespan=lifespan,
+)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

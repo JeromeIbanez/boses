@@ -1,0 +1,77 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Boses API",
+  "logo": {
+    "dark": "/logo/dark.png",
+    "light": "/logo/light.png"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#6C4FF6",
+    "light": "#A78BFA",
+    "dark": "#4C35C9",
+    "background": {
+      "dark": "#0F0F1A"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "App",
+      "url": "https://app.temujintechnologies.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "https://app.temujintechnologies.com/register"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "authentication",
+        "quickstart"
+      ]
+    },
+    {
+      "group": "Core Concepts",
+      "pages": [
+        "concepts/simulations",
+        "concepts/personas",
+        "concepts/ethnography"
+      ]
+    },
+    {
+      "group": "Integrations",
+      "pages": [
+        "integrations/slack"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api-reference/overview",
+        "api-reference/projects",
+        "api-reference/persona-groups",
+        "api-reference/personas",
+        "api-reference/briefings",
+        "api-reference/simulations",
+        "api-reference/library"
+      ]
+    }
+  ],
+  "openapi": "https://api.temujintechnologies.com/openapi.json",
+  "footerSocials": {
+    "website": "https://temujintechnologies.com"
+  },
+  "feedback": {
+    "suggestEdit": false,
+    "raiseIssue": false
+  }
+}

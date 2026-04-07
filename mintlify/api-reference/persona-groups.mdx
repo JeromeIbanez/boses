@@ -1,0 +1,75 @@
+---
+title: Persona Groups
+description: Define target segments and generate AI personas
+---
+
+A **persona group** defines the demographic and psychographic profile of a target consumer segment. Once defined, you trigger generation to produce individual AI personas within that group.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v1/projects/{project_id}/persona-groups/parse-prompt` | Parse a natural language description into group fields |
+| `GET` | `/api/v1/projects/{project_id}/persona-groups` | List all persona groups in a project |
+| `POST` | `/api/v1/projects/{project_id}/persona-groups` | Create a persona group |
+| `GET` | `/api/v1/projects/{project_id}/persona-groups/{group_id}` | Get a group and its generation status |
+| `PATCH` | `/api/v1/projects/{project_id}/persona-groups/{group_id}` | Update group definition |
+| `DELETE` | `/api/v1/projects/{project_id}/persona-groups/{group_id}` | Delete group and its personas |
+| `POST` | `/api/v1/projects/{project_id}/persona-groups/{group_id}/generate` | Trigger persona generation |
+
+---
+
+## Parse prompt (recommended starting point)
+
+Pass a natural language description and get back pre-filled group fields. Useful for building quick "describe your audience" UIs.
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/projects/{project_id}/persona-groups/parse-prompt \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Urban millennial women in Manila aged 25-32 who use GCash and shop on Shopee at least twice a week"}'
+```
+
+---
+
+## Create a persona group
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/projects/{project_id}/persona-groups \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Metro Manila Millennials",
+    "age_min": 25,
+    "age_max": 35,
+    "gender": "Female",
+    "location": "Manila, Philippines",
+    "income_level": "Middle",
+    "occupation": "Office worker",
+    "persona_count": 5
+  }'
+```
+
+<Tip>
+Creating a persona group automatically triggers a background ethnography refresh for the detected market — so by the time you hit `/generate`, fresh cultural signals are already ready.
+</Tip>
+
+---
+
+## Generate personas
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/projects/{project_id}/persona-groups/{group_id}/generate \
+  -H "Authorization: Bearer <token>"
+```
+
+Returns `202 Accepted` immediately. Poll `GET /persona-groups/{group_id}` and check:
+
+| `generation_status` | Meaning |
+|---------------------|---------|
+| `pending` | Not yet started |
+| `generating` | In progress — check `generation_progress` for details |
+| `complete` | All personas ready |
+| `failed` | Generation failed — retry or check the group definition |
+
+Generation typically takes **20–40 seconds** for a group of 5 personas.

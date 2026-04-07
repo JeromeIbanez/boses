@@ -1,0 +1,77 @@
+---
+title: Slack
+description: Get notified in Slack when a simulation completes or fails
+---
+
+Connect Boses to a Slack channel and receive a notification every time a simulation finishes — no polling required.
+
+<img src="/images/slack-notification-preview.png" alt="Example Slack notification showing simulation complete with project name, type, persona group, and a button to open Boses" />
+
+The notification includes:
+- Status (complete ✅ or failed ❌)
+- Number of persona responses generated
+- Project name
+- Simulation type
+- Persona group name
+- A button to open the app
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Create a Slack app and Incoming Webhook">
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) and click **Create New App → From scratch**
+2. Name it **Boses** and select your workspace
+3. In the sidebar, go to **Incoming Webhooks** and toggle it **On**
+4. Click **Add New Webhook to Workspace** and pick the channel you want notifications in (e.g. `#research-alerts`)
+5. Copy the **Webhook URL** — it looks like `https://hooks.slack.com/services/T.../B.../...`
+
+</Step>
+
+<Step title="Set the environment variable">
+
+Add the webhook URL to your backend environment:
+
+```bash
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T.../B.../...
+```
+
+On Render.com (the Boses deployment platform):
+1. Open your **boses-backend-prod** service
+2. Go to **Environment** → **Environment Variables**
+3. Add `SLACK_WEBHOOK_URL` with the webhook URL as the value
+4. Click **Save Changes** — the service will redeploy automatically
+
+</Step>
+
+<Step title="Verify it's working">
+
+Run any simulation in the app. When it completes, you should see a notification in your chosen Slack channel within a few seconds.
+
+If you don't see a notification, check the backend logs for lines starting with `[slack]`.
+
+</Step>
+
+</Steps>
+
+---
+
+## Disabling notifications
+
+Remove the `SLACK_WEBHOOK_URL` environment variable (or set it to an empty string) to stop notifications. The app continues to work normally — Slack is purely optional.
+
+---
+
+## FAQ
+
+**Can I send to multiple channels?**
+Not currently from a single webhook. Create a second Incoming Webhook pointing to a different channel and contact us if you need multi-channel fan-out.
+
+**Will I get notified for failed simulations too?**
+Yes. Failed simulations send an ❌ notification with the error message so you can investigate quickly.
+
+**Is there a rate limit?**
+Slack's Incoming Webhooks allow up to 1 message/second per webhook. Boses sends one notification per simulation — well within this limit.

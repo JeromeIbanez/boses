@@ -1,0 +1,72 @@
+---
+title: Library
+description: Reusable cross-project persona library
+---
+
+The **Library** is a curated pool of personas that have been promoted from individual projects and made available across all projects in your company.
+
+Library personas are useful for longitudinal consistency — running the same personas across multiple campaigns or time periods to track attitude shifts.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/library/personas` | List all library personas (with optional filters) |
+| `GET` | `/api/v1/library/personas/{library_persona_id}` | Get a library persona |
+| `GET` | `/api/v1/library/personas/{library_persona_id}/projects` | List projects this persona has been used in |
+| `POST` | `/api/v1/library/personas/{library_persona_id}/retire` | Retire a library persona (soft-delete) |
+| `DELETE` | `/api/v1/library/personas/{library_persona_id}` | Permanently delete a library persona |
+| `DELETE` | `/api/v1/library/personas` | Bulk delete library personas |
+
+---
+
+## List library personas
+
+```bash
+curl "https://api.temujintechnologies.com/api/v1/library/personas?market=PH&page=1&page_size=20" \
+  -H "Authorization: Bearer <token>"
+```
+
+Filter parameters:
+- `market` — `PH`, `ID`, or `VN`
+- `gender`
+- `age_min` / `age_max`
+- `search` — full-text search on name and notes
+
+---
+
+## Response
+
+```json
+{
+  "personas": [
+    {
+      "id": "...",
+      "full_name": "Maria Santos",
+      "age": 28,
+      "gender": "Female",
+      "location": "Quezon City, Philippines",
+      "occupation": "Marketing coordinator",
+      "avatar_url": "https://...",
+      "times_used": 7,
+      "last_used_at": "2026-03-15T10:00:00",
+      "retired": false
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "page_size": 20
+}
+```
+
+---
+
+## How personas enter the Library
+
+Personas are promoted to the Library automatically based on their **reliability score** — a measure of response consistency across simulations. High-scoring personas (those who give coherent, non-contradictory responses across multiple runs) are eligible for promotion.
+
+Promoted personas retain their full profile and are available when creating new persona groups via the Library selection UI.
+
+<Note>
+Retiring a library persona prevents it from being used in new simulations but preserves its historical results.
+</Note>

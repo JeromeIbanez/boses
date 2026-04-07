@@ -1,0 +1,18 @@
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Top-left: pink, vertical bar -->
+  <rect x="5.5" y="2" width="3" height="7" rx="1.5" fill="#E01E5A"/>
+  <rect x="2" y="5.5" width="7" height="3" rx="1.5" fill="#E01E5A"/>
+  <circle cx="7" cy="7" r="1.5" fill="#E01E5A" opacity="0"/>
+
+  <!-- Top-right: teal -->
+  <rect x="15.5" y="2" width="3" height="7" rx="1.5" fill="#36C5F0"/>
+  <rect x="15" y="5.5" width="7" height="3" rx="1.5" fill="#36C5F0"/>
+
+  <!-- Bottom-left: green -->
+  <rect x="5.5" y="15" width="3" height="7" rx="1.5" fill="#2EB67D"/>
+  <rect x="2" y="15.5" width="7" height="3" rx="1.5" fill="#2EB67D"/>
+
+  <!-- Bottom-right: yellow -->
+  <rect x="15.5" y="15" width="3" height="7" rx="1.5" fill="#ECB22E"/>
+  <rect x="15" y="15.5" width="7" height="3" rx="1.5" fill="#ECB22E"/>
+</svg>

@@ -36,7 +36,7 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="px-8 py-8 flex items-center gap-2 text-zinc-400">
-        <Spinner size="sm" /> Loading…
+        <Spinner /> Loading…
       </div>
     );
   }
@@ -122,7 +122,7 @@ export default function SettingsPage() {
                 onClick={() => save()}
                 disabled={isSaving}
               >
-                {isSaving ? <Spinner size="sm" /> : "Save"}
+                {isSaving ? <Spinner /> : "Save"}
               </Button>
               {saved && (
                 <span className="flex items-center gap-1.5 text-xs text-green-600">

@@ -28,6 +28,7 @@ class SimulationResponse(BaseModel):
     status: str
     error_message: Optional[str]
     progress: Optional[dict[str, Any]]
+    share_token: Optional[str]
     created_at: datetime
     completed_at: Optional[datetime]
 

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText, BarChart2 } from "lucide-react";
-import { getSimulation, getSimulationResults, abortSimulation } from "@/lib/api";
+import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText, BarChart2, Share2, Check, X } from "lucide-react";
+import { getSimulation, getSimulationResults, abortSimulation, generateShareLink, revokeShareLink } from "@/lib/api";
 import ConvergencePanel from "@/components/simulations/ConvergencePanel";
 import ReliabilityPanel from "@/components/simulations/ReliabilityPanel";
 import Badge from "@/components/ui/Badge";
@@ -1018,6 +1018,26 @@ export default function SimulationResultsPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const share = useMutation({
+    mutationFn: () => generateShareLink(projectId, simulationId),
+    onSuccess: (updated) => {
+      qc.setQueryData(["simulation", simulationId], updated);
+      const url = `${window.location.origin}/share/${updated.share_token}`;
+      navigator.clipboard.writeText(url).then(() => {
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2500);
+      });
+    },
+  });
+
+  const unshare = useMutation({
+    mutationFn: () => revokeShareLink(projectId, simulationId),
+    onSuccess: (updated) => {
+      qc.setQueryData(["simulation", simulationId], updated);
+    },
+  });
 
   const abort = useMutation({
     mutationFn: () => abortSimulation(projectId, simulationId),
@@ -1078,18 +1098,58 @@ export default function SimulationResultsPage() {
       </button>
 
       <div className="mb-7">
-        <div className="flex items-center gap-2 mb-2">
-          <h1 className="text-xl font-semibold text-zinc-900">Simulation Results</h1>
-          {simulation && (
-            <>
-              <Badge variant={
-                simulation.status === "complete" ? "success" :
-                simulation.status === "failed" ? "error" :
-                simulation.status === "active" ? "warning" :
-                "warning"
-              }>{simulation.status}</Badge>
-              <Badge variant="default">{simTypeLabel()}</Badge>
-            </>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold text-zinc-900">Simulation Results</h1>
+            {simulation && (
+              <>
+                <Badge variant={
+                  simulation.status === "complete" ? "success" :
+                  simulation.status === "failed" ? "error" :
+                  simulation.status === "active" ? "warning" :
+                  "warning"
+                }>{simulation.status}</Badge>
+                <Badge variant="default">{simTypeLabel()}</Badge>
+              </>
+            )}
+          </div>
+          {simulation?.status === "complete" && (
+            <div className="flex items-center gap-2">
+              {simulation.share_token ? (
+                <>
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/share/${simulation.share_token}`;
+                      navigator.clipboard.writeText(url).then(() => {
+                        setShareCopied(true);
+                        setTimeout(() => setShareCopied(false), 2500);
+                      });
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                  >
+                    {shareCopied ? <Check size={12} /> : <Share2 size={12} />}
+                    {shareCopied ? "Copied!" : "Copy link"}
+                  </button>
+                  <button
+                    onClick={() => unshare.mutate()}
+                    disabled={unshare.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-500 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
+                    title="Revoke share link"
+                  >
+                    <X size={12} /> Revoke
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => share.mutate()}
+                  disabled={share.isPending}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-700 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
+                >
+                  <Share2 size={12} />
+                  {share.isPending ? "Generating…" : "Share results"}
+                </button>
+              )}
+            </div>
           )}
         </div>
         {simulation && (

@@ -195,7 +195,8 @@ def run_focus_group(simulation_id: str) -> None:
         if not personas:
             raise ValueError("No personas found for this group. Please generate personas first.")
 
-        briefing_text = simulation.briefing.extracted_text if simulation.briefing else ""
+        from app.services.briefing_utils import combine_briefing_texts
+        briefing_text = combine_briefing_texts(simulation.briefings)
         topic = simulation.prompt_question or "the topic under discussion"
         group = simulation.persona_group
         total_personas = len(personas)

@@ -130,7 +130,7 @@ export interface Simulation {
   id: string;
   project_id: string;
   persona_group_id: string;
-  briefing_id: string | null;
+  briefing_ids: string[];
   prompt_question: string | null;
   simulation_type: "concept_test" | "idi_ai" | "idi_manual" | "survey" | "focus_group" | "conjoint";
   idi_script_text: string | null;

@@ -364,7 +364,8 @@ def run_conjoint(simulation_id: str) -> None:
             raise ValueError("Each attribute must have at least 2 levels.")
 
         category = simulation.prompt_question or "the product"
-        briefing_text = simulation.briefing.extracted_text if simulation.briefing else ""
+        from app.services.briefing_utils import combine_briefing_texts
+        briefing_text = combine_briefing_texts(simulation.briefings)
         group = simulation.persona_group
 
         tasks = _generate_choice_sets(attributes, n_tasks)

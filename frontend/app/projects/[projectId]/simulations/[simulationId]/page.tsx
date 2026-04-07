@@ -1253,7 +1253,7 @@ export default function SimulationResultsPage() {
             <ConvergencePanel
               projectId={projectId}
               personaGroupId={simulation.persona_group_id}
-              briefingId={simulation.briefing_id}
+              briefingId={simulation.briefing_ids?.[0] ?? null}
             />
           )}
         </div>

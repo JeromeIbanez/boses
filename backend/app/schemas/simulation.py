@@ -2,13 +2,13 @@ import uuid
 from datetime import datetime
 from typing import Optional, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class SimulationCreate(BaseModel):
     simulation_type: str = "concept_test"
     persona_group_id: uuid.UUID
-    briefing_id: Optional[uuid.UUID] = None
+    briefing_ids: list[uuid.UUID] = []
     prompt_question: Optional[str] = None
     idi_script_text: Optional[str] = None
     idi_persona_id: Optional[uuid.UUID] = None
@@ -19,7 +19,7 @@ class SimulationResponse(BaseModel):
     id: uuid.UUID
     project_id: uuid.UUID
     persona_group_id: uuid.UUID
-    briefing_id: Optional[uuid.UUID]
+    briefing_ids: list[uuid.UUID] = []
     prompt_question: Optional[str]
     simulation_type: str
     idi_script_text: Optional[str]
@@ -32,6 +32,14 @@ class SimulationResponse(BaseModel):
     completed_at: Optional[datetime]
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="before")
+    @classmethod
+    def extract_briefing_ids(cls, data: Any) -> Any:
+        # When constructing from an ORM object, pull IDs from the relationship
+        if hasattr(data, "briefings"):
+            data.__dict__.setdefault("briefing_ids", [b.id for b in (data.briefings or [])])
+        return data
 
 
 class SimulationResultResponse(BaseModel):

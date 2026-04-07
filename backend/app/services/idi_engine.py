@@ -179,7 +179,8 @@ def run_idi_ai(simulation_id: str) -> None:
         if not questions:
             raise ValueError("No questions found in the interview script.")
 
-        briefing_text = simulation.briefing.extracted_text if simulation.briefing else ""
+        from app.services.briefing_utils import combine_briefing_texts
+        briefing_text = combine_briefing_texts(simulation.briefings)
         question_summary = "; ".join(questions[:5])  # for aggregate prompt context
 
         persona_analyses = []

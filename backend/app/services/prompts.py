@@ -75,7 +75,7 @@ def concept_test_system_prompt(persona: "Persona") -> str:
 
 def concept_test_user_prompt(briefing_text: str, prompt_question: str) -> str:
     return (
-        f"Here is a product/campaign briefing:\n\n"
+        f"Here is the briefing material:\n\n"
         f"---\n{briefing_text}\n---\n\n"
         f"Question: {prompt_question}\n\n"
         "Please respond in character. Structure your response EXACTLY as:\n"

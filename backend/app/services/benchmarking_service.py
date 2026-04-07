@@ -115,7 +115,11 @@ def compute_convergence(
         Simulation.status == "complete",
     )
     if briefing_id:
-        query = query.where(Simulation.briefing_id == briefing_id)
+        from app.models.simulation_briefing import SimulationBriefing
+        query = query.join(
+            SimulationBriefing,
+            SimulationBriefing.simulation_id == Simulation.id,
+        ).where(SimulationBriefing.briefing_id == briefing_id)
 
     sims = db.execute(query).scalars().all()
 

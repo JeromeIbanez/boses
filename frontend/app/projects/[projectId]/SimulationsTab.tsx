@@ -80,7 +80,7 @@ export default function SimulationsTab({ projectId }: Props) {
   const [step, setStep] = useState(0);
   const [simType, setSimType] = useState<SimType>("concept_test");
   const [groupId, setGroupId] = useState("");
-  const [briefingId, setBriefingId] = useState("");
+  const [briefingIds, setBriefingIds] = useState<string[]>([]);
   // Concept test
   const [question, setQuestion] = useState("");
   // IDI shared
@@ -150,7 +150,7 @@ export default function SimulationsTab({ projectId }: Props) {
       const sim = await createSimulation(projectId, {
         simulation_type: "conjoint",
         persona_group_id: groupId,
-        briefing_id: briefingId || null,
+        briefing_ids: briefingIds,
         prompt_question: question || "the product",
       });
       setConjointSimId(sim.id);
@@ -165,7 +165,7 @@ export default function SimulationsTab({ projectId }: Props) {
       const sim = await createSimulation(projectId, {
         simulation_type: "survey",
         persona_group_id: groupId,
-        briefing_id: briefingId || null,
+        briefing_ids: briefingIds,
       });
       const fd = new FormData();
       fd.append("file", surveyFile!);
@@ -198,7 +198,7 @@ export default function SimulationsTab({ projectId }: Props) {
       const body: Parameters<typeof createSimulation>[1] = {
         simulation_type: simType,
         persona_group_id: groupId,
-        briefing_id: briefingId || null,
+        briefing_ids: briefingIds,
       };
 
       if (simType === "concept_test" || simType === "focus_group") {
@@ -238,7 +238,7 @@ export default function SimulationsTab({ projectId }: Props) {
     setStep(0);
     setSimType("concept_test");
     setGroupId("");
-    setBriefingId("");
+    setBriefingIds([]);
     setQuestion("");
     setScriptMode("text");
     setScriptText("");
@@ -259,7 +259,7 @@ export default function SimulationsTab({ projectId }: Props) {
   const canProceed = () => {
     if (step === 0) return !!simType;
     if (step === 1) return !!groupId;
-    if (step === 2) return true; // briefing optional
+    if (step === 2) return simType !== "concept_test" || briefingIds.length > 0;
     if (step === 3) {
       if (simType === "concept_test") return !!question.trim();
       if (simType === "focus_group") return !!question.trim();
@@ -378,24 +378,41 @@ export default function SimulationsTab({ projectId }: Props) {
             </>
           )}
 
-          {/* Step 2: Briefing (optional for IDI) */}
+          {/* Step 2: Briefing selection */}
           {step === 2 && (
             <>
               <p className="text-sm text-zinc-500">
                 {simType === "concept_test"
-                  ? "Choose the briefing document to test against."
-                  : "Optionally select a briefing to give your personas background context before the interview."}
+                  ? "Select one or more briefing documents to test against. Personas will react to all selected materials."
+                  : "Optionally select one or more briefings to give your personas background context."}
               </p>
-              <Select
-                label={simType === "concept_test" ? "Briefing" : "Briefing (optional)"}
-                value={briefingId}
-                onChange={e => setBriefingId(e.target.value)}
-              >
-                <option value="">{simType === "concept_test" ? "Select a briefing…" : "No briefing"}</option>
-                {briefings?.map(b => (
-                  <option key={b.id} value={b.id}>{b.title}</option>
-                ))}
-              </Select>
+              {!briefings?.length ? (
+                <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">No briefings uploaded yet. You can still run the simulation without one.</p>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {briefings.map(b => {
+                    const checked = briefingIds.includes(b.id);
+                    return (
+                      <label key={b.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${checked ? "border-zinc-800 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300"}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={e => setBriefingIds(prev => e.target.checked ? [...prev, b.id] : prev.filter(id => id !== b.id))}
+                          className="shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm text-zinc-800 font-medium truncate">{b.title}</p>
+                          {b.description && <p className="text-xs text-zinc-400 truncate">{b.description}</p>}
+                        </div>
+                        <span className="text-xs text-zinc-400 shrink-0 uppercase">{b.file_type}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+              {simType === "concept_test" && briefingIds.length === 0 && (
+                <p className="text-xs text-amber-600">Select at least one briefing to run a concept test.</p>
+              )}
             </>
           )}
 

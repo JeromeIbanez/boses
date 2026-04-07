@@ -103,7 +103,7 @@ export const createSimulation = (
   body: {
     simulation_type: string;
     persona_group_id: string;
-    briefing_id?: string | null;
+    briefing_ids?: string[];
     prompt_question?: string | null;
     idi_script_text?: string | null;
     idi_persona_id?: string | null;

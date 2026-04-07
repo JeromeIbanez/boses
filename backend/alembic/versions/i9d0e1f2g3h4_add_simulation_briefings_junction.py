@@ -44,7 +44,7 @@ def upgrade() -> None:
         )
 
     # 3. Drop old FK constraint and column
-    op.drop_constraint('simulations_briefing_id_fkey', 'simulations', type_='foreignkey')
+    op.drop_constraint('fk_simulations_briefing_id', 'simulations', type_='foreignkey')
     op.drop_column('simulations', 'briefing_id')
 
 

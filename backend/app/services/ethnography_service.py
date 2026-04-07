@@ -93,17 +93,32 @@ def _detect_market(location: str) -> str | None:
 # Reddit crawl helper (reuses pattern from reddit_grounding.py)
 # ---------------------------------------------------------------------------
 
-def _crawl_reddit_subreddit(subreddit: str, limit: int = 25) -> dict | None:
+def _crawl_reddit_subreddit(
+    subreddit: str,
+    limit: int = 25,
+    vertical: str | None = None,
+) -> dict | None:
     """
-    Fetch top posts + comments from a subreddit via Reddit's public JSON API.
+    Fetch posts + comments from a subreddit via Reddit's public JSON API.
     No credentials required. Returns {source, post_count, text} or None on failure.
+
+    When vertical is provided, uses Reddit's search endpoint with that keyword
+    (e.g. "fintech", "beauty") instead of fetching top posts — this surfaces
+    commercially relevant content rather than civic/general noise.
 
     NOTE: The subreddit slug is case-sensitive for Reddit's API.
     Verified slugs: Philippines, indonesia, VietNam
     """
     headers = {"User-Agent": _USER_AGENT}
-    url = f"https://www.reddit.com/r/{subreddit}/top.json"
-    params = {"t": "month", "limit": str(limit)}
+
+    if vertical:
+        url = f"https://www.reddit.com/r/{subreddit}/search.json"
+        params = {"q": vertical, "sort": "top", "t": "month", "limit": str(limit), "restrict_sr": "1"}
+        source_label = f"r/{subreddit} (search: {vertical})"
+    else:
+        url = f"https://www.reddit.com/r/{subreddit}/top.json"
+        params = {"t": "month", "limit": str(limit)}
+        source_label = f"r/{subreddit}"
 
     try:
         with httpx.Client(timeout=_REQUEST_TIMEOUT) as client:
@@ -111,7 +126,7 @@ def _crawl_reddit_subreddit(subreddit: str, limit: int = 25) -> dict | None:
             resp.raise_for_status()
             data = resp.json()
     except Exception as e:
-        logger.warning(f"[ethnography] Reddit crawl failed for r/{subreddit}: {e}")
+        logger.warning(f"[ethnography] Reddit crawl failed for {source_label}: {e}")
         return None
 
     posts = data.get("data", {}).get("children", [])
@@ -148,12 +163,12 @@ def _crawl_reddit_subreddit(subreddit: str, limit: int = 25) -> dict | None:
             pass  # Comments are optional; continue without them
 
     if not text_chunks:
-        logger.warning(f"[ethnography] r/{subreddit}: no posts retrieved")
+        logger.warning(f"[ethnography] {source_label}: no posts retrieved")
         return None
 
-    logger.info(f"[ethnography] r/{subreddit}: retrieved {len(posts)} posts")
+    logger.info(f"[ethnography] {source_label}: retrieved {len(posts)} posts")
     return {
-        "source": f"r/{subreddit}",
+        "source": source_label,
         "post_count": len(posts),
         "text": "\n".join(text_chunks[:60]),  # cap to ~60 chunks to control token size
     }
@@ -225,10 +240,247 @@ def _crawl_kaskus() -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Shopee crawl
+# ---------------------------------------------------------------------------
+
+_SHOPEE_MARKET_TLD = {"PH": "ph", "ID": "co.id", "VN": "vn"}
+# Default search keyword per market when no vertical is provided
+_SHOPEE_DEFAULT_KEYWORDS = {
+    "PH": "bestseller",
+    "ID": "terlaris",   # "bestselling" in Bahasa Indonesia
+    "VN": "bán chạy",   # "bestselling" in Vietnamese
+}
+
+
+def _crawl_shopee_reviews(market_code: str, vertical: str | None = None) -> dict | None:
+    """
+    Fetch product reviews from Shopee for the given market via the public search + ratings API.
+
+    Pipeline:
+        1. Search for products by keyword (vertical if provided, else market default)
+        2. Pick the product with the most reviews (highest comment_count)
+        3. Fetch up to 20 reviews for that product
+
+    Falls back gracefully: any HTTP error or unexpected response shape returns None.
+    Shopee's API endpoints have been stable across markets (PH/ID/VN) but may
+    require header adjustments if they start returning 403.
+    """
+    tld = _SHOPEE_MARKET_TLD.get(market_code)
+    if not tld:
+        logger.warning(f"[ethnography] Shopee: unsupported market '{market_code}'")
+        return None
+
+    keyword = vertical if vertical else _SHOPEE_DEFAULT_KEYWORDS.get(market_code, "bestseller")
+    base_url = f"https://shopee.{tld}"
+    headers = {
+        "User-Agent": _USER_AGENT,
+        "Referer": f"{base_url}/",
+        "Accept": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+
+    # Step 1: search for products
+    try:
+        search_url = f"{base_url}/api/v4/search/search_items"
+        with httpx.Client(timeout=_REQUEST_TIMEOUT) as client:
+            resp = client.get(
+                search_url,
+                params={"keyword": keyword, "limit": "10", "newest": "0"},
+                headers=headers,
+            )
+            resp.raise_for_status()
+            search_data = resp.json()
+    except Exception as e:
+        logger.warning(f"[ethnography] Shopee {market_code} search failed: {e}")
+        return None
+
+    items = search_data.get("items") or []
+    if not items:
+        logger.warning(f"[ethnography] Shopee {market_code}: no items returned for keyword '{keyword}'")
+        return None
+
+    # Step 2: pick item with highest comment_count > 0
+    best_item = None
+    best_count = 0
+    for entry in items:
+        basic = entry.get("item_basic") or {}
+        count = basic.get("comment_count") or 0
+        if count > best_count:
+            best_count = count
+            best_item = basic
+
+    if not best_item or best_count == 0:
+        logger.warning(f"[ethnography] Shopee {market_code}: no reviewed items found for '{keyword}'")
+        return None
+
+    item_id = best_item.get("itemid")
+    shop_id = best_item.get("shopid")
+    item_name = str(best_item.get("name", "product"))[:60]
+
+    if not item_id or not shop_id:
+        logger.warning(f"[ethnography] Shopee {market_code}: missing itemid/shopid")
+        return None
+
+    # Step 3: fetch reviews
+    try:
+        ratings_url = f"{base_url}/api/v4/item/get_ratings"
+        with httpx.Client(timeout=_REQUEST_TIMEOUT) as client:
+            resp = client.get(
+                ratings_url,
+                params={
+                    "itemid": str(item_id),
+                    "shopid": str(shop_id),
+                    "limit": "20",
+                    "offset": "0",
+                    "filter": "0",
+                    "type": "0",
+                },
+                headers=headers,
+            )
+            resp.raise_for_status()
+            ratings_data = resp.json()
+    except Exception as e:
+        logger.warning(f"[ethnography] Shopee {market_code} ratings fetch failed: {e}")
+        return None
+
+    ratings = (ratings_data.get("data") or {}).get("ratings") or []
+    text_chunks: list[str] = []
+    for r in ratings:
+        comment = (r.get("comment") or "").strip()
+        stars = r.get("rating_star", "?")
+        if comment and len(comment) > 10:
+            text_chunks.append(f'[Shopee review, {stars}★] "{comment[:200]}"')
+
+    if not text_chunks:
+        logger.warning(f"[ethnography] Shopee {market_code}: no review text found for '{item_name}'")
+        return None
+
+    logger.info(f"[ethnography] Shopee {market_code}: {len(text_chunks)} reviews for '{item_name}'")
+    return {
+        "source": f"Shopee {market_code} ({item_name})",
+        "post_count": len(text_chunks),
+        "text": "\n".join(text_chunks[:30]),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Google Play Store crawl
+# ---------------------------------------------------------------------------
+
+_PLAY_STORE_APPS = {
+    "ID": "com.gojek.app",
+    "PH": "com.globe.gcash.android",
+    "VN": "vn.momo.client",
+}
+_PLAY_STORE_APP_NAMES = {
+    "ID": "Gojek",
+    "PH": "GCash",
+    "VN": "MoMo",
+}
+_PLAY_STORE_LOCALE = {
+    "ID": "id",
+    "PH": "en",
+    "VN": "vi",
+}
+
+
+def _crawl_play_store_reviews(app_id: str, market_code: str) -> dict | None:
+    """
+    Fetch app reviews from Google Play Store for the market's primary consumer app:
+        ID → Gojek, PH → GCash, VN → MoMo
+
+    Primary approach: Play Store's internal batchexecute RPC endpoint (unofficial,
+    reverse-engineered — same approach used by google-play-scraper and similar tools).
+
+    Fallback: scrape review text from the app's Play Store HTML page.
+
+    Both approaches fail gracefully (return None) if the response shape changes or
+    the request is blocked. The pipeline continues with other sources.
+
+    Note: vertical is NOT used here — these are fixed app IDs, not keyword-searched.
+    """
+    import re
+    import urllib.parse
+
+    app_name = _PLAY_STORE_APP_NAMES.get(market_code, app_id)
+    lang = _PLAY_STORE_LOCALE.get(market_code, "en")
+    text_chunks: list[str] = []
+
+    # Primary: batchexecute POST
+    try:
+        inner = json.dumps([None, None, [2, 2, 40, None, None], app_id, None, lang])
+        rpc = json.dumps([[["UsvDTd", inner, None, "generic"]]])
+        body = f"f.req={urllib.parse.quote(rpc)}"
+
+        with httpx.Client(timeout=_REQUEST_TIMEOUT) as client:
+            resp = client.post(
+                "https://play.google.com/_/PlayStoreUi/data/batchexecute",
+                content=body,
+                headers={
+                    "User-Agent": _USER_AGENT,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "*/*",
+                },
+            )
+            resp.raise_for_status()
+            text = resp.text
+
+        # Strip Google's XSSI prefix
+        if text.startswith(")]}'\n"):
+            text = text[5:]
+
+        outer = json.loads(text)
+        inner_json = outer[0][2]
+        payload = json.loads(inner_json)
+        reviews = payload[0]
+
+        for review in reviews:
+            try:
+                stars = review[2]
+                review_text = str(review[4] or "").strip()
+                if review_text and len(review_text) > 10:
+                    text_chunks.append(f'[Play Store {app_name}, {stars}★] "{review_text[:200]}"')
+            except (IndexError, TypeError):
+                continue
+
+    except Exception as e:
+        logger.warning(f"[ethnography] Play Store batchexecute failed for {app_id}: {e}")
+
+    # Fallback: HTML scraping
+    if not text_chunks:
+        try:
+            url = f"https://play.google.com/store/apps/details?id={app_id}&hl=en&showAllReviews=true"
+            with httpx.Client(timeout=_REQUEST_TIMEOUT, follow_redirects=True) as client:
+                resp = client.get(url, headers={"User-Agent": _USER_AGENT})
+                resp.raise_for_status()
+                html = resp.text
+
+            found = re.findall(r'<div jsname="sngebd"[^>]*>([^<]{10,500})</div>', html)
+            for r in found[:40]:
+                clean = r.strip()
+                if clean:
+                    text_chunks.append(f'[Play Store {app_name}] "{clean[:200]}"')
+
+        except Exception as e:
+            logger.warning(f"[ethnography] Play Store HTML fallback failed for {app_id}: {e}")
+
+    if not text_chunks:
+        logger.warning(f"[ethnography] Play Store: no reviews retrieved for {app_id} ({market_code})")
+        return None
+
+    logger.info(f"[ethnography] Play Store {app_name}: {len(text_chunks)} reviews")
+    return {
+        "source": f"Play Store {app_name} ({market_code})",
+        "post_count": len(text_chunks),
+        "text": "\n".join(text_chunks[:40]),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Per-market crawl functions
 # ---------------------------------------------------------------------------
 
-def _crawl_philippines() -> list[dict]:
+def _crawl_philippines(vertical: str | None = None) -> list[dict]:
     """
     Philippines crawl.
 
@@ -236,21 +488,32 @@ def _crawl_philippines() -> list[dict]:
     Reddit is genuinely popular in PH due to high English literacy —
     less demographically biased than in ID or VN.
 
-    Future sources (not yet implemented):
-        - Shopee PH product reviews (requires product ID navigation)
-        - Google Play Store reviews for GCash (com.globe.gcash.android)
-          — requires dynamic rendering workaround or unofficial API
+    Additional sources:
+        - Shopee PH product reviews — real consumer purchase decisions and attitudes
+        - Google Play Store reviews for GCash (com.globe.gcash.android) — most-used
+          fintech app in PH; reviews surface digital behavior pain points and trust signals
+
+    When vertical is provided, Reddit uses keyword search instead of top posts.
+    Shopee searches using the vertical keyword; Play Store reviews are always for GCash.
     """
     batches: list[dict] = []
 
-    reddit = _crawl_reddit_subreddit("Philippines", limit=25)
+    reddit = _crawl_reddit_subreddit("Philippines", limit=25, vertical=vertical)
     if reddit:
         batches.append(reddit)
+
+    shopee = _crawl_shopee_reviews("PH", vertical=vertical)
+    if shopee:
+        batches.append(shopee)
+
+    play = _crawl_play_store_reviews(_PLAY_STORE_APPS["PH"], "PH")
+    if play:
+        batches.append(play)
 
     return batches
 
 
-def _crawl_indonesia() -> list[dict]:
+def _crawl_indonesia(vertical: str | None = None) -> list[dict]:
     """
     Indonesia crawl.
 
@@ -262,9 +525,13 @@ def _crawl_indonesia() -> list[dict]:
     self-selected demographic that does NOT represent the general population.
     Use as a supplement, not a primary signal.
 
-    Future sources (not yet implemented):
-        - Shopee ID product reviews
-        - Google Play Store reviews for Gojek (com.gojek.app)
+    Additional sources:
+        - Shopee ID product reviews — strong purchase-intent signal for this market
+        - Google Play Store reviews for Gojek (com.gojek.app) — super-app covering
+          ride-hailing, food, payments; reviews reflect broad urban consumer behavior
+
+    Note: Kaskus is not vertically filtered — its HTML scraper uses category URLs,
+    not a search API. Vertical filtering applies to Reddit and Shopee only.
     """
     batches: list[dict] = []
 
@@ -272,14 +539,22 @@ def _crawl_indonesia() -> list[dict]:
     if kaskus:
         batches.append(kaskus)
 
-    reddit = _crawl_reddit_subreddit("indonesia", limit=20)
+    reddit = _crawl_reddit_subreddit("indonesia", limit=20, vertical=vertical)
     if reddit:
         batches.append(reddit)
+
+    shopee = _crawl_shopee_reviews("ID", vertical=vertical)
+    if shopee:
+        batches.append(shopee)
+
+    play = _crawl_play_store_reviews(_PLAY_STORE_APPS["ID"], "ID")
+    if play:
+        batches.append(play)
 
     return batches
 
 
-def _crawl_vietnam() -> list[dict]:
+def _crawl_vietnam(vertical: str | None = None) -> list[dict]:
     """
     Vietnam crawl.
 
@@ -290,27 +565,36 @@ def _crawl_vietnam() -> list[dict]:
     English. Local Vietnamese consumer signal is weaker here than Kaskus is
     for Indonesia. This is a known limitation for VN vs. the other markets.
 
-    Future sources (not yet implemented):
-        - Shopee VN product reviews (strongest signal for this market)
-        - Google Play Store reviews for MoMo (vn.momo.client)
+    Additional sources:
+        - Shopee VN product reviews — strongest supplementary signal for this market
+          given the Reddit community's expat skew
+        - Google Play Store reviews for MoMo (vn.momo.client) — dominant e-wallet in VN
     """
     batches: list[dict] = []
 
-    reddit = _crawl_reddit_subreddit("VietNam", limit=25)
+    reddit = _crawl_reddit_subreddit("VietNam", limit=25, vertical=vertical)
     if reddit:
         batches.append(reddit)
+
+    shopee = _crawl_shopee_reviews("VN", vertical=vertical)
+    if shopee:
+        batches.append(shopee)
+
+    play = _crawl_play_store_reviews(_PLAY_STORE_APPS["VN"], "VN")
+    if play:
+        batches.append(play)
 
     return batches
 
 
-def _dispatch_crawl(market_code: str) -> list[dict]:
+def _dispatch_crawl(market_code: str, vertical: str | None = None) -> list[dict]:
     """Route to the correct per-market crawl function."""
     if market_code == "PH":
-        return _crawl_philippines()
+        return _crawl_philippines(vertical=vertical)
     elif market_code == "ID":
-        return _crawl_indonesia()
+        return _crawl_indonesia(vertical=vertical)
     elif market_code == "VN":
-        return _crawl_vietnam()
+        return _crawl_vietnam(vertical=vertical)
     else:
         logger.warning(f"[ethnography] No crawl function for market '{market_code}'")
         return []
@@ -320,7 +604,7 @@ def _dispatch_crawl(market_code: str) -> list[dict]:
 # LLM signal extraction
 # ---------------------------------------------------------------------------
 
-def _extract_signals(market_code: str, batches: list[dict]) -> dict:
+def _extract_signals(market_code: str, batches: list[dict], vertical: str | None = None) -> dict:
     """
     Send all crawled text to GPT-4o and extract structured behavioral signals.
     Returns a dict matching the signals_json schema, or raises on failure.
@@ -328,6 +612,7 @@ def _extract_signals(market_code: str, batches: list[dict]) -> dict:
     The prompt instructs the model to:
     - Extract aggregate behavioral patterns, NOT individual opinions
     - Weight Kaskus (ID) content more heavily than Reddit due to demographic breadth
+    - When vertical is set, focus signals on that product/service category
     - Return only valid JSON
     """
     if not batches:
@@ -343,7 +628,7 @@ def _extract_signals(market_code: str, batches: list[dict]) -> dict:
 
     system_prompt = (
         "You are a cultural anthropologist and consumer research analyst. "
-        "Your job is to synthesise raw social media and forum content into "
+        "Your job is to synthesise raw social media, forum, and product review content into "
         "structured behavioral signals about a consumer market. "
         "Extract AGGREGATE PATTERNS — not individual opinions. "
         "Every signal you extract must be grounded in the provided text. "
@@ -351,8 +636,14 @@ def _extract_signals(market_code: str, batches: list[dict]) -> dict:
         "Return only valid JSON."
     )
 
+    vertical_line = (
+        f"Focus especially on signals relevant to the '{vertical}' vertical.\n\n"
+        if vertical else ""
+    )
+
     user_prompt = (
         f"Below is raw content crawled from public sources about the {market_label} consumer market. "
+        f"{vertical_line}"
         f"Extract structured behavioral signals into the following JSON schema:\n\n"
         "{\n"
         f'  "market": "{market_code}",\n'
@@ -373,7 +664,7 @@ def _extract_signals(market_code: str, batches: list[dict]) -> dict:
         "use what you can find and note the limitation in source_summary.\n"
         "- Do not hallucinate signals. Only include what is grounded in the provided text.\n\n"
         "RAW CONTENT:\n"
-        f"{raw_content[:6000]}"  # cap to manage token cost
+        f"{raw_content[:8000]}"  # bumped from 6000 — more sources now contributing
     )
 
     client = OpenAI(api_key=settings.openai_api_key)
@@ -447,27 +738,38 @@ def _archive_active_snapshots(db, market_code: str) -> None:
 # Public interface — refresh entry point
 # ---------------------------------------------------------------------------
 
-def refresh_market_context(market_code: str) -> None:
+def refresh_market_context(market_code: str, vertical: str | None = None) -> None:
     """
     Main entry point. Called as a FastAPI background task.
 
-    1. Crawl all configured sources for the market
+    1. Crawl all configured sources for the market (Reddit, Shopee, Play Store)
     2. Extract structured signals via LLM
     3. Compute quality score
     4. If score >= 0.5: archive previous active snapshot, save new as active
     5. If score < 0.5: save as draft (silent failure — existing behaviour unchanged)
-    """
-    logger.info(f"[ethnography] Starting refresh for market '{market_code}'")
 
-    batches = _dispatch_crawl(market_code)
+    When vertical is provided (e.g. "fintech", "beauty"), Reddit and Shopee crawls
+    use that keyword to surface category-specific content. Stored in raw_sources
+    as a _meta entry for operator visibility.
+    """
+    logger.info(
+        f"[ethnography] Starting refresh for market '{market_code}'"
+        + (f" (vertical: {vertical})" if vertical else "")
+    )
+
+    batches = _dispatch_crawl(market_code, vertical=vertical)
     raw_sources = [{"source": b["source"], "post_count": b["post_count"]} for b in batches]
+
+    # Store vertical in raw_sources for operator inspection — no schema change needed
+    if vertical:
+        raw_sources.insert(0, {"source": "_meta", "vertical": vertical})
 
     if not batches:
         logger.warning(f"[ethnography] No data crawled for market '{market_code}' — aborting refresh")
         return
 
     try:
-        signals = _extract_signals(market_code, batches)
+        signals = _extract_signals(market_code, batches, vertical=vertical)
     except Exception as e:
         logger.error(f"[ethnography] Signal extraction failed for '{market_code}': {e}")
         return

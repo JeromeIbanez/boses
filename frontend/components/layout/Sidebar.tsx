@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderOpen, BookMarked, LogOut } from "lucide-react";
+import { LayoutDashboard, FolderOpen, BookMarked, LogOut, FileText, Puzzle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,6 +10,11 @@ const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/projects", icon: FolderOpen },
   { label: "Personas", href: "/personas", icon: BookMarked },
+];
+
+const bottomNav = [
+  { label: "Integrations", href: "/integrations", icon: Puzzle },
+  { label: "API Docs", href: "https://docs.temujintechnologies.com", icon: FileText, external: true },
 ];
 
 export default function Sidebar() {
@@ -44,6 +49,36 @@ export default function Sidebar() {
             {label}
           </Link>
         ))}
+        <div className="pt-3 mt-3 border-t border-zinc-100 space-y-0.5">
+          {bottomNav.map(({ label, href, icon: Icon, external }) =>
+            external ? (
+              <a
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+              >
+                <Icon size={16} strokeWidth={1.8} />
+                {label}
+              </a>
+            ) : (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
+                  pathname.startsWith(href)
+                    ? "bg-zinc-100 text-zinc-900 font-medium"
+                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+                )}
+              >
+                <Icon size={16} strokeWidth={1.8} />
+                {label}
+              </Link>
+            )
+          )}
+        </div>
       </nav>
       <div className="px-4 py-4 border-t border-zinc-200 space-y-2">
         {user && (

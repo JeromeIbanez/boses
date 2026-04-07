@@ -19,6 +19,7 @@ class Briefing(Base):
     file_path: Mapped[str] = mapped_column(String(1000), nullable=False)
     file_type: Mapped[str] = mapped_column(String(50), nullable=False)
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     project: Mapped["Project"] = relationship(back_populates="briefings")

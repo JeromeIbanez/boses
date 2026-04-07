@@ -17,10 +17,12 @@ def combine_briefing_texts(briefings: list["Briefing"]) -> str:
     - Briefings with no extracted_text are skipped.
     """
     parts = []
-    non_empty = [b for b in briefings if b.extracted_text and b.extracted_text.strip()]
+    non_empty = [b for b in briefings if (b.summary_text or b.extracted_text or "").strip()]
 
     for i, b in enumerate(non_empty, 1):
-        text = b.extracted_text.strip()
+        # Prefer AI summary for long briefings; fall back to full extracted text
+        raw = (b.summary_text or b.extracted_text or "").strip()
+        text = raw
         if len(non_empty) == 1:
             parts.append(text)
         else:

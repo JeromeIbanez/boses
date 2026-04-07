@@ -109,6 +109,7 @@ export interface Briefing {
   file_name: string;
   file_type: "pdf" | "image" | "text" | "video" | "audio";
   extracted_text: string | null;
+  summary_text: string | null;
   created_at: string;
 }
 

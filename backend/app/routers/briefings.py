@@ -14,7 +14,7 @@ from app.database import get_db
 from app.models.briefing import Briefing
 from app.models.project import Project
 from app.schemas.briefing import BriefingResponse
-from app.services.briefing_extractor import extract_text
+from app.services.briefing_extractor import extract_text, summarize_if_long
 
 router = APIRouter(prefix="/projects/{project_id}/briefings", tags=["briefings"])
 
@@ -76,6 +76,7 @@ async def upload_briefing(
         shutil.copyfileobj(file.file, f)
 
     extracted = extract_text(save_path, file_type)
+    summary = summarize_if_long(extracted, title) if extracted else None
 
     briefing = Briefing(
         project_id=project_id,
@@ -85,6 +86,7 @@ async def upload_briefing(
         file_path=save_path,
         file_type=file_type,
         extracted_text=extracted,
+        summary_text=summary,
     )
     db.add(briefing)
     db.commit()

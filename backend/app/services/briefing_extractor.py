@@ -156,6 +156,38 @@ def _analyze_video(file_path: str) -> str:
     return analysis
 
 
+# ~12,000 chars ≈ 3,000 tokens — long enough to keep short briefs verbatim
+_SUMMARY_CHAR_THRESHOLD = 12_000
+
+
+def summarize_if_long(text: str, title: str) -> str | None:
+    """
+    Return an AI summary when text exceeds the threshold, else None.
+    Called at upload time; result is cached in briefing.summary_text.
+    """
+    if not text or len(text) <= _SUMMARY_CHAR_THRESHOLD:
+        return None
+    client = OpenAI(api_key=settings.openai_api_key)
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": (
+                f"You are a market research analyst. The following is a briefing document titled \"{title}\".\n\n"
+                "Summarize it concisely for use in a consumer research simulation. "
+                "Preserve all key information that AI personas would need to react authentically: "
+                "product or campaign details, key messages, target audience, value proposition, "
+                "tone, and any specific claims or visuals described. "
+                "Aim for ~400 words. Do not add commentary — just the summary.\n\n"
+                f"{text[:60_000]}"  # hard cap to avoid absurdly large payloads
+            ),
+        }],
+        max_tokens=600,
+        temperature=0.3,
+    )
+    return response.choices[0].message.content or None
+
+
 def extract_text(file_path: str, file_type: str) -> str | None:
     if file_type == "pdf":
         try:

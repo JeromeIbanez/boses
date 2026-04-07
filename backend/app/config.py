@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str = ""   # service_role key (not anon key)
     SUPABASE_AVATARS_BUCKET: str = "avatars"
 
+    # Slack notifications (optional)
+    # Set to an Incoming Webhook URL to receive simulation complete/fail alerts.
+    # Create one at: https://api.slack.com/apps → Incoming Webhooks
+    SLACK_WEBHOOK_URL: str = ""
+
     @property
     def supabase_configured(self) -> bool:
         return bool(self.SUPABASE_URL and self.SUPABASE_SERVICE_KEY)

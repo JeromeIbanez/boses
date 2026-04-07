@@ -1,0 +1,76 @@
+---
+title: Authentication
+description: JWT-based authentication for the Boses API
+---
+
+The Boses API uses short-lived JWT access tokens with a rotating refresh token. All endpoints except `/health` and the auth endpoints themselves require a valid bearer token.
+
+---
+
+## 1. Register or Log In
+
+<CodeGroup>
+
+```bash Login
+curl -X POST https://api.temujintechnologies.com/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "you@company.com",
+    "password": "your-password"
+  }'
+```
+
+```json Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR...",
+  "token_type": "bearer"
+}
+```
+
+</CodeGroup>
+
+The access token expires after **15 minutes**. Use the refresh endpoint to get a new one without re-entering credentials.
+
+---
+
+## 2. Use the Token
+
+Pass the access token in the `Authorization` header on every request:
+
+```bash
+curl https://api.temujintechnologies.com/api/v1/projects \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR..."
+```
+
+---
+
+## 3. Refresh the Token
+
+```bash
+curl -X POST https://api.temujintechnologies.com/api/v1/auth/refresh \
+  -H "Content-Type: application/json"
+```
+
+The refresh token is stored as an `HttpOnly` cookie set during login — no need to pass it manually.
+
+---
+
+## Token Lifetimes
+
+| Token | Lifetime |
+|-------|----------|
+| Access token | 15 minutes |
+| Refresh token | 30 days |
+
+---
+
+## Errors
+
+| Status | Meaning |
+|--------|---------|
+| `401 Unauthorized` | Missing or expired access token |
+| `403 Forbidden` | Valid token but insufficient permissions |
+
+<Note>
+All API calls are scoped to your **company** — you can only access resources belonging to your organization.
+</Note>

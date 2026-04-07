@@ -1,0 +1,75 @@
+---
+title: Briefings
+description: Upload product briefs and stimulus materials for simulations
+---
+
+A **briefing** is a document or text passage that provides context for a simulation — product briefs, campaign concepts, packaging descriptions, pricing proposals, or any stimulus material.
+
+Briefings are attached to simulations so personas can reference them when forming responses.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/projects/{project_id}/briefings` | List briefings for a project |
+| `POST` | `/api/v1/projects/{project_id}/briefings` | Upload a new briefing (PDF or text) |
+| `GET` | `/api/v1/projects/{project_id}/briefings/{briefing_id}` | Get briefing metadata |
+| `GET` | `/api/v1/projects/{project_id}/briefings/{briefing_id}/file` | Download the original file |
+| `PATCH` | `/api/v1/projects/{project_id}/briefings/{briefing_id}` | Update briefing title or summary |
+| `DELETE` | `/api/v1/projects/{project_id}/briefings/{briefing_id}` | Delete a briefing |
+
+---
+
+## Upload a briefing
+
+Briefings are uploaded as `multipart/form-data` with a `file` field (PDF) or a plain text `content` field.
+
+```bash
+# PDF upload
+curl -X POST https://api.temujintechnologies.com/api/v1/projects/{project_id}/briefings \
+  -H "Authorization: Bearer <token>" \
+  -F "title=Chili-Lime Relaunch Brief" \
+  -F "file=@brief.pdf"
+
+# Text upload
+curl -X POST https://api.temujintechnologies.com/api/v1/projects/{project_id}/briefings \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Concept Description",
+    "content": "We are launching a chili-lime flavoured corn chip at PHP 35 per pack..."
+  }'
+```
+
+---
+
+## Auto-summarisation
+
+Long briefings (PDF or text over ~1,000 words) are automatically summarised at upload time. The summary is stored in `summary_text` and injected into simulation prompts — keeping context relevant without overwhelming the LLM context window.
+
+```json
+{
+  "id": "...",
+  "title": "Chili-Lime Relaunch Brief",
+  "summary_text": "AI-generated summary of the brief content...",
+  "file_path": "uploads/...",
+  "created_at": "2026-04-07T09:00:00"
+}
+```
+
+---
+
+## Attaching briefings to simulations
+
+Pass `briefing_ids` when creating a simulation:
+
+```json
+{
+  "persona_group_id": "...",
+  "simulation_type": "concept_test",
+  "prompt_question": "How do you respond to this new product?",
+  "briefing_ids": ["<briefing_id>"]
+}
+```
+
+Multiple briefings can be attached to one simulation.

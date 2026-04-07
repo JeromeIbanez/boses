@@ -1,0 +1,54 @@
+---
+title: API Overview
+description: Full interactive reference for all Boses API endpoints
+---
+
+The Boses API is a REST API. All endpoints are prefixed with `/api/v1` and return JSON.
+
+## Interactive Explorer
+
+The fastest way to explore and test endpoints is the live Swagger UI:
+
+<Card title="Swagger UI — Production" icon="arrow-up-right-from-square" href="https://api.temujintechnologies.com/docs">
+  Interactive API explorer with live request execution
+</Card>
+
+<Card title="OpenAPI Spec (JSON)" icon="code" href="https://api.temujintechnologies.com/openapi.json">
+  Download the raw OpenAPI 3.x spec
+</Card>
+
+---
+
+## Resource Overview
+
+| Resource | Base path | Description |
+|----------|-----------|-------------|
+| [Projects](/api-reference/projects) | `/api/v1/projects` | Top-level containers for research initiatives |
+| [Persona Groups](/api-reference/persona-groups) | `/api/v1/projects/{id}/persona-groups` | Demographic definitions and persona generation |
+| [Personas](/api-reference/personas) | `/api/v1/projects/{id}/persona-groups/{id}/personas` | Individual AI consumers |
+| [Briefings](/api-reference/briefings) | `/api/v1/projects/{id}/briefings` | Product briefs and stimulus materials |
+| [Simulations](/api-reference/simulations) | `/api/v1/projects/{id}/simulations` | Research studies run against persona groups |
+| [Library](/api-reference/library) | `/api/v1/library` | Reusable cross-project persona library |
+
+---
+
+## Common patterns
+
+### Pagination
+List endpoints return arrays. No cursor-based pagination currently — all records for the authenticated company are returned.
+
+### IDs
+All resource IDs are UUIDs (e.g. `"3fa85f64-5717-4562-b3fc-2c963f66afa6"`).
+
+### Timestamps
+All timestamps are UTC ISO 8601 strings: `"2026-04-07T08:30:00"`.
+
+### Errors
+
+```json
+{
+  "detail": "Simulation not found"
+}
+```
+
+Standard HTTP status codes: `400` bad request, `401` unauthenticated, `403` forbidden, `404` not found, `422` validation error, `500` server error.

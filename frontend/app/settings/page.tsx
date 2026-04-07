@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { getCompanySettings, updateCompanySettings } from "@/lib/api";
@@ -17,12 +17,13 @@ export default function SettingsPage() {
   const { data: company, isLoading } = useQuery({
     queryKey: ["company-settings"],
     queryFn: getCompanySettings,
-    onSuccess: (data: { slack_webhook_url: string | null }) => {
-      setSlackUrl(data.slack_webhook_url ?? "");
-    },
-  } as Parameters<typeof useQuery>[0]);
+  });
 
-  const { mutate: save, isLoading: isSaving, error } = useMutation({
+  useEffect(() => {
+    if (company) setSlackUrl(company.slack_webhook_url ?? "");
+  }, [company]);
+
+  const { mutate: save, isPending: isSaving, error } = useMutation({
     mutationFn: () =>
       updateCompanySettings({ slack_webhook_url: slackUrl.trim() || null }),
     onSuccess: () => {

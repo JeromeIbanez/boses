@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderOpen, BookMarked, LogOut, FileText, Puzzle, Settings } from "lucide-react";
+import { LayoutDashboard, FolderOpen, BookMarked, LogOut, FileText, Puzzle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -14,7 +14,6 @@ const nav = [
 
 const bottomNav = [
   { label: "Integrations", href: "/integrations", icon: Puzzle },
-  { label: "Settings", href: "/settings", icon: Settings },
   { label: "API Docs", href: "https://docs.temujintechnologies.com", icon: FileText, external: true },
 ];
 

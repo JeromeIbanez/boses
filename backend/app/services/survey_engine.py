@@ -22,6 +22,32 @@ from app.services.prompts import survey_system_prompt, survey_user_prompt, surve
 logger = logging.getLogger(__name__)
 
 
+def _parse_json(raw: str | None, fallback: object) -> object:
+    """Parse JSON from an OpenAI response, stripping markdown code fences if present."""
+    if not raw or not raw.strip():
+        return fallback
+    text = raw.strip()
+    # Strip ```json ... ``` or ``` ... ``` wrappers
+    if text.startswith("```"):
+        lines = text.splitlines()
+        # Drop first line (```json or ```) and last line (```)
+        inner = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+        text = inner.strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Last resort: find the first { or [ and parse from there
+        for start_char, end_char in [('{', '}'), ('[', ']')]:
+            s = text.find(start_char)
+            e = text.rfind(end_char)
+            if s != -1 and e > s:
+                try:
+                    return json.loads(text[s:e + 1])
+                except json.JSONDecodeError:
+                    pass
+        return fallback
+
+
 def _build_survey_prompt(persona: "Persona", briefing_text: str, questions: list[dict]) -> tuple[str, str]:
     """Return (system_prompt, user_prompt) for a persona filling out the survey."""
     sys_prompt = survey_system_prompt(persona, briefing_text)
@@ -99,8 +125,8 @@ def run_survey(simulation_id: str) -> None:
                     ],
                     temperature=0.85,
                 )
-                raw = response.choices[0].message.content or "[]"
-                answers = json.loads(raw)
+                raw = response.choices[0].message.content
+                answers = _parse_json(raw, [])
 
                 # Attach question text/type to each answer for display convenience
                 q_map = {q["id"]: q for q in questions}
@@ -225,7 +251,7 @@ def run_survey(simulation_id: str) -> None:
                             }],
                             temperature=0.5,
                         )
-                        oe_json = json.loads(oe_response.choices[0].message.content or "{}")
+                        oe_json = _parse_json(oe_response.choices[0].message.content, {})
                         themes = oe_json.get("themes", [])
                         notable_quotes = oe_json.get("notable_quotes", [])
                     except Exception as e:
@@ -267,7 +293,7 @@ def run_survey(simulation_id: str) -> None:
                 }],
                 temperature=0.7,
             )
-            exec_json = json.loads(exec_response.choices[0].message.content or "{}")
+            exec_json = _parse_json(exec_response.choices[0].message.content, {})
             executive_summary = exec_json.get("executive_summary", "")
             recommendations = exec_json.get("recommendations", "")
         except Exception as e:

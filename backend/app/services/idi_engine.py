@@ -14,6 +14,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
+from openai import OpenAI
 from app.services.openai_client import get_openai_client
 from sqlalchemy import select
 

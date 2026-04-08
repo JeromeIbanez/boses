@@ -17,6 +17,7 @@ import logging
 import uuid as _uuid
 from abc import ABC, abstractmethod
 
+from openai import OpenAI
 from app.services.openai_client import get_openai_client
 
 from app.config import settings

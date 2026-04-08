@@ -678,6 +678,13 @@ export default function SimulationsTab({ projectId }: Props) {
             </>
           )}
 
+          {/* Run error */}
+          {run.error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">
+              {(run.error as Error).message}
+            </div>
+          )}
+
           {/* Nav */}
           <div className="flex justify-between pt-2">
             <Button variant="ghost" onClick={() => { if (step === 0) handleClose(); else setStep(s => s - 1); }}>

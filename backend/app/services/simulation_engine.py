@@ -148,7 +148,7 @@ def run_simulation(simulation_id: str) -> None:
         from app.services.briefing_utils import combine_briefing_texts
         briefing_text = combine_briefing_texts(simulation.briefings)
         individual_results = []
-        failed_personas = []
+        failed_personas: list[dict] = []
         sim_ref = simulation_id[:8]
         total = len(personas)
 
@@ -159,7 +159,7 @@ def run_simulation(simulation_id: str) -> None:
                 "total": total,
                 "current_name": persona.full_name,
                 "completed": [p.full_name for p, _ in individual_results],
-                "failed": failed_personas[:],
+                "failed": [f["name"] for f in failed_personas],
                 "stage": "interviewing",
             }
             db.commit()
@@ -195,14 +195,20 @@ def run_simulation(simulation_id: str) -> None:
                 logger.info(f"[sim:{sim_ref}] ✓ {persona.full_name} ({parsed['sentiment']})")
             except Exception as persona_err:
                 logger.error(f"[sim:{sim_ref}] ✗ {persona.full_name} failed: {persona_err}")
-                failed_personas.append(persona.full_name)
+                failed_personas.append({
+                    "name": persona.full_name,
+                    "persona_id": str(persona.id),
+                    "error": str(persona_err),
+                    "stage": "interviewing",
+                })
 
         if not individual_results:
             raise RuntimeError(f"All {len(personas)} persona(s) failed to respond.")
         if failed_personas:
+            simulation.failed_personas = failed_personas
             simulation.error_message = (
                 f"{len(failed_personas)} of {len(personas)} persona(s) failed: "
-                + ", ".join(failed_personas)
+                + ", ".join(f["name"] for f in failed_personas)
             )
 
         # Aggregate summary

@@ -27,6 +27,7 @@ class SimulationResponse(BaseModel):
     survey_schema: Optional[dict[str, Any]]
     status: str
     error_message: Optional[str]
+    failed_personas: Optional[list[dict[str, Any]]]
     progress: Optional[dict[str, Any]]
     share_token: Optional[str]
     created_at: datetime

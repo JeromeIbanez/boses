@@ -44,6 +44,11 @@ class Settings(BaseSettings):
             url = url.replace("postgres://", "postgresql+psycopg://", 1)
         elif url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+        # Enforce SSL for non-local connections
+        if self.ENVIRONMENT in ("production", "staging"):
+            separator = "&" if "?" in url else "?"
+            if "sslmode" not in url:
+                url = f"{url}{separator}sslmode=require"
         return url
 
     @property

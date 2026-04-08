@@ -1,6 +1,8 @@
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,9 +32,28 @@ if settings.SENTRY_DSN:
     )
 
 
+async def _cleanup_refresh_tokens() -> None:
+    """Periodically delete refresh tokens older than REFRESH_TOKEN_EXPIRE_DAYS + 30 days."""
+    while True:
+        await asyncio.sleep(24 * 60 * 60)  # run once every 24 hours
+        try:
+            from app.database import SessionLocal
+            from app.models.refresh_token import RefreshToken
+            cutoff = datetime.utcnow() - timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS + 30)
+            with SessionLocal() as db:
+                deleted = db.query(RefreshToken).filter(RefreshToken.created_at < cutoff).delete()
+                db.commit()
+            if deleted:
+                logging.getLogger(__name__).info("Token cleanup: deleted %d expired refresh tokens", deleted)
+        except Exception as e:
+            logging.getLogger(__name__).error("Token cleanup failed: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    task = asyncio.create_task(_cleanup_refresh_tokens())
     yield
+    task.cancel()
 
 
 app = FastAPI(

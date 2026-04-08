@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText, BarChart2, Share2, Check, X } from "lucide-react";
-import { getSimulation, getSimulationResults, abortSimulation, generateShareLink, revokeShareLink } from "@/lib/api";
+import { getSimulation, getSimulationResults, abortSimulation, generateShareLink, revokeShareLink, getReliabilityCheck } from "@/lib/api";
 import ConvergencePanel from "@/components/simulations/ConvergencePanel";
 import ReliabilityPanel from "@/components/simulations/ReliabilityPanel";
 import Badge from "@/components/ui/Badge";
@@ -1075,6 +1075,16 @@ export default function SimulationResultsPage() {
     if (r.persona_id) personaNames[r.persona_id] = `Persona ${i + 1}`;
   });
 
+  const { data: reliabilityData } = useQuery({
+    queryKey: ["reliability", simulationId],
+    queryFn: () => getReliabilityCheck(projectId, simulationId),
+    enabled: simulation?.status === "complete",
+    refetchInterval: (q) => {
+      const status = q.state.data?.status;
+      return status === "running" || status === "pending" ? 5000 : false;
+    },
+  });
+
   const isRunning = simulation?.status === "pending" || simulation?.status === "running" || simulation?.status === "generating_report";
   const isActive = simulation?.status === "active";
   const isFailed = simulation?.status === "failed";
@@ -1112,6 +1122,15 @@ export default function SimulationResultsPage() {
                 <Badge variant="default">{simTypeLabel()}</Badge>
               </>
             )}
+            {reliabilityData?.status === "complete" && reliabilityData.confidence_score != null && (() => {
+              const pct = Math.round(reliabilityData.confidence_score * 100);
+              const color = pct >= 80 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : pct >= 60 ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-red-50 text-red-600 border-red-200";
+              return (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full border flex items-center gap-1 ${color}`}>
+                  <span>🛡</span>{pct}% reliable
+                </span>
+              );
+            })()}
           </div>
           {simulation?.status === "complete" && (
             <div className="flex items-center gap-2">

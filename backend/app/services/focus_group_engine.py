@@ -224,7 +224,7 @@ def run_focus_group(simulation_id: str) -> None:
         # Round 1 — initial responses
         # ------------------------------------------------------------------ #
         round1_entries: list[dict] = []
-        failed_personas: list[str] = []
+        failed_personas: list[dict] = []
         round1_per_persona: dict[str, str] = {}  # persona_id → text
 
         for i, persona in enumerate(personas, 1):
@@ -235,7 +235,7 @@ def run_focus_group(simulation_id: str) -> None:
                 "total": total_personas,
                 "current_name": persona.full_name,
                 "completed": [e["speaker"] for e in round1_entries],
-                "failed": failed_personas[:],
+                "failed": [f["name"] for f in failed_personas],
             }
             db.commit()
             logger.info(f"[fg:{sim_ref}] Round 1 — {persona.full_name} ({i}/{total_personas})")
@@ -250,7 +250,12 @@ def run_focus_group(simulation_id: str) -> None:
                 logger.info(f"[fg:{sim_ref}] ✓ Round 1 {persona.full_name}")
             except Exception as e:
                 logger.error(f"[fg:{sim_ref}] ✗ Round 1 {persona.full_name}: {e}")
-                failed_personas.append(persona.full_name)
+                failed_personas.append({
+                    "name": persona.full_name,
+                    "persona_id": str(persona.id),
+                    "error": str(e),
+                    "stage": "round_1",
+                })
 
         if not round1_entries:
             raise RuntimeError(f"All {len(personas)} persona(s) failed in Round 1.")
@@ -265,7 +270,7 @@ def run_focus_group(simulation_id: str) -> None:
             "total": total_personas,
             "current_name": None,
             "completed": [e["speaker"] for e in round1_entries],
-            "failed": failed_personas[:],
+            "failed": [f["name"] for f in failed_personas],
         }
         db.commit()
 
@@ -290,7 +295,7 @@ def run_focus_group(simulation_id: str) -> None:
                     "total": total_personas,
                     "current_name": persona.full_name,
                     "completed": [e["speaker"] for e in round1_entries],
-                    "failed": failed_personas[:],
+                    "failed": [f["name"] for f in failed_personas],
                 }
                 db.commit()
                 logger.info(f"[fg:{sim_ref}] Round 2 — {persona.full_name} ({i}/{total_personas})")
@@ -306,7 +311,12 @@ def run_focus_group(simulation_id: str) -> None:
                     logger.info(f"[fg:{sim_ref}] ✓ Round 2 {persona.full_name}")
                 except Exception as e:
                     logger.error(f"[fg:{sim_ref}] ✗ Round 2 {persona.full_name}: {e}")
-                    # Round 2 failures are non-fatal — persona still has a Round 1 result
+                    failed_personas.append({
+                        "name": persona.full_name,
+                        "persona_id": str(persona.id),
+                        "error": str(e),
+                        "stage": "round_2",
+                    })
 
         # ------------------------------------------------------------------ #
         # Store individual results
@@ -338,7 +348,7 @@ def run_focus_group(simulation_id: str) -> None:
             "total": total_personas,
             "current_name": None,
             "completed": [e["speaker"] for e in round1_entries],
-            "failed": failed_personas[:],
+            "failed": [f["name"] for f in failed_personas],
         }
         db.commit()
         logger.info(f"[fg:{sim_ref}] Generating aggregate report…")
@@ -361,9 +371,10 @@ def run_focus_group(simulation_id: str) -> None:
         db.add(agg_result)
 
         if failed_personas:
+            simulation.failed_personas = failed_personas
             simulation.error_message = (
-                f"{len(failed_personas)} of {len(personas)} persona(s) failed in Round 1: "
-                + ", ".join(failed_personas)
+                f"{len(failed_personas)} of {len(personas)} persona(s) failed: "
+                + ", ".join(f["name"] for f in failed_personas)
             )
 
         simulation.status = "complete"

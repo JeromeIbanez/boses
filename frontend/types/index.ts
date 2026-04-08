@@ -139,6 +139,7 @@ export interface Simulation {
   survey_schema: SurveySchema | null;
   status: "pending" | "running" | "active" | "generating_report" | "complete" | "failed";
   error_message: string | null;
+  failed_personas: { name: string; persona_id: string; error: string; stage: string }[] | null;
   progress: {
     current: number;
     total: number;

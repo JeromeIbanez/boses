@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 IDI (In-Depth Interview) simulation engine.
 

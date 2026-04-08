@@ -126,6 +126,25 @@ def create_simulation(
     return simulation
 
 
+@router.get("/convergence")
+def get_convergence(
+    project_id: str,
+    persona_group_id: str,
+    briefing_id: str | None = None,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Return convergence scores across completed simulations sharing the same persona group."""
+    from app.services.benchmarking_service import compute_convergence
+    _get_project_or_404(project_id, db, current_user.company_id)
+    return compute_convergence(
+        project_id=project_id,
+        briefing_id=briefing_id,
+        persona_group_id=persona_group_id,
+        db=db,
+    )
+
+
 @router.get("/{simulation_id}", response_model=SimulationResponse)
 def get_simulation(
     project_id: str,
@@ -525,29 +544,6 @@ def run_conjoint_simulation(
 
     background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
     return simulation
-
-
-# ---------------------------------------------------------------------------
-# Phase 1: Cross-simulation convergence
-# ---------------------------------------------------------------------------
-
-@router.get("/convergence")
-def get_convergence(
-    project_id: str,
-    persona_group_id: str,
-    briefing_id: str | None = None,
-    db: Session = Depends(get_db),
-    current_user: CurrentUser = Depends(get_current_user),
-):
-    """Return convergence scores across completed simulations sharing the same persona group."""
-    from app.services.benchmarking_service import compute_convergence
-    _get_project_or_404(project_id, db, current_user.company_id)
-    return compute_convergence(
-        project_id=project_id,
-        briefing_id=briefing_id,
-        persona_group_id=persona_group_id,
-        db=db,
-    )
 
 
 # ---------------------------------------------------------------------------

@@ -21,6 +21,7 @@ class Simulation(Base):
     survey_schema: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="pending")
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    failed_personas: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     progress: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     share_token: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -34,3 +35,4 @@ class Simulation(Base):
     idi_persona: Mapped["Persona | None"] = relationship(foreign_keys="[Simulation.idi_persona_id]", passive_deletes=True)
     results: Mapped[list["SimulationResult"]] = relationship(back_populates="simulation", cascade="all, delete-orphan")
     idi_messages: Mapped[list["IDIMessage"]] = relationship(back_populates="simulation", cascade="all, delete-orphan")
+    ratings: Mapped[list["SimulationRating"]] = relationship(back_populates="simulation", cascade="all, delete-orphan")

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Conjoint / Trade-Off Test simulation engine.
 

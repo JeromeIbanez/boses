@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Focus Group simulation engine.
 

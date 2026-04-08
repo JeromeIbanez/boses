@@ -1,11 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, RefreshCw } from "lucide-react";
+import { ShieldCheck, RefreshCw, X } from "lucide-react";
 import { getReliabilityCheck, createReliabilityCheck } from "@/lib/api";
 import Card from "@/components/ui/Card";
 import Spinner from "@/components/ui/Spinner";
+
+function ScienceExplainer({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-3 text-xs text-zinc-600 space-y-2 relative">
+      <button onClick={onClose} className="absolute top-2 right-2 text-zinc-400 hover:text-zinc-600">
+        <X size={12} />
+      </button>
+      <p className="font-medium text-zinc-700">How this works</p>
+      <p>We re-run your simulation multiple times with identical settings and measure consistency across runs using three signals:</p>
+      <ul className="space-y-1.5 list-none">
+        <li><span className="font-medium text-zinc-700">Sentiment agreement (40%)</span> — do the runs agree on whether the reaction is positive, neutral, or negative?</li>
+        <li><span className="font-medium text-zinc-700">Distribution consistency (35%)</span> — how similar are the full sentiment distributions across runs? (measured using Jensen-Shannon divergence)</li>
+        <li><span className="font-medium text-zinc-700">Theme stability (25%)</span> — which themes appear in most runs vs. only once?</li>
+      </ul>
+      <p className="text-zinc-400">A high score means your results are stable. A low score means the model is sensitive to randomness and you should interpret results with caution.</p>
+    </div>
+  );
+}
 
 interface Props {
   projectId: string;
@@ -41,6 +59,7 @@ function ScoreRow({ label, value, positiveHigh = true }: { label: string; value:
 
 export default function ReliabilityPanel({ projectId, simulationId }: Props) {
   const qc = useQueryClient();
+  const [showExplainer, setShowExplainer] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["reliability", simulationId],
@@ -56,15 +75,30 @@ export default function ReliabilityPanel({ projectId, simulationId }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reliability", simulationId] }),
   });
 
+  const header = (rightSlot?: React.ReactNode) => (
+    <div className="flex items-center justify-between">
+      <h3 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide flex items-center gap-2">
+        <ShieldCheck size={14} /> Reliability Check
+        <button
+          onClick={() => setShowExplainer(v => !v)}
+          className="text-[10px] font-medium text-zinc-400 hover:text-zinc-600 border border-zinc-200 rounded-full w-4 h-4 flex items-center justify-center leading-none transition-colors"
+          title="How does this work?"
+        >
+          ?
+        </button>
+      </h3>
+      {rightSlot}
+    </div>
+  );
+
   if (isLoading) return null;
 
   // No study yet
   if (!data?.exists) {
     return (
       <Card className="space-y-3">
-        <h3 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide flex items-center gap-2">
-          <ShieldCheck size={14} /> Reliability Check
-        </h3>
+        {header()}
+        {showExplainer && <ScienceExplainer onClose={() => setShowExplainer(false)} />}
         <p className="text-xs text-zinc-500">
           Not sure how stable these results are? Run this simulation 2 more times automatically and get a confidence score.
         </p>
@@ -84,9 +118,8 @@ export default function ReliabilityPanel({ projectId, simulationId }: Props) {
   if (data.status === "running" || data.status === "pending") {
     return (
       <Card className="space-y-3">
-        <h3 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide flex items-center gap-2">
-          <ShieldCheck size={14} /> Reliability Check
-        </h3>
+        {header()}
+        {showExplainer && <ScienceExplainer onClose={() => setShowExplainer(false)} />}
         <div className="flex items-center gap-2 text-xs text-zinc-500">
           <Spinner className="h-3 w-3 border-zinc-200 border-t-zinc-600" />
           Running {data.n_runs} simulations to assess consistency…
@@ -98,12 +131,8 @@ export default function ReliabilityPanel({ projectId, simulationId }: Props) {
   // Study complete (or failed)
   return (
     <Card className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide flex items-center gap-2">
-          <ShieldCheck size={14} /> Reliability Check
-        </h3>
-        {data.confidence_score != null && <ConfidenceBadge score={data.confidence_score} />}
-      </div>
+      {header(data.confidence_score != null ? <ConfidenceBadge score={data.confidence_score} /> : undefined)}
+      {showExplainer && <ScienceExplainer onClose={() => setShowExplainer(false)} />}
 
       {data.confidence_score != null ? (
         <>

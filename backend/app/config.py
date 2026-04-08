@@ -54,3 +54,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if settings.JWT_SECRET == "change-me-in-production":
+    raise RuntimeError(
+        "JWT_SECRET is set to the default placeholder. "
+        "Set a strong random value in your environment before starting the server."
+    )

@@ -1,5 +1,8 @@
 import json
+import logging
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+
+logger = logging.getLogger(__name__)
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -67,7 +70,8 @@ def parse_prompt(
         )
         return json.loads(response.choices[0].message.content)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Failed to suggest persona group config: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to generate suggestion. Please try again.")
 
 
 @router.get("", response_model=list[PersonaGroupResponse])

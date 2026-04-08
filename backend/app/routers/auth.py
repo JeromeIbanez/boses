@@ -1,3 +1,4 @@
+import hashlib
 import re
 import secrets
 from datetime import datetime, timedelta
@@ -106,10 +107,8 @@ def signup(request: Request, body: SignupRequest, response: Response, db: Sessio
 @limiter.limit("20/minute")
 def login(request: Request, body: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email.lower()).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="No account found with that email address")
-    if not verify_password(body.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect password")
+    if not user or not verify_password(body.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="This account has been deactivated. Please contact support.")
 
@@ -209,8 +208,9 @@ def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session =
     if not user:
         return
 
-    token = secrets.token_urlsafe(32)
-    user.password_reset_token = token
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    user.password_reset_token = token_hash
     user.password_reset_token_expiry = datetime.utcnow() + timedelta(hours=2)
     db.commit()
 
@@ -221,7 +221,8 @@ def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session =
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
 def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.password_reset_token == body.token).first()
+    token_hash = hashlib.sha256(body.token.encode()).hexdigest()
+    user = db.query(User).filter(User.password_reset_token == token_hash).first()
 
     if (
         not user

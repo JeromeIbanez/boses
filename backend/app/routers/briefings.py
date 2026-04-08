@@ -2,6 +2,7 @@ import mimetypes
 import os
 import shutil
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
 from fastapi.responses import FileResponse
@@ -46,7 +47,7 @@ async def upload_briefing(
 ):
     _get_project_or_404(project_id, db, current_user.company_id)
 
-    filename = file.filename or "upload"
+    filename = Path(file.filename or "upload").name
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "txt"
     _IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
     _VIDEO_EXTS = {"mp4", "mov", "avi", "mkv", "webm"}

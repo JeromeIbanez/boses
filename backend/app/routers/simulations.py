@@ -44,10 +44,13 @@ def list_simulations(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
+    from app.models.reproducibility import ReproducibilityRun
     _get_project_or_404(project_id, db, current_user.company_id)
+    reliability_run_ids = select(ReproducibilityRun.simulation_id)
     return db.execute(
         select(Simulation)
         .where(Simulation.project_id == project_id)
+        .where(Simulation.id.not_in(reliability_run_ids))
         .order_by(Simulation.created_at.desc())
     ).scalars().all()
 

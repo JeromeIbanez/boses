@@ -3,13 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from openai import OpenAI
+from app.services.openai_client import get_openai_client
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.config import settings
 from app.database import get_db
 from app.models.persona_group import PersonaGroup
 from app.models.project import Project
+from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.schemas.persona_group import PersonaGroupCreate, PersonaGroupUpdate, PersonaGroupResponse
 from app.services.persona_generator import generate_personas
 from app.services.ethnography_service import should_refresh, refresh_market_context
@@ -21,12 +22,6 @@ class ParsePromptRequest(BaseModel):
     prompt: str
 
 
-def _get_project_or_404(project_id: str, db: Session, company_id) -> Project:
-    project = db.get(Project, project_id)
-    if not project or project.company_id != company_id:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
-
 
 @router.post("/parse-prompt")
 def parse_prompt(
@@ -37,7 +32,7 @@ def parse_prompt(
 ):
     _get_project_or_404(project_id, db, current_user.company_id)
     try:
-        client = OpenAI(api_key=settings.openai_api_key)
+        client = get_openai_client()
         response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[

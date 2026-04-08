@@ -13,17 +13,12 @@ from app.config import settings
 from app.database import get_db
 from app.models.briefing import Briefing
 from app.models.project import Project
+from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.schemas.briefing import BriefingResponse
 from app.services.briefing_extractor import extract_text, summarize_if_long
 
 router = APIRouter(prefix="/projects/{project_id}/briefings", tags=["briefings"])
 
-
-def _get_project_or_404(project_id: str, db: Session, company_id) -> Project:
-    project = db.get(Project, project_id)
-    if not project or project.company_id != company_id:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
 
 
 @router.get("", response_model=list[BriefingResponse])

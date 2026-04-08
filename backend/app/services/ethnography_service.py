@@ -42,7 +42,7 @@ import uuid
 from datetime import datetime, timedelta
 
 import httpx
-from openai import OpenAI
+from app.services.openai_client import get_openai_client
 from sqlalchemy import select
 
 from app.config import settings
@@ -667,7 +667,7 @@ def _extract_signals(market_code: str, batches: list[dict], vertical: str | None
         f"{raw_content[:8000]}"  # bumped from 6000 — more sources now contributing
     )
 
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=[

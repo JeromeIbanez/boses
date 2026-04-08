@@ -192,7 +192,7 @@ def generate_avatars_for_group(client: OpenAI, persona_ids: list[str]) -> None:
     """
     if not persona_ids:
         return
-    with ThreadPoolExecutor(max_workers=len(persona_ids)) as pool:
+    with ThreadPoolExecutor(max_workers=min(len(persona_ids), 4)) as pool:
         futures = {pool.submit(_generate_and_save, client, pid): pid for pid in persona_ids}
         for future in as_completed(futures):
             pid = futures[future]

@@ -11,9 +11,10 @@ Handles two modes:
 import json
 import logging
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-from openai import OpenAI
+from app.services.openai_client import get_openai_client
 from sqlalchemy import select
 
 from app.config import settings
@@ -156,8 +157,32 @@ def _generate_aggregate_report(client: OpenAI, group_name: str, question_summary
 # AI-Assisted IDI runner
 # ---------------------------------------------------------------------------
 
+_MAX_PARALLEL_PERSONAS = 5
+
+
+def _idi_persona_worker(persona, briefing_text: str, questions: list) -> tuple:
+    """Run a single persona's full IDI interview via LLM. DB-free — no session needed."""
+    client = get_openai_client()
+    system_prompt = idi_system_prompt(persona, briefing_text)
+    messages = [{"role": "system", "content": system_prompt}]
+    answers = []
+    for question in questions:
+        messages.append({"role": "user", "content": question})
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=messages,
+            temperature=0.85,
+        )
+        answer = response.choices[0].message.content or ""
+        messages.append({"role": "assistant", "content": answer})
+        answers.append(answer)
+    transcript = _format_transcript(questions, answers)
+    analysis = _analyse_persona_transcript(client, persona, transcript)
+    return persona, transcript, analysis
+
+
 def run_idi_ai(simulation_id: str) -> None:
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     db = SessionLocal()
     sim_ref = simulation_id[:8]
     try:
@@ -187,69 +212,56 @@ def run_idi_ai(simulation_id: str) -> None:
         failed_personas: list[dict] = []
         total = len(personas)
 
-        for i, persona in enumerate(personas, 1):
-            logger.info(f"[idi:{sim_ref}] Persona {i}/{total}: {persona.full_name}")
-            simulation.progress = {
-                "current": i,
-                "total": total,
-                "current_name": persona.full_name,
-                "completed": [a["name"] for a in persona_analyses],
-                "failed": [f["name"] for f in failed_personas],
-                "stage": "interviewing",
+        simulation.progress = {
+            "current": 0,
+            "total": total,
+            "current_name": None,
+            "completed": [],
+            "failed": [],
+            "stage": "interviewing",
+        }
+        db.commit()
+
+        with ThreadPoolExecutor(max_workers=min(total, _MAX_PARALLEL_PERSONAS)) as executor:
+            futures = {
+                executor.submit(_idi_persona_worker, persona, briefing_text, questions): persona
+                for persona in personas
             }
-            db.commit()
-            try:
-                system_prompt = idi_system_prompt(persona, briefing_text)
-                messages = [{"role": "system", "content": system_prompt}]
-                answers = []
-
-                for question in questions:
-                    messages.append({"role": "user", "content": question})
-                    response = client.chat.completions.create(
-                        model=settings.OPENAI_MODEL,
-                        messages=messages,
-                        temperature=0.85,
+            for future in as_completed(futures):
+                persona = futures[future]
+                try:
+                    _, transcript, analysis = future.result()
+                    result = SimulationResult(
+                        simulation_id=simulation_id,
+                        persona_id=persona.id,
+                        result_type="idi_individual",
+                        sentiment=analysis["sentiment"],
+                        sentiment_score={"Positive": 1.0, "Neutral": 0.0, "Negative": -1.0}.get(analysis["sentiment"], 0.0),
+                        transcript=transcript,
+                        key_themes=analysis["key_themes"] or None,
+                        notable_quote=analysis["notable_quotes"][0] if analysis["notable_quotes"] else None,
+                        report_sections={
+                            "summary": analysis["summary"],
+                            "notable_quotes": analysis["notable_quotes"],
+                        },
                     )
-                    answer = response.choices[0].message.content or ""
-                    messages.append({"role": "assistant", "content": answer})
-                    answers.append(answer)
-
-                transcript = _format_transcript(questions, answers)
-                analysis = _analyse_persona_transcript(client, persona, transcript)
-
-                result = SimulationResult(
-                    simulation_id=simulation_id,
-                    persona_id=persona.id,
-                    result_type="idi_individual",
-                    sentiment=analysis["sentiment"],
-                    sentiment_score={"Positive": 1.0, "Neutral": 0.0, "Negative": -1.0}.get(analysis["sentiment"], 0.0),
-                    transcript=transcript,
-                    key_themes=analysis["key_themes"] or None,
-                    notable_quote=analysis["notable_quotes"][0] if analysis["notable_quotes"] else None,
-                    report_sections={
-                        "summary": analysis["summary"],
-                        "notable_quotes": analysis["notable_quotes"],
-                    },
-                )
-                db.add(result)
-                db.flush()
-
-                persona_analyses.append({
-                    "name": persona.full_name,
-                    "age": persona.age,
-                    "occupation": persona.occupation,
-                    **analysis,
-                })
-                logger.info(f"[idi:{sim_ref}] ✓ {persona.full_name} ({analysis['sentiment']})")
-
-            except Exception as e:
-                logger.error(f"[idi:{sim_ref}] ✗ {persona.full_name} failed: {e}")
-                failed_personas.append({
-                    "name": persona.full_name,
-                    "persona_id": str(persona.id),
-                    "error": str(e),
-                    "stage": "interviewing",
-                })
+                    db.add(result)
+                    db.flush()
+                    persona_analyses.append({
+                        "name": persona.full_name,
+                        "age": persona.age,
+                        "occupation": persona.occupation,
+                        **analysis,
+                    })
+                    logger.info(f"[idi:{sim_ref}] ✓ {persona.full_name} ({analysis['sentiment']})")
+                except Exception as e:
+                    logger.error(f"[idi:{sim_ref}] ✗ {persona.full_name} failed: {e}")
+                    failed_personas.append({
+                        "name": persona.full_name,
+                        "persona_id": str(persona.id),
+                        "error": str(e),
+                        "stage": "interviewing",
+                    })
 
         if not persona_analyses:
             raise RuntimeError(f"All {len(personas)} personas failed during IDI.")
@@ -328,7 +340,7 @@ def _trigger_scoring(simulation_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 def generate_idi_report_from_messages(simulation_id: str) -> None:
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     db = SessionLocal()
     sim_ref = simulation_id[:8]
     try:

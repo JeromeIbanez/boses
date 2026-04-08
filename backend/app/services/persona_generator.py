@@ -17,7 +17,7 @@ import logging
 import uuid as _uuid
 from abc import ABC, abstractmethod
 
-from openai import OpenAI
+from app.services.openai_client import get_openai_client
 
 from app.config import settings
 from app.database import SessionLocal
@@ -331,7 +331,7 @@ def _set_progress(db, group: PersonaGroup, current: int, total: int, current_nam
 
 
 def generate_personas(group_id: str) -> None:
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     db = SessionLocal()
     try:
         group = db.get(PersonaGroup, group_id)

@@ -12,12 +12,14 @@ from sqlalchemy import select
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.config import settings
 from app.database import get_db
+from app.services.openai_client import get_openai_client
 from app.models.idi_message import IDIMessage
 from app.models.persona import Persona
 from app.models.simulation import Simulation
 from app.models.simulation_briefing import SimulationBriefing
 from app.models.simulation_result import SimulationResult
 from app.models.project import Project
+from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.schemas.simulation import (
     ConjointDesignCreate,
     IDIMessageCreate,
@@ -30,12 +32,6 @@ from app.services.simulation_engine import run_simulation
 
 router = APIRouter(prefix="/projects/{project_id}/simulations", tags=["simulations"])
 
-
-def _get_project_or_404(project_id: str, db: Session, company_id) -> Project:
-    project = db.get(Project, project_id)
-    if not project or project.company_id != company_id:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
 
 
 @router.get("", response_model=list[SimulationResponse])
@@ -267,8 +263,7 @@ async def upload_idi_script(
 
     # Use LLM to extract only the interview questions, regardless of document format
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=settings.openai_api_key)
+        client = get_openai_client()
         response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[{
@@ -330,7 +325,6 @@ def send_idi_message(
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """Send a message as the interviewer and receive the persona's response."""
-    from openai import OpenAI
     from app.services.idi_engine import _build_persona_system_prompt
 
     _get_project_or_404(project_id, db, current_user.company_id)
@@ -382,7 +376,7 @@ def send_idi_message(
             "content": msg.content,
         })
 
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=oai_messages,
@@ -449,9 +443,8 @@ async def upload_survey_file(
             raise HTTPException(status_code=422, detail="Could not read .docx file")
 
     try:
-        from openai import OpenAI
         import json
-        client = OpenAI(api_key=settings.openai_api_key)
+        client = get_openai_client()
         response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[{

@@ -13,9 +13,10 @@ Flow:
   5. Aggregate report   — extract consensus themes, disagreements, summary
 """
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-from openai import OpenAI
+from app.services.openai_client import get_openai_client
 from sqlalchemy import select
 
 from app.config import settings
@@ -176,7 +177,7 @@ def _parse_aggregate_report(text: str) -> dict:
 
 
 def run_focus_group(simulation_id: str) -> None:
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     db = SessionLocal()
     sim_ref = simulation_id[:8]
 
@@ -221,41 +222,45 @@ def run_focus_group(simulation_id: str) -> None:
         transcript: list[dict] = [{"speaker": "Moderator", "round": 0, "text": opening}]
 
         # ------------------------------------------------------------------ #
-        # Round 1 — initial responses
+        # Round 1 — initial responses (parallelized)
         # ------------------------------------------------------------------ #
         round1_entries: list[dict] = []
         failed_personas: list[dict] = []
         round1_per_persona: dict[str, str] = {}  # persona_id → text
 
-        for i, persona in enumerate(personas, 1):
-            step += 1
-            simulation.progress = {
-                "stage": "round_1",
-                "current": i,
-                "total": total_personas,
-                "current_name": persona.full_name,
-                "completed": [e["speaker"] for e in round1_entries],
-                "failed": [f["name"] for f in failed_personas],
-            }
-            db.commit()
-            logger.info(f"[fg:{sim_ref}] Round 1 — {persona.full_name} ({i}/{total_personas})")
+        simulation.progress = {
+            "stage": "round_1",
+            "current": 0,
+            "total": total_personas,
+            "current_name": None,
+            "completed": [],
+            "failed": [],
+        }
+        db.commit()
 
-            try:
-                system_prompt = focus_group_system_prompt(persona, briefing_text)
-                text = _persona_round1_response(client, system_prompt, opening)
-                entry = {"speaker": persona.full_name, "persona_id": str(persona.id), "round": 1, "text": text}
-                round1_entries.append(entry)
-                transcript.append(entry)
-                round1_per_persona[str(persona.id)] = text
-                logger.info(f"[fg:{sim_ref}] ✓ Round 1 {persona.full_name}")
-            except Exception as e:
-                logger.error(f"[fg:{sim_ref}] ✗ Round 1 {persona.full_name}: {e}")
-                failed_personas.append({
-                    "name": persona.full_name,
-                    "persona_id": str(persona.id),
-                    "error": str(e),
-                    "stage": "round_1",
-                })
+        def _round1_worker(p):
+            sp = focus_group_system_prompt(p, briefing_text)
+            return p, _persona_round1_response(client, sp, opening)
+
+        with ThreadPoolExecutor(max_workers=min(total_personas, 5)) as executor:
+            r1_futures = {executor.submit(_round1_worker, p): p for p in personas}
+            for future in as_completed(r1_futures):
+                p = r1_futures[future]
+                try:
+                    _, text = future.result()
+                    entry = {"speaker": p.full_name, "persona_id": str(p.id), "round": 1, "text": text}
+                    round1_entries.append(entry)
+                    transcript.append(entry)
+                    round1_per_persona[str(p.id)] = text
+                    logger.info(f"[fg:{sim_ref}] ✓ Round 1 {p.full_name}")
+                except Exception as e:
+                    logger.error(f"[fg:{sim_ref}] ✗ Round 1 {p.full_name}: {e}")
+                    failed_personas.append({
+                        "name": p.full_name,
+                        "persona_id": str(p.id),
+                        "error": str(e),
+                        "stage": "round_1",
+                    })
 
         if not round1_entries:
             raise RuntimeError(f"All {len(personas)} persona(s) failed in Round 1.")
@@ -285,38 +290,42 @@ def run_focus_group(simulation_id: str) -> None:
         round2_per_persona: dict[str, str] = {}
 
         if len(round1_entries) > 1:
-            for i, persona in enumerate(personas, 1):
-                if str(persona.id) not in round1_per_persona:
-                    continue  # skip personas that failed Round 1
+            simulation.progress = {
+                "stage": "round_2",
+                "current": 0,
+                "total": total_personas,
+                "current_name": None,
+                "completed": [e["speaker"] for e in round1_entries],
+                "failed": [f["name"] for f in failed_personas],
+            }
+            db.commit()
 
-                simulation.progress = {
-                    "stage": "round_2",
-                    "current": i,
-                    "total": total_personas,
-                    "current_name": persona.full_name,
-                    "completed": [e["speaker"] for e in round1_entries],
-                    "failed": [f["name"] for f in failed_personas],
-                }
-                db.commit()
-                logger.info(f"[fg:{sim_ref}] Round 2 — {persona.full_name} ({i}/{total_personas})")
+            r2_personas = [p for p in personas if str(p.id) in round1_per_persona]
 
-                try:
-                    system_prompt = focus_group_system_prompt(persona, briefing_text)
-                    text = _persona_round2_response(
-                        client, system_prompt, opening, round1_entries, bridge, persona.full_name
-                    )
-                    entry = {"speaker": persona.full_name, "persona_id": str(persona.id), "round": 2, "text": text}
-                    transcript.append(entry)
-                    round2_per_persona[str(persona.id)] = text
-                    logger.info(f"[fg:{sim_ref}] ✓ Round 2 {persona.full_name}")
-                except Exception as e:
-                    logger.error(f"[fg:{sim_ref}] ✗ Round 2 {persona.full_name}: {e}")
-                    failed_personas.append({
-                        "name": persona.full_name,
-                        "persona_id": str(persona.id),
-                        "error": str(e),
-                        "stage": "round_2",
-                    })
+            def _round2_worker(p):
+                sp = focus_group_system_prompt(p, briefing_text)
+                return p, _persona_round2_response(
+                    client, sp, opening, round1_entries, bridge, p.full_name
+                )
+
+            with ThreadPoolExecutor(max_workers=min(len(r2_personas), 5)) as executor:
+                r2_futures = {executor.submit(_round2_worker, p): p for p in r2_personas}
+                for future in as_completed(r2_futures):
+                    p = r2_futures[future]
+                    try:
+                        _, text = future.result()
+                        entry = {"speaker": p.full_name, "persona_id": str(p.id), "round": 2, "text": text}
+                        transcript.append(entry)
+                        round2_per_persona[str(p.id)] = text
+                        logger.info(f"[fg:{sim_ref}] ✓ Round 2 {p.full_name}")
+                    except Exception as e:
+                        logger.error(f"[fg:{sim_ref}] ✗ Round 2 {p.full_name}: {e}")
+                        failed_personas.append({
+                            "name": p.full_name,
+                            "persona_id": str(p.id),
+                            "error": str(e),
+                            "stage": "round_2",
+                        })
 
         # ------------------------------------------------------------------ #
         # Store individual results

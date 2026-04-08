@@ -50,6 +50,10 @@ function SentimentBar({ distribution }: { distribution: Record<string, number> }
 
 function IndividualCard({ result, index }: { result: SimulationResult; index: number }) {
   const variant = (result.sentiment ?? "Neutral") as keyof typeof SENTIMENT_PILL;
+  const sections = result.report_sections as Record<string, unknown> | null;
+  // Fallback for IDI (sections.summary) and focus group (sections.round_1_text)
+  const bodyText = result.reaction_text || (sections?.summary as string) || (sections?.round_1_text as string);
+  const notableQuote = result.notable_quote || ((sections?.notable_quotes as string[])?.[0]);
   return (
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between">
@@ -65,12 +69,12 @@ function IndividualCard({ result, index }: { result: SimulationResult; index: nu
           </span>
         )}
       </div>
-      {result.reaction_text && (
-        <p className="text-sm text-zinc-700 leading-relaxed">{result.reaction_text}</p>
+      {bodyText && (
+        <p className="text-sm text-zinc-700 leading-relaxed">{bodyText}</p>
       )}
-      {result.notable_quote && (
+      {notableQuote && (
         <blockquote className="border-l-2 border-zinc-200 pl-3 text-sm text-zinc-500 italic">
-          "{result.notable_quote}"
+          "{notableQuote}"
         </blockquote>
       )}
       {result.key_themes && result.key_themes.length > 0 && (
@@ -123,8 +127,15 @@ export default function SharedSimulationPage() {
     conjoint: "Conjoint Analysis",
   };
 
-  const aggregate = data.results.find(r => r.result_type === "aggregate");
-  const individual = data.results.filter(r => r.result_type === "individual");
+  // Match all simulation types: "aggregate", "focus_group_aggregate", "idi_aggregate", etc.
+  const aggregate = data.results.find(r => r.result_type.endsWith("aggregate"));
+  const individual = data.results.filter(r => r.result_type.endsWith("individual"));
+
+  // Fallbacks for simulation types that store text in report_sections instead of top-level fields
+  const aggSections = aggregate?.report_sections as Record<string, unknown> | null;
+  const summaryText = aggregate?.summary_text || (aggSections?.executive_summary as string) || (aggSections?.moderator_summary as string);
+  const topThemes = aggregate?.top_themes || (aggSections?.consensus_themes as string[]) || (aggSections?.cross_persona_themes as string[]);
+  const recommendations = aggregate?.recommendations || (aggSections?.recommendations as string);
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -164,23 +175,23 @@ export default function SharedSimulationPage() {
             {aggregate.sentiment_distribution && Object.keys(aggregate.sentiment_distribution).length > 0 && (
               <SentimentBar distribution={aggregate.sentiment_distribution} />
             )}
-            {aggregate.summary_text && (
-              <p className="text-sm text-zinc-700 leading-relaxed">{aggregate.summary_text}</p>
+            {summaryText && (
+              <p className="text-sm text-zinc-700 leading-relaxed">{summaryText}</p>
             )}
-            {aggregate.top_themes && aggregate.top_themes.length > 0 && (
+            {topThemes && topThemes.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-zinc-500 mb-2">Top themes</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {aggregate.top_themes.map((t) => (
+                  {topThemes.map((t) => (
                     <span key={t} className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full">{t}</span>
                   ))}
                 </div>
               </div>
             )}
-            {aggregate.recommendations && (
+            {recommendations && (
               <div>
                 <p className="text-xs font-medium text-zinc-500 mb-1.5">Recommendations</p>
-                <p className="text-sm text-zinc-700 leading-relaxed">{aggregate.recommendations}</p>
+                <p className="text-sm text-zinc-700 leading-relaxed">{recommendations}</p>
               </div>
             )}
           </Card>

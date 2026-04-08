@@ -1019,6 +1019,7 @@ export default function SimulationResultsPage() {
   const qc = useQueryClient();
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [showFailedDetails, setShowFailedDetails] = useState(false);
 
   const share = useMutation({
     mutationFn: () => generateShareLink(projectId, simulationId),
@@ -1319,8 +1320,31 @@ export default function SimulationResultsPage() {
 
       {/* Partial failure warning */}
       {simulation?.status === "complete" && simulation?.error_message && (
-        <div className="border border-amber-200 bg-amber-50 rounded-xl px-4 py-3 mb-5">
-          <p className="text-xs text-amber-700">⚠ Partial results — {simulation.error_message}</p>
+        <div className="border border-amber-200 bg-amber-50 rounded-xl px-4 py-3 mb-5 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-amber-700 font-medium">⚠ Partial results — {simulation.error_message}</p>
+            {simulation.failed_personas && simulation.failed_personas.length > 0 && (
+              <button
+                onClick={() => setShowFailedDetails(v => !v)}
+                className="text-xs text-amber-600 hover:text-amber-800 underline shrink-0 ml-3"
+              >
+                {showFailedDetails ? "Hide details" : "Show details"}
+              </button>
+            )}
+          </div>
+          {showFailedDetails && simulation.failed_personas && (
+            <div className="space-y-1.5 pt-1">
+              {simulation.failed_personas.map((fp, i) => (
+                <div key={i} className="bg-white border border-amber-100 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-medium text-zinc-800">{fp.name}</span>
+                    <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">{fp.stage}</span>
+                  </div>
+                  <p className="text-xs text-zinc-500 font-mono break-all">{fp.error}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

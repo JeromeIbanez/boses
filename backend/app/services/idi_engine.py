@@ -184,7 +184,7 @@ def run_idi_ai(simulation_id: str) -> None:
         question_summary = "; ".join(questions[:5])  # for aggregate prompt context
 
         persona_analyses = []
-        failed_personas = []
+        failed_personas: list[dict] = []
         total = len(personas)
 
         for i, persona in enumerate(personas, 1):
@@ -194,7 +194,7 @@ def run_idi_ai(simulation_id: str) -> None:
                 "total": total,
                 "current_name": persona.full_name,
                 "completed": [a["name"] for a in persona_analyses],
-                "failed": failed_personas[:],
+                "failed": [f["name"] for f in failed_personas],
                 "stage": "interviewing",
             }
             db.commit()
@@ -244,15 +244,21 @@ def run_idi_ai(simulation_id: str) -> None:
 
             except Exception as e:
                 logger.error(f"[idi:{sim_ref}] ✗ {persona.full_name} failed: {e}")
-                failed_personas.append(persona.full_name)
+                failed_personas.append({
+                    "name": persona.full_name,
+                    "persona_id": str(persona.id),
+                    "error": str(e),
+                    "stage": "interviewing",
+                })
 
         if not persona_analyses:
             raise RuntimeError(f"All {len(personas)} personas failed during IDI.")
 
         if failed_personas:
+            simulation.failed_personas = failed_personas
             simulation.error_message = (
                 f"{len(failed_personas)} of {len(personas)} persona(s) failed: "
-                + ", ".join(failed_personas)
+                + ", ".join(f["name"] for f in failed_personas)
             )
 
         # Aggregate report
@@ -261,7 +267,7 @@ def run_idi_ai(simulation_id: str) -> None:
             "total": total,
             "current_name": None,
             "completed": [a["name"] for a in persona_analyses],
-            "failed": failed_personas[:],
+            "failed": [f["name"] for f in failed_personas],
             "stage": "generating_report",
         }
         db.commit()

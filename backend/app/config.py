@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str = ""   # service_role key (not anon key)
     SUPABASE_AVATARS_BUCKET: str = "avatars"
 
+    # File uploads
+    MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50 MB
+
     @property
     def supabase_configured(self) -> bool:
         return bool(self.SUPABASE_URL and self.SUPABASE_SERVICE_KEY)

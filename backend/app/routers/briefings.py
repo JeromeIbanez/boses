@@ -1,16 +1,17 @@
 import mimetypes
 import os
-import shutil
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
+import magic
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.config import settings
+from app.limiter import limiter
 from app.database import get_db
 from app.models.briefing import Briefing
 from app.models.project import Project
@@ -36,8 +37,27 @@ def list_briefings(
     ).scalars().all()
 
 
+_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
+_VIDEO_EXTS = {"mp4", "mov", "avi", "mkv", "webm"}
+_AUDIO_EXTS = {"mp3", "wav", "m4a", "aac", "ogg", "flac"}
+
+_ALLOWED_MIMES = {
+    "application/pdf",
+    "text/plain", "text/csv", "text/html",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "image/png", "image/jpeg", "image/gif", "image/webp",
+    "video/mp4", "video/quicktime", "video/x-msvideo", "video/webm",
+    "audio/mpeg", "audio/wav", "audio/mp4", "audio/ogg", "audio/flac",
+}
+
+
 @router.post("", response_model=BriefingResponse, status_code=201)
+@limiter.limit("30/hour")
 async def upload_briefing(
+    request: Request,
     project_id: str,
     title: str = Form(...),
     description: str = Form(None),
@@ -49,9 +69,22 @@ async def upload_briefing(
 
     filename = Path(file.filename or "upload").name
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "txt"
-    _IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
-    _VIDEO_EXTS = {"mp4", "mov", "avi", "mkv", "webm"}
-    _AUDIO_EXTS = {"mp3", "wav", "m4a", "aac", "ogg", "flac"}
+
+    # Read file into memory to check size and MIME type before saving
+    content = await file.read()
+    if len(content) > settings.MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE // (1024 * 1024)} MB.",
+        )
+
+    detected_mime = magic.from_buffer(content, mime=True)
+    if detected_mime not in _ALLOWED_MIMES:
+        raise HTTPException(
+            status_code=415,
+            detail=f"File type not allowed. Detected: {detected_mime}.",
+        )
+
     if ext == "pdf":
         file_type = "pdf"
     elif ext in _IMAGE_EXTS:
@@ -69,7 +102,7 @@ async def upload_briefing(
     save_path = os.path.join(save_dir, unique_name)
 
     with open(save_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+        f.write(content)
 
     extracted = extract_text(save_path, file_type)
     summary = summarize_if_long(extracted, title) if extracted else None

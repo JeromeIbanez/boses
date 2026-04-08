@@ -5,7 +5,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, File, HTTPException, BackgroundTasks, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, BackgroundTasks, UploadFile, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -20,6 +20,7 @@ from app.models.simulation_briefing import SimulationBriefing
 from app.models.simulation_result import SimulationResult
 from app.models.project import Project
 from app.routers.common import get_project_or_404 as _get_project_or_404
+from app.limiter import limiter
 from app.schemas.simulation import (
     ConjointDesignCreate,
     IDIMessageCreate,
@@ -52,7 +53,9 @@ def list_simulations(
 
 
 @router.post("", response_model=SimulationResponse, status_code=201)
+@limiter.limit("20/hour")
 def create_simulation(
+    request: Request,
     project_id: str,
     body: SimulationCreate,
     background_tasks: BackgroundTasks,

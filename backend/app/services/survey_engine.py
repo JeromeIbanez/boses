@@ -61,8 +61,8 @@ def _build_survey_prompt(persona: "Persona", briefing_text: str, questions: list
             question_lines.append(
                 f'- id: "{q["id"]}", type: likert (1–{scale}, where 1={low}, {scale}={high})\n  Question: {q["text"]}'
             )
-        elif q["type"] == "multiple_choice":
-            opts = ", ".join(f'"{o}"' for o in q.get("options", []))
+        elif q["type"] == "multiple_choice" and q.get("options"):
+            opts = ", ".join(f'"{o}"' for o in q["options"])
             question_lines.append(
                 f'- id: "{q["id"]}", type: multiple_choice (choose one: {opts})\n  Question: {q["text"]}'
             )

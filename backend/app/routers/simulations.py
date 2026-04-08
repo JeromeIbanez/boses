@@ -507,6 +507,14 @@ def run_survey_simulation(
     if not simulation.survey_schema:
         raise HTTPException(status_code=422, detail="Survey questions not uploaded yet")
 
+    questions = (simulation.survey_schema or {}).get("questions", [])
+    bad = [q["id"] for q in questions if q.get("type") == "multiple_choice" and not q.get("options")]
+    if bad:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Multiple choice question(s) {', '.join(bad)} have no options. Please re-upload the survey or edit the questions."
+        )
+
     background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
     db.refresh(simulation)
     return simulation

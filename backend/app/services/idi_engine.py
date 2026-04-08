@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 IDI (In-Depth Interview) simulation engine.
 
@@ -53,7 +55,7 @@ def _format_transcript(questions: list[str], answers: list[str]) -> str:
     return "\n\n".join(parts)
 
 
-def _analyse_persona_transcript(client: OpenAI, persona: Persona, transcript: str) -> dict:
+def _analyse_persona_transcript(client, persona: Persona, transcript: str) -> dict:
     """Ask GPT to analyse a single persona's interview transcript."""
     prompt = idi_analyse_persona_user_prompt(
         persona.full_name, persona.age, persona.occupation, persona.location, transcript
@@ -97,7 +99,7 @@ def _analyse_persona_transcript(client: OpenAI, persona: Persona, transcript: st
     return result
 
 
-def _generate_aggregate_report(client: OpenAI, group_name: str, question_summary: str, persona_analyses: list[dict]) -> dict:
+def _generate_aggregate_report(client, group_name: str, question_summary: str, persona_analyses: list[dict]) -> dict:
     """Generate a cross-persona IDI aggregate report."""
     per_persona_block = "\n\n".join(
         f"[{a['name']}, {a['age']}, {a['occupation']}]\n"

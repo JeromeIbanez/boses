@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Persona generation service.
 
@@ -50,7 +52,7 @@ class PersonaDataSource(ABC):
 # ---------------------------------------------------------------------------
 
 class SyntheticPersonaSource(PersonaDataSource):
-    def __init__(self, client: OpenAI):
+    def __init__(self, client):
         self.client = client
 
     def fetch(self, group: PersonaGroup) -> list[dict]:

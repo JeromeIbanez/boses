@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Focus Group simulation engine.
 
@@ -40,7 +42,7 @@ SENTIMENT_SCORES = {"Positive": 1.0, "Neutral": 0.0, "Negative": -1.0}
 
 
 
-def _moderator_opening(client: OpenAI, topic: str, briefing_text: str, n_participants: int) -> str:
+def _moderator_opening(client, topic: str, briefing_text: str, n_participants: int) -> str:
     """Generate the moderator's opening statement and first question."""
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
@@ -53,7 +55,7 @@ def _moderator_opening(client: OpenAI, topic: str, briefing_text: str, n_partici
     return (response.choices[0].message.content or "").strip()
 
 
-def _moderator_bridge(client: OpenAI, topic: str, round1_entries: list[dict]) -> str:
+def _moderator_bridge(client, topic: str, round1_entries: list[dict]) -> str:
     """Generate the moderator's bridge between Round 1 and Round 2."""
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
@@ -66,7 +68,7 @@ def _moderator_bridge(client: OpenAI, topic: str, round1_entries: list[dict]) ->
     return (response.choices[0].message.content or "").strip()
 
 
-def _persona_round1_response(client: OpenAI, system_prompt: str, opening: str) -> str:
+def _persona_round1_response(client, system_prompt: str, opening: str) -> str:
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=[
@@ -79,7 +81,7 @@ def _persona_round1_response(client: OpenAI, system_prompt: str, opening: str) -
 
 
 def _persona_round2_response(
-    client: OpenAI,
+    client,
     system_prompt: str,
     opening: str,
     round1_entries: list[dict],
@@ -102,7 +104,7 @@ def _persona_round2_response(
 
 
 def _generate_aggregate_report(
-    client: OpenAI,
+    client,
     topic: str,
     transcript: list[dict],
     group_name: str,

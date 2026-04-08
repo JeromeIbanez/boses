@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { getPersona, deletePersona } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import LibraryBadge from "@/components/ui/LibraryBadge";
 import Spinner from "@/components/ui/Spinner";
 
@@ -56,6 +57,7 @@ export default function PersonaProfilePage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [imgError, setImgError] = useState(false);
+  const [confirmPending, setConfirmPending] = useState<{ message: string; action: () => void } | null>(null);
 
   const { data: persona, isLoading } = useQuery({
     queryKey: ["persona", personaId],
@@ -84,6 +86,12 @@ export default function PersonaProfilePage() {
 
   return (
     <div className="bg-zinc-50 min-h-screen">
+      <ConfirmDialog
+        open={confirmPending !== null}
+        message={confirmPending?.message ?? ""}
+        onConfirm={() => confirmPending?.action()}
+        onClose={() => setConfirmPending(null)}
+      />
       {/* Top bar */}
       <div className="bg-white border-b border-zinc-100 px-6 py-3 flex items-center gap-3">
         <button
@@ -195,9 +203,7 @@ export default function PersonaProfilePage() {
           <Card>
             <button
               onClick={() => {
-                if (confirm(`Delete ${persona.full_name}? This cannot be undone.`)) {
-                  remove.mutate();
-                }
+                setConfirmPending({ message: `Delete ${persona.full_name}? This cannot be undone.`, action: () => remove.mutate() });
               }}
               disabled={remove.isPending}
               className="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-600 text-xs font-medium py-1.5 rounded-lg transition-colors disabled:opacity-50"

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { getPersonaGroup, getPersonas, deletePersona, deleteAllPersonas } from "@/lib/api";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { Persona } from "@/types";
 
 const API_ROOT = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace("/api/v1", "");
@@ -42,6 +43,7 @@ export default function PersonaGroupPage() {
   const { projectId, groupId } = useParams<{ projectId: string; groupId: string }>();
   const router = useRouter();
   const qc = useQueryClient();
+  const [confirmPending, setConfirmPending] = useState<{ message: string; action: () => void } | null>(null);
 
   const remove = useMutation({
     mutationFn: (personaId: string) => deletePersona(projectId, groupId, personaId),
@@ -91,6 +93,12 @@ export default function PersonaGroupPage() {
 
   return (
     <div className="px-8 py-8">
+      <ConfirmDialog
+        open={confirmPending !== null}
+        message={confirmPending?.message ?? ""}
+        onConfirm={() => confirmPending?.action()}
+        onClose={() => setConfirmPending(null)}
+      />
       <button
         onClick={() => router.push(`/projects/${projectId}`)}
         className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-700 mb-5 transition-colors"
@@ -103,7 +111,7 @@ export default function PersonaGroupPage() {
         {personas && personas.length > 0 && (
           <button
             onClick={() => {
-              if (confirm(`Delete all ${personas.length} persona(s) in this group?`)) removeAll.mutate();
+              setConfirmPending({ message: `Delete all ${personas.length} persona(s) in this group?`, action: () => removeAll.mutate() });
             }}
             disabled={removeAll.isPending}
             className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded-md px-3 py-1.5 transition-colors shrink-0 disabled:opacity-50"
@@ -201,7 +209,7 @@ export default function PersonaGroupPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (confirm(`Delete ${p.full_name}?`)) remove.mutate(p.id);
+                    setConfirmPending({ message: `Delete ${p.full_name}?`, action: () => remove.mutate(p.id) });
                   }}
                   className="p-1 text-zinc-300 hover:text-red-500 transition-colors shrink-0"
                   title="Delete persona"

@@ -8,6 +8,7 @@ import { getLibraryPersonas, deleteLibraryPersona, deleteAllLibraryPersonas } fr
 import type { LibraryPersona, LibraryPersonaListResponse } from "@/types";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import PageHeader from "@/components/layout/PageHeader";
 import Spinner from "@/components/ui/Spinner";
 
@@ -82,7 +83,7 @@ function LibraryPersonaCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            if (confirm(`Delete ${persona.full_name} from the library?`)) onDelete();
+            onDelete();
           }}
           className="p-1 text-zinc-300 hover:text-red-500 transition-colors shrink-0"
           title="Delete persona"
@@ -125,6 +126,7 @@ function LibraryPersonaCard({
 export default function LibraryPage() {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [activeFilters, setActiveFilters] = useState<Filters>(defaultFilters);
+  const [confirmPending, setConfirmPending] = useState<{ message: string; action: () => void } | null>(null);
   const router = useRouter();
   const qc = useQueryClient();
 
@@ -186,6 +188,12 @@ export default function LibraryPage() {
 
   return (
     <div className="px-8 py-8">
+      <ConfirmDialog
+        open={confirmPending !== null}
+        message={confirmPending?.message ?? ""}
+        onConfirm={() => confirmPending?.action()}
+        onClose={() => setConfirmPending(null)}
+      />
       <div className="flex items-start justify-between gap-4">
         <PageHeader
           title="Personas"
@@ -194,7 +202,7 @@ export default function LibraryPage() {
         {data && data.total > 0 && (
           <button
             onClick={() => {
-              if (confirm(`Permanently delete all ${data.total} persona(s) from the library?`)) removeAll.mutate();
+              setConfirmPending({ message: `Permanently delete all ${data.total} persona(s) from the library?`, action: () => removeAll.mutate() });
             }}
             disabled={removeAll.isPending}
             className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded-md px-3 py-1.5 transition-colors shrink-0 disabled:opacity-50"
@@ -321,7 +329,7 @@ export default function LibraryPage() {
               key={p.id}
               persona={p}
               onClick={() => router.push(`/personas/${p.id}`)}
-              onDelete={() => remove.mutate(p.id)}
+              onDelete={() => setConfirmPending({ message: `Delete ${p.full_name} from the library?`, action: () => remove.mutate(p.id) })}
             />
           ))}
         </div>

@@ -9,6 +9,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import EmptyState from "@/components/ui/EmptyState";
@@ -20,6 +21,7 @@ export default function DashboardPage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [confirmPending, setConfirmPending] = useState<{ message: string; action: () => void } | null>(null);
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ["projects"],
@@ -104,9 +106,7 @@ export default function DashboardPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (confirm(`Delete "${p.name}"? This cannot be undone.`)) {
-                      deleteMutation.mutate(p.id);
-                    }
+                    setConfirmPending({ message: `Delete "${p.name}"? This cannot be undone.`, action: () => deleteMutation.mutate(p.id) });
                   }}
                   className="p-1.5 rounded-md text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                 >
@@ -118,6 +118,12 @@ export default function DashboardPage() {
         </div>
       )}
 
+      <ConfirmDialog
+        open={confirmPending !== null}
+        message={confirmPending?.message ?? ""}
+        onConfirm={() => confirmPending?.action()}
+        onClose={() => setConfirmPending(null)}
+      />
       <Modal open={open} onClose={() => setOpen(false)} title="New Project">
         <div className="space-y-4">
           <Input

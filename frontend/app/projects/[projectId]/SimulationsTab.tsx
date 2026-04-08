@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useReducer, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Plus, Play, ChevronRight, Trash2, Bot, User, MessageSquare, ClipboardList, Users, BarChart2 } from "lucide-react";
@@ -12,6 +12,7 @@ import type { ConjointAttribute } from "@/types";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import Badge from "@/components/ui/Badge";
@@ -71,36 +72,104 @@ const SIM_TYPES: { id: SimType; label: string; description: string; icon: React.
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Wizard state — useReducer keeps all form state in one place and makes
+// handleClose a single dispatch({ type: "RESET" }) instead of 13 setters.
+// ---------------------------------------------------------------------------
+
+interface WizardState {
+  step: number;
+  simType: SimType;
+  groupId: string;
+  briefingIds: string[];
+  question: string;
+  scriptMode: "text" | "file";
+  scriptText: string;
+  scriptFile: File | null;
+  idiPersonaId: string;
+  surveyFile: File | null;
+  surveySimId: string | null;
+  parsedQuestions: { id: string; type: string; text: string }[];
+  conjointAttributes: ConjointAttribute[];
+  conjointNTasks: number;
+  conjointSimId: string | null;
+}
+
+const INITIAL_WIZARD_STATE: WizardState = {
+  step: 0,
+  simType: "concept_test",
+  groupId: "",
+  briefingIds: [],
+  question: "",
+  scriptMode: "text",
+  scriptText: "",
+  scriptFile: null,
+  idiPersonaId: "",
+  surveyFile: null,
+  surveySimId: null,
+  parsedQuestions: [],
+  conjointAttributes: [
+    { name: "Price", levels: ["$49", "$99", "$149"] },
+    { name: "Feature", levels: ["Basic", "Premium"] },
+  ],
+  conjointNTasks: 10,
+  conjointSimId: null,
+};
+
+type WizardAction =
+  | { type: "RESET" }
+  | { type: "SET_STEP"; payload: number }
+  | { type: "SET_SIM_TYPE"; payload: SimType }
+  | { type: "SET_GROUP_ID"; payload: string }
+  | { type: "SET_BRIEFING_IDS"; payload: string[] }
+  | { type: "SET_QUESTION"; payload: string }
+  | { type: "SET_SCRIPT_MODE"; payload: "text" | "file" }
+  | { type: "SET_SCRIPT_TEXT"; payload: string }
+  | { type: "SET_SCRIPT_FILE"; payload: File | null }
+  | { type: "SET_IDI_PERSONA_ID"; payload: string }
+  | { type: "SET_SURVEY_FILE"; payload: File | null }
+  | { type: "SET_SURVEY_SIM_ID"; payload: string | null }
+  | { type: "SET_PARSED_QUESTIONS"; payload: { id: string; type: string; text: string }[] }
+  | { type: "SET_CONJOINT_ATTRIBUTES"; payload: ConjointAttribute[] }
+  | { type: "SET_CONJOINT_N_TASKS"; payload: number }
+  | { type: "SET_CONJOINT_SIM_ID"; payload: string | null };
+
+function wizardReducer(state: WizardState, action: WizardAction): WizardState {
+  switch (action.type) {
+    case "RESET": return INITIAL_WIZARD_STATE;
+    case "SET_STEP": return { ...state, step: action.payload };
+    case "SET_SIM_TYPE": return { ...state, simType: action.payload };
+    case "SET_GROUP_ID": return { ...state, groupId: action.payload };
+    case "SET_BRIEFING_IDS": return { ...state, briefingIds: action.payload };
+    case "SET_QUESTION": return { ...state, question: action.payload };
+    case "SET_SCRIPT_MODE": return { ...state, scriptMode: action.payload };
+    case "SET_SCRIPT_TEXT": return { ...state, scriptText: action.payload };
+    case "SET_SCRIPT_FILE": return { ...state, scriptFile: action.payload };
+    case "SET_IDI_PERSONA_ID": return { ...state, idiPersonaId: action.payload };
+    case "SET_SURVEY_FILE": return { ...state, surveyFile: action.payload };
+    case "SET_SURVEY_SIM_ID": return { ...state, surveySimId: action.payload };
+    case "SET_PARSED_QUESTIONS": return { ...state, parsedQuestions: action.payload };
+    case "SET_CONJOINT_ATTRIBUTES": return { ...state, conjointAttributes: action.payload };
+    case "SET_CONJOINT_N_TASKS": return { ...state, conjointNTasks: action.payload };
+    case "SET_CONJOINT_SIM_ID": return { ...state, conjointSimId: action.payload };
+    default: return state;
+  }
+}
+
 export default function SimulationsTab({ projectId }: Props) {
   const router = useRouter();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const surveyFileRef = useRef<HTMLInputElement>(null);
 
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
-  const [simType, setSimType] = useState<SimType>("concept_test");
-  const [groupId, setGroupId] = useState("");
-  const [briefingIds, setBriefingIds] = useState<string[]>([]);
-  // Concept test
-  const [question, setQuestion] = useState("");
-  // IDI shared
-  const [scriptMode, setScriptMode] = useState<"text" | "file">("text");
-  const [scriptText, setScriptText] = useState("");
-  const [scriptFile, setScriptFile] = useState<File | null>(null);
-  // IDI manual
-  const [idiPersonaId, setIdiPersonaId] = useState("");
-  // Survey
-  const surveyFileRef = useRef<HTMLInputElement>(null);
-  const [surveyFile, setSurveyFile] = useState<File | null>(null);
-  const [surveySimId, setSurveySimId] = useState<string | null>(null);
-  const [parsedQuestions, setParsedQuestions] = useState<{ id: string; type: string; text: string }[]>([]);
-  // Conjoint
-  const [conjointAttributes, setConjointAttributes] = useState<ConjointAttribute[]>([
-    { name: "Price", levels: ["$49", "$99", "$149"] },
-    { name: "Feature", levels: ["Basic", "Premium"] },
-  ]);
-  const [conjointNTasks, setConjointNTasks] = useState(10);
-  const [conjointSimId, setConjointSimId] = useState<string | null>(null);
+  const [confirmPending, setConfirmPending] = useState<{ message: string; action: () => void } | null>(null);
+
+  const [
+    { step, simType, groupId, briefingIds, question, scriptMode, scriptText, scriptFile,
+      idiPersonaId, surveyFile, surveySimId, parsedQuestions, conjointAttributes, conjointNTasks, conjointSimId },
+    dispatch,
+  ] = useReducer(wizardReducer, INITIAL_WIZARD_STATE);
 
   const { data: simulations, isLoading } = useQuery({
     queryKey: ["simulations", projectId],
@@ -153,10 +222,10 @@ export default function SimulationsTab({ projectId }: Props) {
         briefing_ids: briefingIds,
         prompt_question: question || "the product",
       });
-      setConjointSimId(sim.id);
+      dispatch({ type: "SET_CONJOINT_SIM_ID", payload: sim.id });
       return sim;
     },
-    onSuccess: () => setStep(4),
+    onSuccess: () => dispatch({ type: "SET_STEP", payload: 4 }),
   });
 
   // Survey step 3 → 4: create simulation + upload file, show preview
@@ -173,9 +242,9 @@ export default function SimulationsTab({ projectId }: Props) {
       return updated;
     },
     onSuccess: (sim) => {
-      setSurveySimId(sim.id);
-      setParsedQuestions(sim.survey_schema?.questions ?? []);
-      setStep(4);
+      dispatch({ type: "SET_SURVEY_SIM_ID", payload: sim.id });
+      dispatch({ type: "SET_PARSED_QUESTIONS", payload: sim.survey_schema?.questions ?? [] });
+      dispatch({ type: "SET_STEP", payload: 4 });
     },
   });
 
@@ -235,24 +304,7 @@ export default function SimulationsTab({ projectId }: Props) {
 
   const handleClose = () => {
     setOpen(false);
-    setStep(0);
-    setSimType("concept_test");
-    setGroupId("");
-    setBriefingIds([]);
-    setQuestion("");
-    setScriptMode("text");
-    setScriptText("");
-    setScriptFile(null);
-    setIdiPersonaId("");
-    setSurveyFile(null);
-    setSurveySimId(null);
-    setParsedQuestions([]);
-    setConjointAttributes([
-      { name: "Price", levels: ["$49", "$99", "$149"] },
-      { name: "Feature", levels: ["Basic", "Premium"] },
-    ]);
-    setConjointNTasks(10);
-    setConjointSimId(null);
+    dispatch({ type: "RESET" });
   };
 
   const totalSteps = simType === "survey" || simType === "conjoint" ? 5 : 4;
@@ -324,7 +376,7 @@ export default function SimulationsTab({ projectId }: Props) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm("Delete this simulation and all its results?")) deleteSim.mutate(s.id);
+                      setConfirmPending({ message: "Delete this simulation and all its results?", action: () => deleteSim.mutate(s.id) });
                     }}
                     className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
                     title="Delete simulation"
@@ -339,6 +391,12 @@ export default function SimulationsTab({ projectId }: Props) {
         </div>
       )}
 
+      <ConfirmDialog
+        open={confirmPending !== null}
+        message={confirmPending?.message ?? ""}
+        onConfirm={() => confirmPending?.action()}
+        onClose={() => setConfirmPending(null)}
+      />
       <Modal open={open} onClose={handleClose} title={`Run Simulation — Step ${step + 1} of ${totalSteps}`} width="max-w-xl" key={simType}>
         <div className="space-y-4">
 
@@ -349,7 +407,7 @@ export default function SimulationsTab({ projectId }: Props) {
               {SIM_TYPES.map(t => (
                 <button
                   key={t.id}
-                  onClick={() => setSimType(t.id)}
+                  onClick={() => dispatch({ type: "SET_SIM_TYPE", payload: t.id })}
                   className={`w-full text-left rounded-lg border px-4 py-3 transition-colors ${simType === t.id ? "border-zinc-800 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300"}`}
                 >
                   <div className="flex items-center gap-2 mb-1 text-zinc-800">
@@ -366,7 +424,7 @@ export default function SimulationsTab({ projectId }: Props) {
           {step === 1 && (
             <>
               <p className="text-sm text-zinc-500">Select the persona group to simulate against.</p>
-              <Select label="Persona Group" value={groupId} onChange={e => { setGroupId(e.target.value); setIdiPersonaId(""); }}>
+              <Select label="Persona Group" value={groupId} onChange={e => { dispatch({ type: "SET_GROUP_ID", payload: e.target.value }); dispatch({ type: "SET_IDI_PERSONA_ID", payload: "" }); }}>
                 <option value="">Select a group…</option>
                 {groups?.filter(g => g.generation_status === "complete").map(g => (
                   <option key={g.id} value={g.id}>{g.name} ({g.persona_count} personas)</option>
@@ -397,7 +455,7 @@ export default function SimulationsTab({ projectId }: Props) {
                         <input
                           type="checkbox"
                           checked={checked}
-                          onChange={e => setBriefingIds(prev => e.target.checked ? [...prev, b.id] : prev.filter(id => id !== b.id))}
+                          onChange={e => dispatch({ type: "SET_BRIEFING_IDS", payload: e.target.checked ? [...briefingIds, b.id] : briefingIds.filter(id => id !== b.id) })}
                           className="shrink-0"
                         />
                         <div className="min-w-0">
@@ -425,7 +483,7 @@ export default function SimulationsTab({ projectId }: Props) {
                 placeholder="e.g. How would they react to this tagline? Would they trust this brand?"
                 rows={4}
                 value={question}
-                onChange={e => setQuestion(e.target.value)}
+                onChange={e => dispatch({ type: "SET_QUESTION", payload: e.target.value })}
               />
             </>
           )}
@@ -438,7 +496,7 @@ export default function SimulationsTab({ projectId }: Props) {
                 placeholder="e.g. How do you feel about this new product concept? What would make you try it or not?"
                 rows={4}
                 value={question}
-                onChange={e => setQuestion(e.target.value)}
+                onChange={e => dispatch({ type: "SET_QUESTION", payload: e.target.value })}
               />
             </>
           )}
@@ -453,13 +511,13 @@ export default function SimulationsTab({ projectId }: Props) {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => setScriptMode("text")}
+                  onClick={() => dispatch({ type: "SET_SCRIPT_MODE", payload: "text" })}
                   className={`flex-1 py-1.5 text-xs rounded-md border transition-colors ${scriptMode === "text" ? "border-zinc-800 bg-zinc-50 font-medium" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}
                 >
                   Type questions
                 </button>
                 <button
-                  onClick={() => setScriptMode("file")}
+                  onClick={() => dispatch({ type: "SET_SCRIPT_MODE", payload: "file" })}
                   className={`flex-1 py-1.5 text-xs rounded-md border transition-colors ${scriptMode === "file" ? "border-zinc-800 bg-zinc-50 font-medium" : "border-zinc-200 text-zinc-500 hover:border-zinc-300"}`}
                 >
                   Upload script file
@@ -472,7 +530,7 @@ export default function SimulationsTab({ projectId }: Props) {
                   placeholder={"1. Can you tell me about yourself?\n2. How do you typically discover new products?\n3. What would make you trust a brand like this?"}
                   rows={6}
                   value={scriptText}
-                  onChange={e => setScriptText(e.target.value)}
+                  onChange={e => dispatch({ type: "SET_SCRIPT_TEXT", payload: e.target.value })}
                 />
               )}
 
@@ -484,7 +542,7 @@ export default function SimulationsTab({ projectId }: Props) {
                     type="file"
                     accept=".txt,.docx"
                     className="hidden"
-                    onChange={e => setScriptFile(e.target.files?.[0] ?? null)}
+                    onChange={e => dispatch({ type: "SET_SCRIPT_FILE", payload: e.target.files?.[0] ?? null })}
                   />
                   <button
                     onClick={() => fileRef.current?.click()}
@@ -497,7 +555,7 @@ export default function SimulationsTab({ projectId }: Props) {
 
               {simType === "idi_manual" && (
                 <>
-                  <Select label="Select persona to interview" value={idiPersonaId} onChange={e => setIdiPersonaId(e.target.value)}>
+                  <Select label="Select persona to interview" value={idiPersonaId} onChange={e => dispatch({ type: "SET_IDI_PERSONA_ID", payload: e.target.value })}>
                     <option value="">Select a persona…</option>
                     {personas?.map(p => (
                       <option key={p.id} value={p.id}>{p.full_name} — {p.age}, {p.occupation}</option>
@@ -522,7 +580,7 @@ export default function SimulationsTab({ projectId }: Props) {
                   type="file"
                   accept=".txt,.docx"
                   className="hidden"
-                  onChange={e => setSurveyFile(e.target.files?.[0] ?? null)}
+                  onChange={e => dispatch({ type: "SET_SURVEY_FILE", payload: e.target.files?.[0] ?? null })}
                 />
                 <button
                   onClick={() => surveyFileRef.current?.click()}
@@ -544,7 +602,7 @@ export default function SimulationsTab({ projectId }: Props) {
                 placeholder="e.g. Wireless over-ear headphones"
                 rows={2}
                 value={question}
-                onChange={e => setQuestion(e.target.value)}
+                onChange={e => dispatch({ type: "SET_QUESTION", payload: e.target.value })}
               />
 
               <div className="space-y-3">
@@ -558,12 +616,12 @@ export default function SimulationsTab({ projectId }: Props) {
                         onChange={e => {
                           const next = [...conjointAttributes];
                           next[attrIdx] = { ...next[attrIdx], name: e.target.value };
-                          setConjointAttributes(next);
+                          dispatch({ type: "SET_CONJOINT_ATTRIBUTES", payload: next });
                         }}
                       />
                       {conjointAttributes.length > 2 && (
                         <button
-                          onClick={() => setConjointAttributes(conjointAttributes.filter((_, i) => i !== attrIdx))}
+                          onClick={() => dispatch({ type: "SET_CONJOINT_ATTRIBUTES", payload: conjointAttributes.filter((_, i) => i !== attrIdx) })}
                           className="text-xs text-zinc-300 hover:text-red-500 transition-colors shrink-0"
                         >
                           Remove
@@ -582,7 +640,7 @@ export default function SimulationsTab({ projectId }: Props) {
                               const levels = [...next[attrIdx].levels];
                               levels[lvIdx] = e.target.value;
                               next[attrIdx] = { ...next[attrIdx], levels };
-                              setConjointAttributes(next);
+                              dispatch({ type: "SET_CONJOINT_ATTRIBUTES", payload: next });
                             }}
                           />
                           {attr.levels.length > 2 && (
@@ -590,7 +648,7 @@ export default function SimulationsTab({ projectId }: Props) {
                               onClick={() => {
                                 const next = [...conjointAttributes];
                                 next[attrIdx] = { ...next[attrIdx], levels: next[attrIdx].levels.filter((_, i) => i !== lvIdx) };
-                                setConjointAttributes(next);
+                                dispatch({ type: "SET_CONJOINT_ATTRIBUTES", payload: next });
                               }}
                               className="text-zinc-300 hover:text-red-400 text-xs ml-0.5"
                             >×</button>
@@ -601,7 +659,7 @@ export default function SimulationsTab({ projectId }: Props) {
                         onClick={() => {
                           const next = [...conjointAttributes];
                           next[attrIdx] = { ...next[attrIdx], levels: [...next[attrIdx].levels, ""] };
-                          setConjointAttributes(next);
+                          dispatch({ type: "SET_CONJOINT_ATTRIBUTES", payload: next });
                         }}
                         className="text-xs text-zinc-400 hover:text-zinc-600 px-2 py-0.5 border border-dashed border-zinc-200 rounded-md transition-colors"
                       >
@@ -611,7 +669,7 @@ export default function SimulationsTab({ projectId }: Props) {
                   </div>
                 ))}
                 <button
-                  onClick={() => setConjointAttributes([...conjointAttributes, { name: "", levels: ["", ""] }])}
+                  onClick={() => dispatch({ type: "SET_CONJOINT_ATTRIBUTES", payload: [...conjointAttributes, { name: "", levels: ["", ""] }] })}
                   className="w-full text-xs text-zinc-400 hover:text-zinc-600 border border-dashed border-zinc-200 rounded-lg py-2 transition-colors"
                 >
                   + Add attribute
@@ -623,7 +681,7 @@ export default function SimulationsTab({ projectId }: Props) {
                 <input
                   type="range" min={6} max={20} step={1}
                   value={conjointNTasks}
-                  onChange={e => setConjointNTasks(Number(e.target.value))}
+                  onChange={e => dispatch({ type: "SET_CONJOINT_N_TASKS", payload: Number(e.target.value) })}
                   className="flex-1"
                 />
                 <span className="text-xs text-zinc-700 font-medium w-6 text-right">{conjointNTasks}</span>
@@ -687,7 +745,7 @@ export default function SimulationsTab({ projectId }: Props) {
 
           {/* Nav */}
           <div className="flex justify-between pt-2">
-            <Button variant="ghost" onClick={() => { if (step === 0) handleClose(); else setStep(s => s - 1); }}>
+            <Button variant="ghost" onClick={() => { if (step === 0) handleClose(); else dispatch({ type: "SET_STEP", payload: step - 1 }); }}>
               {step === 0 ? "Cancel" : "Back"}
             </Button>
             {/* Survey step 3: "Next" uploads + parses */}
@@ -700,7 +758,7 @@ export default function SimulationsTab({ projectId }: Props) {
                 {createConjointSim.isPending ? "Saving…" : "Next"}
               </Button>
             ) : step < totalSteps - 1 ? (
-              <Button onClick={() => setStep(s => s + 1)} disabled={!canProceed()}>
+              <Button onClick={() => dispatch({ type: "SET_STEP", payload: step + 1 })} disabled={!canProceed()}>
                 Next
               </Button>
             ) : (

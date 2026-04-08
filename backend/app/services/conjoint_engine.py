@@ -18,7 +18,7 @@ import random
 from collections import defaultdict
 from datetime import datetime
 
-from openai import OpenAI
+from app.services.openai_client import get_openai_client
 from sqlalchemy import select
 
 from app.config import settings
@@ -335,7 +335,7 @@ def _generate_narrative(
 # ---------------------------------------------------------------------------
 
 def run_conjoint(simulation_id: str) -> None:
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     db = SessionLocal()
     sim_ref = simulation_id[:8]
 

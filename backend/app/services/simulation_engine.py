@@ -1,7 +1,8 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-from openai import OpenAI
+from app.services.openai_client import get_openai_client
 from sqlalchemy import select
 
 from app.config import settings
@@ -97,6 +98,30 @@ def _parse_aggregate_response(text: str) -> dict:
     return sections
 
 
+_MAX_PARALLEL_PERSONAS = 5
+
+
+def _concept_test_persona_worker(
+    persona,
+    briefing_text: str,
+    prompt_question: str,
+) -> tuple:
+    """Run a single persona's concept test LLM call. DB-free — no session needed."""
+    client = get_openai_client()
+    system_prompt = concept_test_system_prompt(persona)
+    user_prompt = concept_test_user_prompt(briefing_text, prompt_question)
+    response = client.chat.completions.create(
+        model=settings.OPENAI_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.9,
+    )
+    raw_text = response.choices[0].message.content or ""
+    return persona, _parse_individual_response(raw_text)
+
+
 def run_simulation(simulation_id: str) -> None:
     from app.services.idi_engine import run_idi_ai  # local import avoids circular dependency
 
@@ -127,7 +152,7 @@ def run_simulation(simulation_id: str) -> None:
         return
 
     # concept_test path
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     db = SessionLocal()
     try:
         simulation = db.get(Simulation, simulation_id)
@@ -152,55 +177,52 @@ def run_simulation(simulation_id: str) -> None:
         sim_ref = simulation_id[:8]
         total = len(personas)
 
-        for i, persona in enumerate(personas, 1):
-            logger.info(f"[sim:{sim_ref}] Persona {i}/{total}: {persona.full_name}")
-            simulation.progress = {
-                "current": i,
-                "total": total,
-                "current_name": persona.full_name,
-                "completed": [p.full_name for p, _ in individual_results],
-                "failed": [f["name"] for f in failed_personas],
-                "stage": "interviewing",
+        simulation.progress = {
+            "current": 0,
+            "total": total,
+            "current_name": None,
+            "completed": [],
+            "failed": [],
+            "stage": "interviewing",
+        }
+        db.commit()
+
+        with ThreadPoolExecutor(max_workers=min(total, _MAX_PARALLEL_PERSONAS)) as executor:
+            futures = {
+                executor.submit(
+                    _concept_test_persona_worker,
+                    persona,
+                    briefing_text,
+                    simulation.prompt_question,
+                ): persona
+                for persona in personas
             }
-            db.commit()
-            try:
-                system_prompt = concept_test_system_prompt(persona)
-                user_prompt = concept_test_user_prompt(briefing_text, simulation.prompt_question)
-
-                response = client.chat.completions.create(
-                    model=settings.OPENAI_MODEL,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    temperature=0.9,
-                )
-
-                raw_text = response.choices[0].message.content or ""
-                parsed = _parse_individual_response(raw_text)
-
-                result = SimulationResult(
-                    simulation_id=simulation_id,
-                    persona_id=persona.id,
-                    result_type="individual",
-                    sentiment=parsed["sentiment"],
-                    sentiment_score=SENTIMENT_SCORES.get(parsed["sentiment"], 0.0),
-                    reaction_text=parsed["reaction"] + (" " + parsed["reasoning"]).rstrip(),
-                    key_themes=parsed["key_themes"] or None,
-                    notable_quote=parsed["notable_quote"] or None,
-                )
-                db.add(result)
-                db.flush()
-                individual_results.append((persona, parsed))
-                logger.info(f"[sim:{sim_ref}] ✓ {persona.full_name} ({parsed['sentiment']})")
-            except Exception as persona_err:
-                logger.error(f"[sim:{sim_ref}] ✗ {persona.full_name} failed: {persona_err}")
-                failed_personas.append({
-                    "name": persona.full_name,
-                    "persona_id": str(persona.id),
-                    "error": str(persona_err),
-                    "stage": "interviewing",
-                })
+            for future in as_completed(futures):
+                persona = futures[future]
+                try:
+                    _, parsed = future.result()
+                    result = SimulationResult(
+                        simulation_id=simulation_id,
+                        persona_id=persona.id,
+                        result_type="individual",
+                        sentiment=parsed["sentiment"],
+                        sentiment_score=SENTIMENT_SCORES.get(parsed["sentiment"], 0.0),
+                        reaction_text=parsed["reaction"] + (" " + parsed["reasoning"]).rstrip(),
+                        key_themes=parsed["key_themes"] or None,
+                        notable_quote=parsed["notable_quote"] or None,
+                    )
+                    db.add(result)
+                    db.flush()
+                    individual_results.append((persona, parsed))
+                    logger.info(f"[sim:{sim_ref}] ✓ {persona.full_name} ({parsed['sentiment']})")
+                except Exception as persona_err:
+                    logger.error(f"[sim:{sim_ref}] ✗ {persona.full_name} failed: {persona_err}")
+                    failed_personas.append({
+                        "name": persona.full_name,
+                        "persona_id": str(persona.id),
+                        "error": str(persona_err),
+                        "stage": "interviewing",
+                    })
 
         if not individual_results:
             raise RuntimeError(f"All {len(personas)} persona(s) failed to respond.")

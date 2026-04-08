@@ -8,6 +8,7 @@ import { getPersonaGroups, createPersonaGroup, generatePersonas, parsePersonaPro
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Textarea from "@/components/ui/Textarea";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -35,6 +36,7 @@ export default function PersonasTab({ projectId }: Props) {
   const router = useRouter();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [confirmPending, setConfirmPending] = useState<{ message: string; action: () => void } | null>(null);
   const [step, setStep] = useState<Step>("prompt");
   const [prompt, setPrompt] = useState("");
   const [form, setForm] = useState(emptyForm);
@@ -149,7 +151,7 @@ export default function PersonasTab({ projectId }: Props) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm(`Delete "${g.name}" and all its personas?`)) deleteGroup.mutate(g.id);
+                      setConfirmPending({ message: `Delete "${g.name}" and all its personas?`, action: () => deleteGroup.mutate(g.id) });
                     }}
                     className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
                     title="Delete group"
@@ -163,6 +165,12 @@ export default function PersonasTab({ projectId }: Props) {
         </div>
       )}
 
+      <ConfirmDialog
+        open={confirmPending !== null}
+        message={confirmPending?.message ?? ""}
+        onConfirm={() => confirmPending?.action()}
+        onClose={() => setConfirmPending(null)}
+      />
       <Modal open={open} onClose={handleClose} title="New Persona Group" width="max-w-xl">
         {step === "prompt" ? (
           <div className="space-y-4">

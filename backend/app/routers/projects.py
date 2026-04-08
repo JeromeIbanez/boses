@@ -5,16 +5,10 @@ from sqlalchemy import select
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.database import get_db
 from app.models.project import Project
+from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
 
 router = APIRouter(prefix="/projects", tags=["projects"])
-
-
-def _get_project_or_404(project_id: str, db: Session, company_id) -> Project:
-    project = db.get(Project, project_id)
-    if not project or project.company_id != company_id:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
 
 
 @router.get("", response_model=list[ProjectResponse])

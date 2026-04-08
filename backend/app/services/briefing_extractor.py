@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import tempfile
 
-from openai import OpenAI
+from app.services.openai_client import get_openai_client
 from pdfminer.high_level import extract_text as pdf_extract_text
 
 from app.config import settings
@@ -27,7 +27,7 @@ def _analyze_image(file_path: str) -> str:
         b64 = base64.b64encode(f.read()).decode("utf-8")
     ext = file_path.rsplit(".", 1)[-1].lower()
     mime = _MIME_TYPES.get(ext, "image/png")
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{
@@ -51,7 +51,7 @@ def _analyze_image(file_path: str) -> str:
 
 
 def _transcribe_audio(file_path: str) -> str:
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     with open(file_path, "rb") as f:
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
@@ -63,7 +63,7 @@ def _transcribe_audio(file_path: str) -> str:
 def _analyze_video(file_path: str) -> str:
     if not _FFMPEG:
         raise RuntimeError("ffmpeg not found — install it with: brew install ffmpeg (Mac) or apt-get install ffmpeg (Linux)")
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     frames_b64: list[str] = []
     transcript = ""
 
@@ -167,7 +167,7 @@ def summarize_if_long(text: str, title: str) -> str | None:
     """
     if not text or len(text) <= _SUMMARY_CHAR_THRESHOLD:
         return None
-    client = OpenAI(api_key=settings.openai_api_key)
+    client = get_openai_client()
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{

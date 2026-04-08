@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import LibraryBadge from "@/components/ui/LibraryBadge";
 import Modal from "@/components/ui/Modal";
 import { Persona } from "@/types";
@@ -31,9 +33,18 @@ function Field({ label, value }: { label: string; value: string | null | undefin
 }
 
 export default function PersonaDetailModal({ persona, onClose, onDelete }: PersonaDetailModalProps) {
+  const [confirmPending, setConfirmPending] = useState<{ message: string; action: () => void } | null>(null);
+
   if (!persona) return null;
 
   return (
+    <>
+    <ConfirmDialog
+      open={confirmPending !== null}
+      message={confirmPending?.message ?? ""}
+      onConfirm={() => confirmPending?.action()}
+      onClose={() => setConfirmPending(null)}
+    />
     <Modal open={!!persona} onClose={onClose} title="" width="max-w-2xl">
       {/* Scrollable body */}
       <div className="-mx-6 -my-5 overflow-y-auto max-h-[80vh] px-6 py-5">
@@ -123,10 +134,7 @@ export default function PersonaDetailModal({ persona, onClose, onDelete }: Perso
             <div className="border-t border-zinc-100 pt-4 mt-2">
               <button
                 onClick={() => {
-                  if (confirm(`Delete ${persona.full_name}?`)) {
-                    onDelete(persona.id);
-                    onClose();
-                  }
+                  setConfirmPending({ message: `Delete ${persona.full_name}?`, action: () => { onDelete(persona.id); onClose(); } });
                 }}
                 className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 transition-colors"
               >
@@ -138,5 +146,6 @@ export default function PersonaDetailModal({ persona, onClose, onDelete }: Perso
         </div>
       </div>
     </Modal>
+    </>
   );
 }

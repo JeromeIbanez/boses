@@ -18,6 +18,7 @@ import random
 from collections import defaultdict
 from datetime import datetime
 
+from openai import OpenAI
 from app.services.openai_client import get_openai_client
 from sqlalchemy import select
 

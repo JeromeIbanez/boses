@@ -20,7 +20,6 @@ import random
 from collections import defaultdict
 from datetime import datetime
 
-from openai import OpenAI
 from app.services.openai_client import get_openai_client
 from sqlalchemy import select
 
@@ -85,7 +84,7 @@ def _generate_choice_sets(
 # ---------------------------------------------------------------------------
 
 def _run_persona_tasks(
-    client: OpenAI,
+    client,
     system_prompt: str,
     category: str,
     tasks: list[tuple[dict, dict]],
@@ -283,7 +282,7 @@ def _simulate_market_share(
 # ---------------------------------------------------------------------------
 
 def _generate_narrative(
-    client: OpenAI,
+    client,
     category: str,
     importances: dict[str, float],
     part_worths: dict[str, dict[str, float]],

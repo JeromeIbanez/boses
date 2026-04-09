@@ -114,7 +114,8 @@ Rules:
 - Ground them culturally and statistically in {group.location} using the data above.
 - Income levels and digital behaviors must reflect the real distribution shown above.
 
-Return a JSON array of {group.persona_count} objects, each with:
+Return a JSON object with a single key "archetypes" whose value is an array of exactly {n} objects.
+Even if n=1, always return an array. Each object:
 {{
   "index": <1-based integer>,
   "full_name": "...",
@@ -137,12 +138,17 @@ Return a JSON array of {group.persona_count} objects, each with:
             temperature=1.2,
         )
         raw = json.loads(response.choices[0].message.content or "{}")
+        if isinstance(raw, list):
+            return raw
         if isinstance(raw, dict):
+            # Look for a list value first (e.g. {"archetypes": [...]})
             for v in raw.values():
                 if isinstance(v, list):
                     return v
-            return []
-        return raw if isinstance(raw, list) else []
+            # GPT returned a single object instead of an array — wrap it
+            if "full_name" in raw:
+                return [raw]
+        return []
 
     def _expand_one_skeleton(
         self,

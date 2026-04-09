@@ -1,7 +1,7 @@
 """
 Avatar generation service.
 
-Generates a photorealistic headshot for each persona using DALL-E 3 and
+Generates a photorealistic headshot for each persona using gpt-image-1 and
 stores it persistently, returning a URL for the image.
 
 Storage (production): Supabase Storage bucket — avatars/{persona_id}.png
@@ -56,7 +56,7 @@ def _build_prompt(persona) -> str:
     gender_word = _GENDER_MAP.get(persona.gender, "person")
     ethnicity = _ethnicity_hint(persona.location or "")
 
-    # ── No-text constraint first — DALL-E 3 weights early tokens more heavily ──
+    # ── No-text constraint first ──────────────────────────────────────────────
     no_text = (
         "A photorealistic studio portrait photograph. "
         "No text, no words, no letters, no labels, no watermarks, no overlays of any kind anywhere in the image."
@@ -108,7 +108,7 @@ def _build_prompt(persona) -> str:
 
 def generate_avatar(client: OpenAI, persona) -> str | None:
     """
-    Generate a DALL-E 3 headshot for the persona and save it locally.
+    Generate a gpt-image-1 headshot for the persona and save it locally.
     Returns the URL path (e.g. '/uploads/avatars/<id>.png') or None on failure.
     Never raises — avatar failure must not block persona generation.
     """
@@ -116,11 +116,10 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
         prompt = _build_prompt(persona)
 
         response = client.images.generate(
-            model="dall-e-3",
+            model="gpt-image-1",
             prompt=prompt,
             size="1024x1024",
-            quality="standard",
-            style="natural",
+            quality="medium",
             response_format="b64_json",
             n=1,
         )

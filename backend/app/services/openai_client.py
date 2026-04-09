@@ -13,6 +13,8 @@ _client: OpenAI | None = None
 def get_openai_client() -> OpenAI:
     global _client
     if _client is None:
+        if not settings.openai_api_key:
+            raise RuntimeError("OPENAI_API_KEY is not configured")
         _client = OpenAI(
             api_key=settings.openai_api_key,
             timeout=60.0,

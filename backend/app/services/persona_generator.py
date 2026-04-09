@@ -342,7 +342,9 @@ def generate_personas(group_id: str) -> None:
 
         source_key = getattr(group, "data_source", "synthetic") or "synthetic"
         source_class = _SOURCES.get(source_key, SyntheticPersonaSource)
-        total = group.persona_count
+        total = group.persona_count or 0
+        if total <= 0:
+            raise RuntimeError(f"Persona group {group_id} has invalid persona_count={total}")
         completed_names: list[str] = []
         personas_created = 0
         created_persona_ids: list[str] = []
@@ -420,6 +422,12 @@ def generate_personas(group_id: str) -> None:
 
                 # Pass 1: generate all skeletons at once (fast)
                 skeletons = source._pass1_skeletons(group, grounding_context, count=remaining)
+                if not skeletons:
+                    raise RuntimeError(
+                        f"Pass 1 returned 0 skeletons for group {group_id} "
+                        f"(location={group.location}, count={remaining}). "
+                        "OpenAI may have returned an unexpected response format."
+                    )
 
                 # Pass 2: expand one skeleton at a time with per-persona progress commits
                 for skeleton in skeletons:

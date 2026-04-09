@@ -27,6 +27,13 @@ function PersonaAvatar({ persona }: { persona: Persona }) {
       />
     );
   }
+  if (!persona.avatar_url) {
+    return (
+      <div className="w-9 h-9 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center shrink-0" title="Generating avatar…">
+        <Spinner className="h-3.5 w-3.5 border-zinc-300 border-t-zinc-500" />
+      </div>
+    );
+  }
   return (
     <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm font-medium shrink-0">
       {persona.full_name.charAt(0)}
@@ -87,8 +94,16 @@ export default function PersonaGroupPage() {
     queryKey: ["personas", groupId],
     queryFn: () => getPersonas(projectId, groupId),
     enabled: group?.generation_status === "complete",
-    refetchInterval: group?.generation_status === "generating" ? 3000 : false,
+    refetchInterval: (q) => {
+      if (group?.generation_status !== "complete") return false;
+      // Keep polling until every persona has an avatar
+      const items = q.state.data;
+      if (!items || items.length === 0) return false;
+      return items.some((p) => !p.avatar_url) ? 3000 : false;
+    },
   });
+
+  const avatarsLoading = !!personas && personas.some((p) => !p.avatar_url);
 
   if (!group) return null;
 
@@ -182,6 +197,13 @@ export default function PersonaGroupPage() {
               Generating {group.persona_count} personas with AI…
             </div>
           )}
+        </div>
+      )}
+
+      {avatarsLoading && (
+        <div className="flex items-center gap-2 text-xs text-zinc-400 mb-4">
+          <Spinner className="h-3 w-3 border-zinc-300 border-t-zinc-500" />
+          Generating avatars in the background…
         </div>
       )}
 

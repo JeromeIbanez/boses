@@ -1,7 +1,7 @@
 """
 Avatar generation service.
 
-Generates a photorealistic headshot for each persona using gpt-image-1 and
+Generates a photorealistic headshot for each persona using gpt-image-1.5 and
 stores it persistently, returning a URL for the image.
 
 Storage (production): Supabase Storage bucket — avatars/{persona_id}.png
@@ -108,7 +108,7 @@ def _build_prompt(persona) -> str:
 
 def generate_avatar(client: OpenAI, persona) -> str | None:
     """
-    Generate a gpt-image-1 headshot for the persona and save it locally.
+    Generate a gpt-image-1.5 headshot for the persona and save it locally.
     Returns the URL path (e.g. '/uploads/avatars/<id>.png') or None on failure.
     Never raises — avatar failure must not block persona generation.
     """
@@ -116,7 +116,7 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
         prompt = _build_prompt(persona)
 
         response = client.images.generate(
-            model="gpt-image-1",
+            model="gpt-image-1.5",
             prompt=prompt,
             size="1024x1024",
             quality="medium",

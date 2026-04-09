@@ -32,6 +32,7 @@ class LibraryPersonaResponse(BaseModel):
     avatar_url: Optional[str]
     data_source: str
     data_source_references: Optional[list[str]]
+    is_boses_curated: bool
     simulation_count: int
     is_retired: bool
     created_at: datetime

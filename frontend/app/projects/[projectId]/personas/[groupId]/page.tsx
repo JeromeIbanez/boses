@@ -35,6 +35,7 @@ function PersonaAvatar({ persona }: { persona: Persona }) {
 }
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
+import CuratedBadge from "@/components/ui/CuratedBadge";
 import LibraryBadge from "@/components/ui/LibraryBadge";
 import PageHeader from "@/components/layout/PageHeader";
 import Spinner from "@/components/ui/Spinner";
@@ -198,7 +199,8 @@ export default function PersonaGroupPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-sm font-medium text-zinc-900">{p.full_name}</h3>
-                    {p.library_persona_id && <LibraryBadge />}
+                    {p.data_source === "boses_curated" && <CuratedBadge />}
+                    {p.library_persona_id && p.data_source !== "boses_curated" && <LibraryBadge />}
                   </div>
                   <p className="text-xs text-zinc-400">{p.age} · {p.occupation}</p>
                   {p.archetype_label && (

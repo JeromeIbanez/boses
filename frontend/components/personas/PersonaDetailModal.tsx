@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import CuratedBadge from "@/components/ui/CuratedBadge";
 import LibraryBadge from "@/components/ui/LibraryBadge";
 import Modal from "@/components/ui/Modal";
 import { Persona } from "@/types";
@@ -57,7 +58,8 @@ export default function PersonaDetailModal({ persona, onClose, onDelete }: Perso
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <h2 className="text-sm font-semibold text-zinc-900">{persona.full_name}</h2>
-              {persona.library_persona_id && <LibraryBadge />}
+              {persona.data_source === "boses_curated" && <CuratedBadge />}
+              {persona.library_persona_id && persona.data_source !== "boses_curated" && <LibraryBadge />}
             </div>
             <p className="text-xs text-zinc-500 mb-2">
               {persona.age} · {persona.gender} · {persona.location} · <span className="font-mono text-zinc-300">#{persona.persona_code}</span>

@@ -19,6 +19,7 @@ class User(Base):
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     role: Mapped[str] = mapped_column(String(50), nullable=False, default="owner")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_boses_staff: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     password_reset_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     password_reset_token_expiry: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

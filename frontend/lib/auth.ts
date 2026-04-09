@@ -49,6 +49,7 @@ export interface AuthUser {
   email: string;
   full_name: string | null;
   role: string;
+  is_boses_staff: boolean;
   company: Company;
   created_at: string;
 }

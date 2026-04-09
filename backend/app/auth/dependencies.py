@@ -17,6 +17,7 @@ class CurrentUser:
     email: str
     full_name: str | None
     role: str
+    is_boses_staff: bool
 
 
 def get_current_user(
@@ -52,4 +53,14 @@ def get_current_user(
         email=user.email,
         full_name=user.full_name,
         role=user.role,
+        is_boses_staff=user.is_boses_staff,
     )
+
+
+def require_boses_staff(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    if not current_user.is_boses_staff:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Boses staff access required",
+        )
+    return current_user

@@ -41,6 +41,7 @@ class UserResponse(BaseModel):
     email: str
     full_name: Optional[str]
     role: str
+    is_boses_staff: bool
     company: CompanyResponse
     created_at: datetime
 

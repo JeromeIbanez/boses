@@ -9,6 +9,11 @@ causing full table scans on every simulation run and result fetch.
 """
 from alembic import op
 
+revision = "n4i5j6k7l8m9"
+down_revision = "m3h4i5j6k7l8"
+branch_labels = None
+depends_on = None
+
 
 def upgrade() -> None:
     # simulation_results.simulation_id — every result fetch for a simulation

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderOpen, BookMarked, LogOut, FileText, Puzzle } from "lucide-react";
+import { LayoutDashboard, FolderOpen, BookMarked, LogOut, FileText, Puzzle, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -49,6 +49,22 @@ export default function Sidebar() {
             {label}
           </Link>
         ))}
+        {user?.is_boses_staff && (
+          <div className="pt-3 mt-3 border-t border-zinc-100 space-y-0.5">
+            <Link
+              href="/boses-admin"
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
+                pathname.startsWith("/boses-admin")
+                  ? "bg-amber-50 text-amber-800 font-medium"
+                  : "text-amber-600 hover:bg-amber-50 hover:text-amber-800"
+              )}
+            >
+              <ShieldCheck size={16} strokeWidth={1.8} />
+              Boses Admin
+            </Link>
+          </div>
+        )}
         <div className="pt-3 mt-3 border-t border-zinc-100 space-y-0.5">
           {bottomNav.map(({ label, href, icon: Icon, external }) =>
             external ? (

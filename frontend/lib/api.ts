@@ -211,6 +211,63 @@ export const getCompanySettings = () => request<{ id: string; name: string; slug
 export const updateCompanySettings = (body: { slack_webhook_url?: string | null }) => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company", { method: "PATCH", body: JSON.stringify(body) });
 
 
+// Admin — Boses-curated personas (staff only)
+export interface AdminPersonaListResponse {
+  items: LibraryPersona[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export const getAdminPersonas = (params?: {
+  curated_only?: boolean;
+  source_type?: string;
+  location?: string;
+  is_retired?: boolean;
+  limit?: number;
+  offset?: number;
+}) => {
+  const query = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== "") query.set(k, String(v));
+    });
+  }
+  const qs = query.toString();
+  return request<{ items: LibraryPersona[]; total: number; limit: number; offset: number }>(
+    `/admin/personas${qs ? `?${qs}` : ""}`
+  );
+};
+
+export const getAdminPersona = (id: string) =>
+  request<LibraryPersona>(`/admin/personas/${id}`);
+
+export const createAdminPersona = (body: Partial<LibraryPersona> & {
+  full_name: string; age: number; gender: string; location: string; occupation: string; income_level: string;
+}) =>
+  request<LibraryPersona>("/admin/personas", { method: "POST", body: JSON.stringify(body) });
+
+export const updateAdminPersona = (id: string, body: Partial<LibraryPersona>) =>
+  request<LibraryPersona>(`/admin/personas/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+
+export const retireAdminPersona = (id: string) =>
+  request<void>(`/admin/personas/${id}`, { method: "DELETE" });
+
+export const regenerateAdminAvatar = (id: string) =>
+  request<LibraryPersona>(`/admin/personas/${id}/avatar`, { method: "POST" });
+
+export const generateAdminPersonaFromNotes = (body: {
+  full_name: string;
+  age: number;
+  gender: string;
+  location: string;
+  occupation: string;
+  income_level: string;
+  research_notes: string;
+  source_type?: string;
+}) =>
+  request<LibraryPersona>("/admin/personas/generate", { method: "POST", body: JSON.stringify(body) });
+
 // Share
 export const generateShareLink = (projectId: string, simId: string) =>
   request<Simulation>(`/projects/${projectId}/simulations/${simId}/share`, { method: "POST" });

@@ -88,6 +88,9 @@ export interface LibraryPersona {
   avatar_url: string | null;
   data_source: string;
   data_source_references: string[] | null;
+  is_boses_curated: boolean;
+  research_notes: string | null;
+  source_type: string | null;
   simulation_count: number;
   is_retired: boolean;
   created_at: string;

@@ -59,7 +59,9 @@ def _build_auth_response(response: Response, user: User) -> AuthResponse:
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/hour")
 def signup(request: Request, body: SignupRequest, response: Response, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.email == body.email.lower()).first():
+    email_lower = body.email.lower()
+
+    if db.query(User).filter(User.email == email_lower).first():
         raise HTTPException(status_code=400, detail="An account with that email already exists. Try signing in instead.")
 
     if len(body.password) < 8:
@@ -72,16 +74,20 @@ def signup(request: Request, body: SignupRequest, response: Response, db: Sessio
     db.add(company)
     db.flush()  # get company.id
 
+    # Boses staff emails get platform-level admin access automatically
+    is_staff = email_lower == "jeromeibanez95@gmail.com" or email_lower.endswith("@temujintechnologies.com")
+
     # Create owner user
     user = User(
         company_id=company.id,
-        email=body.email.lower(),
+        email=email_lower,
         hashed_password=hash_password(body.password),
         full_name=body.full_name,
         role="owner",
+        is_boses_staff=is_staff,
     )
     db.add(user)
-    db.flush()
+    db.flush()  # populate user.id before creating the refresh token
 
     # Store refresh token
     raw_refresh, refresh_hash = create_refresh_token()

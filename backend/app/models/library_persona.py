@@ -41,6 +41,10 @@ class LibraryPersona(Base):
     data_source: Mapped[str] = mapped_column(String(50), nullable=False, default="synthetic")
     data_source_references: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
 
+    is_boses_curated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    research_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_type: Mapped[str | None] = mapped_column(String(50), nullable=True)  # "ethnographic", "interview", "composite"
+
     simulation_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_retired: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 

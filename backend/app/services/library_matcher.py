@@ -154,11 +154,15 @@ def find_library_matches(
     if getattr(group, "project_id", None):
         already_used = _get_library_ids_used_in_project(db, str(group.project_id))
 
-    # Pre-filter in SQL to narrow candidates before Python scoring
+    # Pre-filter in SQL to narrow candidates before Python scoring.
+    # Only match Boses-curated personas — synthetic auto-generated ones are
+    # saved to the library for dedup/analytics but must not be recycled back
+    # into new generations (that would just repeat old personas forever).
     query = (
         db.query(LibraryPersona)
         .filter(
             LibraryPersona.is_retired == False,  # noqa: E712
+            LibraryPersona.is_boses_curated == True,  # noqa: E712
             LibraryPersona.age >= age_min,
             LibraryPersona.age <= age_max,
         )

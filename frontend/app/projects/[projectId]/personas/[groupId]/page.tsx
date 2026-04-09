@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Trash2 } from "lucide-react";
@@ -90,20 +90,26 @@ export default function PersonaGroupPage() {
     },
   });
 
+  const avatarPollCount = useRef(0);
+
   const { data: personas, isLoading } = useQuery({
     queryKey: ["personas", groupId],
     queryFn: () => getPersonas(projectId, groupId),
     enabled: group?.generation_status === "complete",
     refetchInterval: (q) => {
       if (group?.generation_status !== "complete") return false;
-      // Keep polling until every persona has an avatar
       const items = q.state.data;
       if (!items || items.length === 0) return false;
-      return items.some((p) => !p.avatar_url) ? 3000 : false;
+      const missing = items.some((p) => !p.avatar_url);
+      if (!missing) { avatarPollCount.current = 0; return false; }
+      // Give up after ~2 minutes (40 × 3s) to avoid infinite loop
+      if (avatarPollCount.current >= 40) return false;
+      avatarPollCount.current += 1;
+      return 3000;
     },
   });
 
-  const avatarsLoading = !!personas && personas.some((p) => !p.avatar_url);
+  const avatarsLoading = !!personas && personas.some((p) => !p.avatar_url) && avatarPollCount.current < 40;
 
   if (!group) return null;
 

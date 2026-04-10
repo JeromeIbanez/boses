@@ -15,11 +15,13 @@ from app.auth.tokens import create_access_token, create_refresh_token, hash_toke
 from app.config import settings
 from app.database import get_db
 from app.models.company import Company
+from app.models.invite_token import InviteToken
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.schemas.auth import (
     AuthResponse,
     ForgotPasswordRequest,
+    InviteTokenValidation,
     LoginRequest,
     ResetPasswordRequest,
     SignupRequest,
@@ -56,16 +58,32 @@ def _build_auth_response(response: Response, user: User) -> AuthResponse:
 # Signup
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Invite token validation (public — used by signup page on load)
+# ---------------------------------------------------------------------------
+
+@router.get("/invite", response_model=InviteTokenValidation)
+def validate_invite(token: str, db: Session = Depends(get_db)):
+    invite = db.query(InviteToken).filter(InviteToken.token == token).first()
+    if not invite or invite.used_at is not None or invite.expires_at < datetime.utcnow():
+        return InviteTokenValidation(valid=False)
+    return InviteTokenValidation(valid=True, email=invite.email)
+
+
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/hour")
 def signup(request: Request, body: SignupRequest, response: Response, db: Session = Depends(get_db)):
     email_lower = body.email.lower()
 
+    # Validate invite token
+    invite = db.query(InviteToken).filter(InviteToken.token == body.invite_token).first()
+    if not invite or invite.used_at is not None or invite.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="This invite link is invalid or has expired.")
+    if invite.email.lower() != email_lower:
+        raise HTTPException(status_code=400, detail="This invite was sent to a different email address.")
+
     if db.query(User).filter(User.email == email_lower).first():
         raise HTTPException(status_code=400, detail="An account with that email already exists. Try signing in instead.")
-
-    if len(body.password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
 
     # Create company
     base_slug = _slugify(body.company_name)
@@ -88,6 +106,9 @@ def signup(request: Request, body: SignupRequest, response: Response, db: Sessio
     )
     db.add(user)
     db.flush()  # populate user.id before creating the refresh token
+
+    # Consume invite token
+    invite.used_at = datetime.utcnow()
 
     # Store refresh token
     raw_refresh, refresh_hash = create_refresh_token()

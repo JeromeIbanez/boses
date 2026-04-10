@@ -58,11 +58,20 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+export interface InviteTokenValidation {
+  valid: boolean;
+  email: string | null;
+}
+
+export const validateInviteToken = (token: string) =>
+  authRequest<InviteTokenValidation>(`/auth/invite?token=${encodeURIComponent(token)}`);
+
 export const signup = (body: {
   email: string;
   password: string;
   full_name?: string;
   company_name: string;
+  invite_token: string;
 }) => authRequest<AuthResponse>("/auth/signup", { method: "POST", body: JSON.stringify(body) });
 
 export const login = (body: { email: string; password: string }) =>

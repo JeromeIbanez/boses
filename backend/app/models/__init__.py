@@ -14,3 +14,4 @@ from app.models.idi_message import IDIMessage  # noqa: F401
 from app.models.reproducibility import ReproducibilityStudy, ReproducibilityRun  # noqa: F401
 from app.models.cultural_context import CulturalContextSnapshot  # noqa: F401
 from app.models.simulation_rating import SimulationRating  # noqa: F401
+from app.models.invite_token import InviteToken  # noqa: F401

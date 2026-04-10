@@ -10,6 +10,12 @@ class SignupRequest(BaseModel):
     password: str = Field(min_length=8, max_length=72)
     full_name: Optional[str] = Field(default=None, max_length=200)
     company_name: str = Field(min_length=1, max_length=200)
+    invite_token: str = Field(min_length=1, max_length=64)
+
+
+class InviteTokenValidation(BaseModel):
+    valid: bool
+    email: Optional[str] = None
 
 
 class LoginRequest(BaseModel):

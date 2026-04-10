@@ -268,6 +268,26 @@ export const generateAdminPersonaFromNotes = (body: {
 }) =>
   request<LibraryPersona>("/admin/personas/generate", { method: "POST", body: JSON.stringify(body) });
 
+// Admin — Invites
+export interface Invite {
+  id: string;
+  email: string;
+  status: "pending" | "used" | "expired";
+  invite_url: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+}
+
+export const getAdminInvites = () =>
+  request<{ items: Invite[]; total: number }>("/admin/invites");
+
+export const createAdminInvite = (email: string) =>
+  request<Invite>("/admin/invites", { method: "POST", body: JSON.stringify({ email }) });
+
+export const revokeAdminInvite = (id: string) =>
+  request<void>(`/admin/invites/${id}`, { method: "DELETE" });
+
 // Share
 export const generateShareLink = (projectId: string, simId: string) =>
   request<Simulation>(`/projects/${projectId}/simulations/${simId}/share`, { method: "POST" });

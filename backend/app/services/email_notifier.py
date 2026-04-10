@@ -4,6 +4,64 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def send_invite_email(to_email: str, invite_url: str) -> None:
+    """Send an invite email with a one-time signup link."""
+    try:
+        from app.config import settings
+        if not getattr(settings, "RESEND_API_KEY", ""):
+            logger.warning("RESEND_API_KEY not set — invite email not sent to %s", to_email)
+            return
+
+        import resend
+        resend.api_key = settings.RESEND_API_KEY
+
+        resend.Emails.send({
+            "from": "Jerome at Boses <jerome@temujintechnologies.com>",
+            "to": [to_email],
+            "subject": "You're invited to try Boses",
+            "html": f"""
+<!DOCTYPE html>
+<html>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; margin: 0; padding: 40px 0;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 12px; padding: 40px; border: 1px solid #e5e7eb;">
+          <tr>
+            <td>
+              <p style="margin: 0 0 4px; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Boses</p>
+              <h1 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #111827;">You're invited</h1>
+              <p style="margin: 0 0 8px; font-size: 15px; color: #374151;">
+                Great speaking with you. Here's your personal invite link to get started with Boses.
+              </p>
+              <p style="margin: 0 0 32px; font-size: 14px; color: #6b7280;">
+                This link is single-use and expires in 7 days.
+              </p>
+              <a href="{invite_url}"
+                 style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none;
+                        padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 500;">
+                Create your account →
+              </a>
+              <hr style="margin: 40px 0; border: none; border-top: 1px solid #e5e7eb;" />
+              <p style="margin: 0; font-size: 13px; color: #9ca3af;">
+                If you weren't expecting this, you can safely ignore it.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+""",
+        })
+        logger.info("Sent invite email to %s", to_email)
+    except Exception as e:
+        logger.warning("Invite email failed for %s: %s", to_email, e)
+        raise
+
+
 def maybe_notify_email(simulation_id: str, status: str) -> None:
     """Send a simulation-complete email to the owning user, if Resend is configured."""
     try:

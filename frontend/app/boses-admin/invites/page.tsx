@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Check, X } from "lucide-react";
+import { Check, Copy, X } from "lucide-react";
 import { getAdminInvites, createAdminInvite, revokeAdminInvite, type Invite } from "@/lib/api";
 
 function StatusBadge({ status }: { status: Invite["status"] }) {
@@ -18,29 +18,31 @@ function StatusBadge({ status }: { status: Invite["status"] }) {
   );
 }
 
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+function RevokeButton({ invite }: { invite: Invite }) {
+  const qc = useQueryClient();
+  const revokeMut = useMutation({
+    mutationFn: () => revokeAdminInvite(invite.id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-invites"] }),
+  });
   return (
     <button
-      onClick={copy}
-      className="text-zinc-400 hover:text-zinc-700 transition-colors"
-      title="Copy invite link"
+      onClick={() => {
+        if (confirm(`Revoke invite for ${invite.email}?`)) revokeMut.mutate();
+      }}
+      disabled={revokeMut.isPending}
+      className="text-zinc-400 hover:text-red-500 transition-colors"
+      title="Revoke invite"
     >
-      {copied ? <Check size={13} className="text-green-600" /> : <Copy size={13} />}
+      <X size={13} />
     </button>
   );
 }
 
-
 export default function AdminInvitesPage() {
   const [email, setEmail] = useState("");
   const [sendError, setSendError] = useState("");
-  const [sendSuccess, setSendSuccess] = useState("");
+  const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
+  const [urlCopied, setUrlCopied] = useState(false);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -52,23 +54,32 @@ export default function AdminInvitesPage() {
     mutationFn: () => createAdminInvite(email.trim()),
     onSuccess: (invite) => {
       qc.invalidateQueries({ queryKey: ["admin-invites"] });
-      setSendSuccess(`Invite sent to ${invite.email}`);
       setSendError("");
       setEmail("");
-      setTimeout(() => setSendSuccess(""), 4000);
+      if (invite.invite_url) {
+        setCreatedInviteUrl(invite.invite_url);
+        navigator.clipboard.writeText(invite.invite_url).catch(() => {});
+      }
     },
     onError: (err: Error) => {
       setSendError(err.message);
-      setSendSuccess("");
+      setCreatedInviteUrl(null);
     },
   });
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     setSendError("");
-    setSendSuccess("");
+    setCreatedInviteUrl(null);
     if (!email.trim()) return;
     sendMut.mutate();
+  };
+
+  const copyUrl = () => {
+    if (!createdInviteUrl) return;
+    navigator.clipboard.writeText(createdInviteUrl);
+    setUrlCopied(true);
+    setTimeout(() => setUrlCopied(false), 2000);
   };
 
   const items = data?.items ?? [];
@@ -104,11 +115,26 @@ export default function AdminInvitesPage() {
             {sendMut.isPending ? "Sending…" : "Send invite"}
           </button>
         </form>
+
         {sendError && (
           <p className="mt-2 text-xs text-red-600">{sendError}</p>
         )}
-        {sendSuccess && (
-          <p className="mt-2 text-xs text-green-600">{sendSuccess}</p>
+
+        {/* Invite link — shown once after creation */}
+        {createdInviteUrl && (
+          <div className="mt-3 flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <Check size={13} className="text-green-600 shrink-0" />
+            <p className="text-xs text-green-700 flex-1">
+              Invite sent. <span className="font-medium">Copy the link below — it won't appear again.</span>
+            </p>
+            <button
+              onClick={copyUrl}
+              className="flex items-center gap-1 text-xs text-green-700 font-medium hover:text-green-900 shrink-0"
+            >
+              {urlCopied ? <Check size={12} /> : <Copy size={12} />}
+              {urlCopied ? "Copied" : "Copy link"}
+            </button>
+          </div>
         )}
       </div>
 
@@ -131,7 +157,7 @@ export default function AdminInvitesPage() {
                 <th className="py-2.5 px-4" />
               </tr>
             </thead>
-            <tbody className="px-4">
+            <tbody>
               {items.map((invite) => (
                 <tr key={invite.id} className="border-b border-zinc-100 last:border-0">
                   <td className="py-3 px-4 text-sm text-zinc-800">{invite.email}</td>
@@ -145,12 +171,7 @@ export default function AdminInvitesPage() {
                     {new Date(invite.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </td>
                   <td className="py-3 px-4">
-                    {invite.status === "pending" && (
-                      <div className="flex items-center gap-2">
-                        <CopyButton text={invite.invite_url} />
-                        <RevokeButton invite={invite} />
-                      </div>
-                    )}
+                    {invite.status === "pending" && <RevokeButton invite={invite} />}
                   </td>
                 </tr>
               ))}
@@ -159,25 +180,5 @@ export default function AdminInvitesPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function RevokeButton({ invite }: { invite: Invite }) {
-  const qc = useQueryClient();
-  const revokeMut = useMutation({
-    mutationFn: () => revokeAdminInvite(invite.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-invites"] }),
-  });
-  return (
-    <button
-      onClick={() => {
-        if (confirm(`Revoke invite for ${invite.email}?`)) revokeMut.mutate();
-      }}
-      disabled={revokeMut.isPending}
-      className="text-zinc-400 hover:text-red-500 transition-colors"
-      title="Revoke invite"
-    >
-      <X size={13} />
-    </button>
   );
 }

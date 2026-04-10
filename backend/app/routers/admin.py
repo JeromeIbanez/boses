@@ -3,15 +3,17 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentUser, require_boses_staff
+from app.auth.tokens import hash_token
 from app.database import get_db
 from app.models.invite_token import InviteToken
 from app.models.user import User
 from app.config import settings
+from app.limiter import limiter
 from app.services.email_notifier import send_invite_email
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -31,7 +33,7 @@ class InviteResponse(BaseModel):
     id: uuid.UUID
     email: str
     status: str  # "pending" | "used" | "expired"
-    invite_url: str
+    invite_url: Optional[str] = None  # Only present in the creation response
     created_at: datetime
     expires_at: datetime
     used_at: Optional[datetime] = None
@@ -57,12 +59,12 @@ def _invite_status(invite: InviteToken) -> str:
 
 
 def _to_response(invite: InviteToken) -> InviteResponse:
-    invite_url = f"{settings.FRONTEND_URL}/signup?token={invite.token}"
+    """Convert an invite to a response. invite_url is NOT set — raw token is not recoverable from the hash."""
     return InviteResponse(
         id=invite.id,
         email=invite.email,
         status=_invite_status(invite),
-        invite_url=invite_url,
+        invite_url=None,
         created_at=invite.created_at,
         expires_at=invite.expires_at,
         used_at=invite.used_at,
@@ -97,9 +99,12 @@ def create_invite(
             detail=f"A pending invite already exists for {email_lower}. Revoke it first or wait for it to expire.",
         )
 
-    token = secrets.token_urlsafe(32)
+    # Generate token — store only the hash, return raw once
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hash_token(raw_token)
+
     invite = InviteToken(
-        token=token,
+        token=token_hash,
         email=email_lower,
         created_by=current_user.id,
         expires_at=datetime.now(timezone.utc) + timedelta(days=INVITE_EXPIRE_DAYS),
@@ -108,14 +113,16 @@ def create_invite(
     db.commit()
     db.refresh(invite)
 
-    invite_url = f"{settings.FRONTEND_URL}/signup?token={token}"
+    invite_url = f"{settings.FRONTEND_URL}/signup?token={raw_token}"
     try:
         send_invite_email(email_lower, invite_url)
     except Exception:
         # Email failure does not roll back the token — staff can copy the URL manually
         pass
 
-    return _to_response(invite)
+    response = _to_response(invite)
+    response.invite_url = invite_url  # Only time the raw URL is returned
+    return response
 
 
 @router.get("/invites", response_model=InviteListResponse)
@@ -141,6 +148,5 @@ def revoke_invite(
         raise HTTPException(status_code=404, detail="Invite not found")
     if invite.used_at is not None:
         raise HTTPException(status_code=400, detail="Cannot revoke a used invite")
-    # Mark as expired immediately by setting expires_at to now
     invite.expires_at = datetime.now(timezone.utc)
     db.commit()

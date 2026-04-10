@@ -12,6 +12,7 @@ from app.auth.cookies import clear_auth_cookies, set_auth_cookies
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.hashing import hash_password, verify_password
 from app.auth.tokens import create_access_token, create_refresh_token, hash_token
+from app.limiter import limiter
 from app.config import settings
 from app.database import get_db
 from app.models.company import Company
@@ -63,8 +64,10 @@ def _build_auth_response(response: Response, user: User) -> AuthResponse:
 # ---------------------------------------------------------------------------
 
 @router.get("/invite", response_model=InviteTokenValidation)
-def validate_invite(token: str, db: Session = Depends(get_db)):
-    invite = db.query(InviteToken).filter(InviteToken.token == token).first()
+@limiter.limit("20/minute")
+def validate_invite(request: Request, token: str, db: Session = Depends(get_db)):
+    token_hash = hash_token(token)
+    invite = db.query(InviteToken).filter(InviteToken.token == token_hash).first()
     if not invite or invite.used_at is not None or invite.expires_at < datetime.now(timezone.utc):
         return InviteTokenValidation(valid=False)
     return InviteTokenValidation(valid=True, email=invite.email)
@@ -76,7 +79,7 @@ def signup(request: Request, body: SignupRequest, response: Response, db: Sessio
     email_lower = body.email.lower()
 
     # Validate invite token
-    invite = db.query(InviteToken).filter(InviteToken.token == body.invite_token).first()
+    invite = db.query(InviteToken).filter(InviteToken.token == hash_token(body.invite_token)).first()
     if not invite or invite.used_at is not None or invite.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="This invite link is invalid or has expired.")
     if invite.email.lower() != email_lower:

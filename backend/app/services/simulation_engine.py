@@ -154,6 +154,8 @@ def run_simulation(simulation_id: str) -> None:
     # concept_test path
     client = get_openai_client()
     db = SessionLocal()
+    # See idi_engine.py — same reason: prevent concurrent lazy-loads in worker threads.
+    db.expire_on_commit = False
     try:
         simulation = db.get(Simulation, simulation_id)
         if not simulation:

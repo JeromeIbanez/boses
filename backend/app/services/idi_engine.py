@@ -186,6 +186,13 @@ def _idi_persona_worker(persona, briefing_text: str, questions: list) -> tuple:
 def run_idi_ai(simulation_id: str) -> None:
     client = get_openai_client()
     db = SessionLocal()
+    # Prevent SQLAlchemy from expiring ORM objects after each commit.
+    # Worker threads access persona attributes (full_name, age, etc.) while the
+    # main thread may simultaneously commit progress updates.  Without this flag,
+    # post-commit expiry triggers concurrent lazy-loads through the shared session,
+    # raising "This session is provisioning a new connection; concurrent operations
+    # are not permitted".
+    db.expire_on_commit = False
     sim_ref = simulation_id[:8]
     try:
         simulation = db.get(Simulation, simulation_id)
@@ -316,14 +323,19 @@ def run_idi_ai(simulation_id: str) -> None:
 
     except Exception as e:
         logger.error(f"[idi:{sim_ref}] IDI failed: {e}")
+        # Use a fresh session — db may be in a broken state if the exception was
+        # a concurrent-session or connection error.
+        _error_db = SessionLocal()
         try:
-            simulation = db.get(Simulation, simulation_id)
+            simulation = _error_db.get(Simulation, simulation_id)
             if simulation:
                 simulation.status = "failed"
                 simulation.error_message = str(e)
-                db.commit()
+                _error_db.commit()
         except Exception:
-            db.rollback()
+            _error_db.rollback()
+        finally:
+            _error_db.close()
         _trigger_scoring(simulation_id)
     finally:
         db.close()

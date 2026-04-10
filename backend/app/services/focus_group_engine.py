@@ -181,6 +181,7 @@ def _parse_aggregate_report(text: str) -> dict:
 def run_focus_group(simulation_id: str) -> None:
     client = get_openai_client()
     db = SessionLocal()
+    db.expire_on_commit = False  # prevent concurrent lazy-loads in worker threads
     sim_ref = simulation_id[:8]
 
     try:

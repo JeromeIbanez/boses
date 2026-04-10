@@ -112,6 +112,7 @@ def _survey_persona_worker(persona, briefing_text: str, questions: list) -> tupl
 def run_survey(simulation_id: str) -> None:
     client = get_openai_client()
     db = SessionLocal()
+    db.expire_on_commit = False  # prevent concurrent lazy-loads in worker threads
     try:
         simulation = db.get(Simulation, simulation_id)
         if not simulation:

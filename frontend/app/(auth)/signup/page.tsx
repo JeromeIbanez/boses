@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signup, validateInviteToken } from "@/lib/auth";
@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type TokenState = "loading" | "valid" | "invalid";
 
-export default function SignupPage() {
+function SignupForm() {
   const { refresh } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -167,5 +167,19 @@ export default function SignupPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-700 rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }

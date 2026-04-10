@@ -1,6 +1,6 @@
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -50,7 +50,7 @@ class InviteListResponse(BaseModel):
 def _invite_status(invite: InviteToken) -> str:
     if invite.used_at is not None:
         return "used"
-    if invite.expires_at < datetime.utcnow():
+    if invite.expires_at < datetime.now(timezone.utc):
         return "expired"
     return "pending"
 
@@ -86,7 +86,7 @@ def create_invite(
         .filter(InviteToken.email == email_lower, InviteToken.used_at == None)  # noqa: E711
         .first()
     )
-    if existing and existing.expires_at > datetime.utcnow():
+    if existing and existing.expires_at > datetime.now(timezone.utc):
         raise HTTPException(
             status_code=400,
             detail=f"A pending invite already exists for {email_lower}. Revoke it first or wait for it to expire.",
@@ -97,7 +97,7 @@ def create_invite(
         token=token,
         email=email_lower,
         created_by=current_user.id,
-        expires_at=datetime.utcnow() + timedelta(days=INVITE_EXPIRE_DAYS),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=INVITE_EXPIRE_DAYS),
     )
     db.add(invite)
     db.commit()
@@ -137,5 +137,5 @@ def revoke_invite(
     if invite.used_at is not None:
         raise HTTPException(status_code=400, detail="Cannot revoke a used invite")
     # Mark as expired immediately by setting expires_at to now
-    invite.expires_at = datetime.utcnow()
+    invite.expires_at = datetime.now(timezone.utc)
     db.commit()

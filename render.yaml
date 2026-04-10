@@ -39,6 +39,10 @@ services:
         value: avatars
       - key: RESEND_API_KEY
         sync: false
+      - key: FRONTEND_URL
+        value: https://app.temujintechnologies.com
+      - key: ENVIRONMENT
+        value: production
     domains:
       - api.temujintechnologies.com
 
@@ -71,6 +75,10 @@ services:
         value: avatars
       - key: RESEND_API_KEY
         sync: false
+      - key: FRONTEND_URL
+        value: https://staging.temujintechnologies.com
+      - key: ENVIRONMENT
+        value: staging
     domains:
       - api-staging.temujintechnologies.com
 

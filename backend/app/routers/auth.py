@@ -1,7 +1,7 @@
 import hashlib
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
@@ -65,7 +65,7 @@ def _build_auth_response(response: Response, user: User) -> AuthResponse:
 @router.get("/invite", response_model=InviteTokenValidation)
 def validate_invite(token: str, db: Session = Depends(get_db)):
     invite = db.query(InviteToken).filter(InviteToken.token == token).first()
-    if not invite or invite.used_at is not None or invite.expires_at < datetime.utcnow():
+    if not invite or invite.used_at is not None or invite.expires_at < datetime.now(timezone.utc):
         return InviteTokenValidation(valid=False)
     return InviteTokenValidation(valid=True, email=invite.email)
 
@@ -77,7 +77,7 @@ def signup(request: Request, body: SignupRequest, response: Response, db: Sessio
 
     # Validate invite token
     invite = db.query(InviteToken).filter(InviteToken.token == body.invite_token).first()
-    if not invite or invite.used_at is not None or invite.expires_at < datetime.utcnow():
+    if not invite or invite.used_at is not None or invite.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="This invite link is invalid or has expired.")
     if invite.email.lower() != email_lower:
         raise HTTPException(status_code=400, detail="This invite was sent to a different email address.")
@@ -108,14 +108,14 @@ def signup(request: Request, body: SignupRequest, response: Response, db: Sessio
     db.flush()  # populate user.id before creating the refresh token
 
     # Consume invite token
-    invite.used_at = datetime.utcnow()
+    invite.used_at = datetime.now(timezone.utc)
 
     # Store refresh token
     raw_refresh, refresh_hash = create_refresh_token()
     rt = RefreshToken(
         user_id=user.id,
         token_hash=refresh_hash,
-        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
     db.add(rt)
     db.commit()
@@ -143,7 +143,7 @@ def login(request: Request, body: LoginRequest, response: Response, db: Session 
     rt = RefreshToken(
         user_id=user.id,
         token_hash=refresh_hash,
-        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
     db.add(rt)
     db.commit()
@@ -167,7 +167,7 @@ def logout(
         token_hash = hash_token(refresh_token)
         rt = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
         if rt:
-            rt.revoked_at = datetime.utcnow()
+            rt.revoked_at = datetime.now(timezone.utc)
             db.commit()
     clear_auth_cookies(response)
 
@@ -208,12 +208,12 @@ def refresh(
         raise HTTPException(status_code=401, detail="User not found")
 
     # Rotate: revoke old, issue new
-    rt.revoked_at = datetime.utcnow()
+    rt.revoked_at = datetime.now(timezone.utc)
     raw_refresh, refresh_hash = create_refresh_token()
     new_rt = RefreshToken(
         user_id=user.id,
         token_hash=refresh_hash,
-        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
     db.add(new_rt)
     db.commit()
@@ -238,7 +238,7 @@ def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session =
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
     user.password_reset_token = token_hash
-    user.password_reset_token_expiry = datetime.utcnow() + timedelta(hours=2)
+    user.password_reset_token_expiry = datetime.now(timezone.utc) + timedelta(hours=2)
     db.commit()
 
     # TODO: send email with reset link
@@ -254,7 +254,7 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
     if (
         not user
         or not user.password_reset_token_expiry
-        or user.password_reset_token_expiry < datetime.utcnow()
+        or user.password_reset_token_expiry < datetime.now(timezone.utc)
     ):
         raise HTTPException(status_code=400, detail="This reset link is invalid or has expired. Please request a new one.")
 
@@ -269,6 +269,6 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
     db.query(RefreshToken).filter(
         RefreshToken.user_id == user.id,
         RefreshToken.revoked_at == None,  # noqa: E711
-    ).update({"revoked_at": datetime.utcnow()})
+    ).update({"revoked_at": datetime.now(timezone.utc)})
 
     db.commit()

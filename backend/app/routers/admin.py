@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import CurrentUser, require_boses_staff
 from app.database import get_db
 from app.models.invite_token import InviteToken
+from app.models.user import User
 from app.config import settings
 from app.services.email_notifier import send_invite_email
 
@@ -79,6 +80,10 @@ def create_invite(
     current_user: CurrentUser = Depends(require_boses_staff),
 ):
     email_lower = body.email.lower()
+
+    # Check if already a registered user
+    if db.query(User).filter(User.email == email_lower).first():
+        raise HTTPException(status_code=400, detail=f"{email_lower} already has an account.")
 
     # Check for an existing pending invite to the same email
     existing = (

@@ -109,3 +109,13 @@ services:
         value: https://api-staging.temujintechnologies.com/api/v1
     domains:
       - staging.temujintechnologies.com
+
+  # ── Landing Page ─────────────────────────────────────────────────────────
+  - type: web
+    name: boses-landing
+    runtime: static
+    staticPublishPath: ./landing
+    branch: main
+    plan: free
+    domains:
+      - www.temujintechnologies.com

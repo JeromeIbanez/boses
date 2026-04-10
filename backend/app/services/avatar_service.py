@@ -120,7 +120,6 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
             prompt=prompt,
             size="1024x1024",
             quality="medium",
-            response_format="b64_json",
             n=1,
         )
 
@@ -151,7 +150,7 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
             return f"/uploads/avatars/{persona.id}.png"
 
     except Exception as e:
-        logger.warning(f"Avatar generation failed for persona {persona.id}: {e}")
+        logger.error(f"Avatar generation failed for persona {persona.id}: {type(e).__name__}: {e}")
         return None
 
 

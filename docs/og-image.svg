@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M 44 0 L 0 0 0 44" fill="none" stroke="rgba(99,102,241,0.08)" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="glow" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="wordmark-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.85)"/>
+    </linearGradient>
+    <linearGradient id="tag-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a5b4fc"/>
+      <stop offset="100%" stop-color="#c4b5fd"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#080812"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <ellipse cx="600" cy="280" rx="560" ry="320" fill="url(#glow)"/>
+
+  <!-- Top accent line -->
+  <rect x="540" y="148" width="120" height="2" rx="1" fill="url(#tag-grad)" opacity="0.6"/>
+
+  <!-- Eyebrow -->
+  <text
+    x="600" y="196"
+    text-anchor="middle"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="18"
+    font-weight="500"
+    letter-spacing="3"
+    fill="rgba(165,180,252,0.7)"
+  >AI-POWERED MARKET RESEARCH</text>
+
+  <!-- Wordmark: B. -->
+  <text
+    x="600" y="316"
+    text-anchor="middle"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="108"
+    font-weight="800"
+    letter-spacing="-4"
+    fill="url(#wordmark-grad)"
+  >Boses</text>
+  <!-- Indigo dot on the period -->
+  <circle cx="763" cy="295" r="7" fill="#6366f1"/>
+
+  <!-- Divider -->
+  <rect x="560" y="346" width="80" height="1" rx="0.5" fill="rgba(255,255,255,0.1)"/>
+
+  <!-- Tagline -->
+  <text
+    x="600" y="396"
+    text-anchor="middle"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="26"
+    font-weight="400"
+    fill="rgba(255,255,255,0.45)"
+    letter-spacing="-0.3"
+  >Know exactly how Southeast Asia will respond</text>
+  <text
+    x="600" y="432"
+    text-anchor="middle"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="26"
+    font-weight="400"
+    fill="rgba(255,255,255,0.45)"
+    letter-spacing="-0.3"
+  >— before you launch.</text>
+
+  <!-- URL badge -->
+  <rect x="434" y="498" width="332" height="38" rx="19" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.25)" stroke-width="1"/>
+  <text
+    x="600" y="522"
+    text-anchor="middle"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="15"
+    font-weight="500"
+    fill="rgba(165,180,252,0.75)"
+    letter-spacing="0.2"
+  >www.temujintechnologies.com</text>
+
+  <!-- Corner marks (subtle) -->
+  <path d="M 60 40 L 60 60 L 80 60" fill="none" stroke="rgba(99,102,241,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M 1140 40 L 1140 60 L 1120 60" fill="none" stroke="rgba(99,102,241,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M 60 590 L 60 570 L 80 570" fill="none" stroke="rgba(99,102,241,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M 1140 590 L 1140 570 L 1120 570" fill="none" stroke="rgba(99,102,241,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

@@ -1511,13 +1511,13 @@
       .hero-flags { gap: 6px; }
       .section-header { margin-bottom: 32px; }
 
-      /* Metrics bar: 2×2 grid, tighter padding */
-      .metrics-inner { flex-wrap: wrap; }
-      .metric { flex: 0 0 50%; border-right: none; border-bottom: 1px solid #f0f0f0; padding: 24px 16px; }
-      .metric:nth-child(odd) { border-right: 1px solid #f0f0f0; }
-      .metric:nth-child(3), .metric:nth-child(4) { border-bottom: none; }
-      .metric-num { font-size: 2rem; }
-      .metric-label { font-size: 0.8rem; }
+      /* Metrics bar: 2×2 CSS grid */
+      .metrics-inner { display: grid; grid-template-columns: 1fr 1fr; flex-wrap: unset; }
+      .metric { flex: unset; border-right: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; padding: 20px 12px; }
+      .metric:nth-child(2n) { border-right: none; }
+      .metric:nth-child(n+3) { border-bottom: none; }
+      .metric-num { font-size: 1.75rem; }
+      .metric-label { font-size: 0.775rem; }
 
       /* How mid CTA */
       .how-mid-cta { flex-direction: column; text-align: center; padding: 28px 20px; }

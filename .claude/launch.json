@@ -7,6 +7,12 @@
       "runtimeArgs": ["node_modules/.bin/next", "dev"],
       "port": 3000,
       "cwd": "/Users/jeromeibanez/Desktop/Boses/frontend"
+    },
+    {
+      "name": "landing",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3001", "/Users/jeromeibanez/Desktop/Boses/docs"],
+      "port": 3001
     }
   ]
 }

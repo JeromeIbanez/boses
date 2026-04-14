@@ -1072,6 +1072,123 @@
     }
 
     /* ============================================================
+       COMPARISON TABLE
+    ============================================================ */
+    .comparison { background: #fafafa; }
+
+    .comp-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 56px;
+      border-radius: 16px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.07);
+    }
+
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      min-width: 620px;
+    }
+
+    .comp-table thead tr {
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .comp-table th {
+      padding: 22px 20px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: -0.01em;
+    }
+
+    .comp-table th:first-child { text-align: left; width: 36%; }
+
+    .comp-th-boses {
+      background: #6366f1;
+      color: #fff;
+    }
+
+    .comp-th-boses .comp-th-sub {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      opacity: 0.75;
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+    }
+
+    .comp-table th.col-trad { color: #374151; background: #f9fafb; }
+    .comp-table th.col-panel { color: #374151; background: #f9fafb; }
+
+    .comp-table td {
+      padding: 16px 20px;
+      font-size: 0.875rem;
+      border-bottom: 1px solid #f3f4f6;
+      text-align: center;
+      vertical-align: middle;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    .comp-table tr:last-child td { border-bottom: none; }
+
+    .comp-table td:first-child {
+      text-align: left;
+      font-weight: 600;
+      color: #111827;
+      font-size: 0.875rem;
+    }
+
+    .comp-table td.col-boses {
+      background: rgba(99,102,241,0.04);
+      border-left: 1px solid rgba(99,102,241,0.12);
+      border-right: 1px solid rgba(99,102,241,0.12);
+    }
+
+    .comp-table tr:hover td { background: #fafafa; }
+    .comp-table tr:hover td.col-boses { background: rgba(99,102,241,0.07); }
+
+    .comp-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px; height: 24px;
+      background: rgba(16,185,129,0.12);
+      border-radius: 50%;
+      color: #059669;
+    }
+
+    .comp-cross {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px; height: 24px;
+      background: rgba(239,68,68,0.1);
+      border-radius: 50%;
+      color: #dc2626;
+    }
+
+    .comp-caveat {
+      font-size: 0.8rem;
+      color: #6b7280;
+      display: block;
+    }
+
+    .comp-value {
+      font-weight: 700;
+      color: #6366f1;
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .comp-wrap { border-radius: 12px; }
+    }
+
+    /* ============================================================
        FOOTER
     ============================================================ */
     footer {
@@ -1758,6 +1875,149 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════
+         COMPARISON TABLE
+    ═══════════════════════════════════════ -->
+    <section class="comparison" aria-labelledby="comp-h2">
+      <div class="container">
+        <div class="section-header center fade-in">
+          <p class="section-eyebrow">How we compare</p>
+          <h2 class="section-title" id="comp-h2">Boses vs. the alternatives</h2>
+          <p class="section-sub">See how Boses stacks up against a traditional research agency and generic global survey panels.</p>
+        </div>
+
+        <div class="comp-wrap fade-in">
+          <table class="comp-table" role="table" aria-label="Boses comparison table">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col" class="comp-th-boses">
+                  Boses
+                  <span class="comp-th-sub">AI-native · SEA-built</span>
+                </th>
+                <th scope="col" class="col-trad">Traditional Agency</th>
+                <th scope="col" class="col-panel">Generic Survey Panel</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Time to insight</td>
+                <td class="col-boses"><span class="comp-value">Under 2 hrs</span></td>
+                <td><span class="comp-caveat">6–12 weeks</span></td>
+                <td><span class="comp-caveat">3–7 days</span></td>
+              </tr>
+              <tr>
+                <td>Cost per study</td>
+                <td class="col-boses"><span class="comp-value">Fraction of cost</span></td>
+                <td><span class="comp-caveat">₱500,000+</span></td>
+                <td><span class="comp-caveat">$500–$5,000+</span></td>
+              </tr>
+              <tr>
+                <td>SEA cultural accuracy</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="comp-caveat">If you hire locally</span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">Western archetypes</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Verbatim quotes</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">Aggregates only</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Shareable report link</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">PDF decks only</span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Multiple research methods</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="comp-caveat" style="color:#6366f1;">6 methods, one platform</span>
+                </td>
+                <td>
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="comp-caveat">Separate vendors</span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">Surveys only</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Run on demand</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">Scheduling required</span>
+                </td>
+                <td>
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="comp-caveat">With panel delays</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>

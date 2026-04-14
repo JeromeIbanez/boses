@@ -1496,7 +1496,7 @@
     }
 
     @media (max-width: 768px) {
-      section { padding: 72px 0; }
+      section { padding: 56px 0; }
 
       /* Nav */
       .nav { padding: 0 20px; }
@@ -1504,27 +1504,62 @@
       .btn-nav.desktop { display: none; }
       .hamburger { display: flex; }
 
-      /* Hero: hide mockups on small screens to keep it clean */
-      .hero { padding: 96px 0 72px; min-height: 95vh; }
+      /* Hero: tighter on mobile */
+      .hero { padding: 80px 0 56px; min-height: auto; }
       .hero-right { display: none; }
       .scroll-hint { display: none; }
       .hero-flags { gap: 6px; }
+      .section-header { margin-bottom: 32px; }
 
-      /* Metrics bar: 2×2 grid */
+      /* Metrics bar: 2×2 grid, tighter padding */
       .metrics-inner { flex-wrap: wrap; }
-      .metric { flex: 0 0 50%; border-right: none; border-bottom: 1px solid #f0f0f0; padding: 32px 20px; }
+      .metric { flex: 0 0 50%; border-right: none; border-bottom: 1px solid #f0f0f0; padding: 24px 16px; }
       .metric:nth-child(odd) { border-right: 1px solid #f0f0f0; }
       .metric:nth-child(3), .metric:nth-child(4) { border-bottom: none; }
-      .metric-num { font-size: 2.25rem; }
+      .metric-num { font-size: 2rem; }
+      .metric-label { font-size: 0.8rem; }
 
       /* How mid CTA */
-      .how-mid-cta { flex-direction: column; text-align: center; padding: 32px 24px; }
+      .how-mid-cta { flex-direction: column; text-align: center; padding: 28px 20px; }
 
       /* Sims */
       .sims-grid { grid-template-columns: 1fr; }
 
+      /* Product screenshots: hide app sidebar row, tighten */
+      .app-window { height: auto; border-radius: 10px; }
+      .tab-bar { width: 100%; }
+      .tab-btn { flex: 1; padding: 8px 10px; font-size: 0.8125rem; }
+      .app-body { padding: 14px 16px; }
+      .app-grid-3, .app-grid-3-sm { grid-template-columns: 1fr; }
+      .app-result-grid { grid-template-columns: 1fr; }
+      .app-topbar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+      .app-topbar-right { flex-wrap: wrap; }
+
+      /* Demo teaser: hide sidebar, compact URL bar */
+      .browser-body { grid-template-columns: 1fr; }
+      .browser-sidebar { display: none; }
+      .browser-main { padding: 18px 16px; gap: 14px; }
+      .browser-sentiment { padding: 14px 16px; }
+      .browser-url { font-size: 0.65rem; }
+      .demo-teaser { padding: 56px 0; }
+
+      /* Comparison table: show scroll hint */
+      .comparison { padding: 56px 0; }
+      .comp-wrap { border-radius: 10px; }
+      .comp-wrap::after {
+        content: 'Scroll to compare →';
+        display: block;
+        text-align: center;
+        font-size: 0.75rem;
+        color: #9ca3af;
+        padding: 10px 0 4px;
+      }
+
+      /* Why Boses */
+      .why { padding: 56px 0; }
+
       /* CTA box */
-      .cta-box { padding: 56px 24px; }
+      .cta-box { padding: 48px 20px; }
       .cta-actions { flex-direction: column; }
       .cta-actions .btn-primary { width: 100%; justify-content: center; }
 
@@ -1538,6 +1573,18 @@
       .section-title { font-size: 1.75rem; }
       .hero-actions { flex-direction: column; width: 100%; }
       .hero-actions .btn-primary, .hero-actions .btn-ghost { width: 100%; justify-content: center; }
+      .result-persona-header { flex-wrap: wrap; }
+
+      /* Comparison table: drop competitor columns, show Boses-only checklist */
+      .comp-wrap { overflow-x: hidden; }
+      .comp-table { min-width: unset; width: 100%; }
+      .comp-table th.col-trad,
+      .comp-table th.col-panel,
+      .comp-table td:nth-child(3),
+      .comp-table td:nth-child(4) { display: none; }
+      .comp-table th:first-child { width: 60%; }
+      .comp-table .comp-th-boses { border-radius: 0 8px 0 0; }
+      .comp-wrap::after { display: none; }
     }
   </style>
 </head>

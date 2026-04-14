@@ -874,6 +874,204 @@
     }
 
     /* ============================================================
+       DEMO TEASER
+    ============================================================ */
+    .demo-teaser {
+      background: #080812;
+      padding: 120px 0;
+    }
+
+    .demo-teaser .section-eyebrow { color: rgba(165,180,252,0.65); }
+    .demo-teaser .section-title { color: #fff; }
+    .demo-teaser .section-sub { color: rgba(255,255,255,0.4); }
+
+    .browser-window {
+      max-width: 960px;
+      margin: 64px auto 0;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 48px 120px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07);
+      background: #13131f;
+    }
+
+    .browser-chrome {
+      background: #1c1c2a;
+      padding: 11px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .browser-dots { display: flex; gap: 6px; }
+
+    .browser-dot {
+      width: 11px; height: 11px; border-radius: 50%;
+    }
+    .browser-dot-red    { background: #ff5f57; }
+    .browser-dot-yellow { background: #febc2e; }
+    .browser-dot-green  { background: #28c840; }
+
+    .browser-url {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.73rem;
+      color: rgba(255,255,255,0.25);
+      font-family: inherit;
+      letter-spacing: 0.01em;
+    }
+
+    .browser-body {
+      display: grid;
+      grid-template-columns: 216px 1fr;
+      min-height: 400px;
+    }
+
+    .browser-sidebar {
+      background: #0e0e1a;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      padding: 18px 0;
+    }
+
+    .sidebar-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.22);
+      padding: 0 14px 10px;
+    }
+
+    .persona-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      cursor: default;
+    }
+
+    .persona-item.active {
+      background: rgba(99,102,241,0.13);
+      border-right: 2px solid #6366f1;
+    }
+
+    .persona-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+    }
+
+    .persona-info { flex: 1; min-width: 0; }
+
+    .persona-name {
+      font-size: 0.8125rem; font-weight: 600; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .persona-meta { font-size: 0.6875rem; color: rgba(255,255,255,0.28); }
+
+    .sentiment-badge {
+      font-size: 0.6rem; font-weight: 700;
+      padding: 2px 6px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
+    }
+    .badge-pos { background: rgba(16,185,129,0.15); color: #34d399; }
+    .badge-neu { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+    .badge-neg { background: rgba(239,68,68,0.15);   color: #f87171; }
+
+    .browser-main {
+      padding: 26px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .result-persona-header {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .result-persona-name { font-size: 1rem; font-weight: 700; color: #fff; }
+    .result-persona-meta { font-size: 0.8125rem; color: rgba(255,255,255,0.38); }
+
+    .result-reaction {
+      font-size: 0.895rem; color: rgba(255,255,255,0.6); line-height: 1.78;
+    }
+
+    .result-quote {
+      background: rgba(99,102,241,0.1);
+      border-left: 3px solid #6366f1;
+      padding: 13px 18px;
+      border-radius: 0 8px 8px 0;
+    }
+    .result-quote p {
+      font-size: 0.875rem; font-style: italic;
+      color: rgba(255,255,255,0.78); line-height: 1.65; margin: 0;
+    }
+
+    .result-themes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .theme-chip {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 20px; padding: 3px 11px;
+      font-size: 0.75rem; color: rgba(255,255,255,0.42);
+    }
+
+    /* Sentiment distribution bar */
+    .browser-sentiment {
+      background: #0e0e1a;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 18px 30px;
+    }
+
+    .sentiment-dist-title {
+      font-size: 0.6875rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.22); margin-bottom: 14px;
+    }
+
+    .sentiment-bars { display: flex; flex-direction: column; gap: 9px; }
+
+    .sent-row { display: flex; align-items: center; gap: 12px; }
+
+    .sent-label {
+      font-size: 0.8rem; color: rgba(255,255,255,0.4);
+      width: 68px; flex-shrink: 0;
+    }
+
+    .sent-track {
+      flex: 1; height: 7px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px; overflow: hidden;
+    }
+
+    .sent-fill {
+      height: 100%; border-radius: 4px;
+      width: 0%;
+    }
+
+    .sent-fill-pos { background: linear-gradient(90deg, #059669, #34d399); }
+    .sent-fill-neu { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .sent-fill-neg { background: linear-gradient(90deg, #dc2626, #f87171); }
+
+    .sent-pct {
+      font-size: 0.8rem; font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      width: 34px; text-align: right; flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .browser-body { grid-template-columns: 1fr; }
+      .browser-sidebar { display: none; }
+      .browser-main { padding: 20px; }
+      .browser-sentiment { padding: 16px 20px; }
+    }
+
+    /* ============================================================
        FOOTER
     ============================================================ */
     footer {
@@ -1422,6 +1620,150 @@
 
 
     <!-- ═══════════════════════════════════════
+         DEMO TEASER
+    ═══════════════════════════════════════ -->
+    <section class="demo-teaser" aria-labelledby="demo-h2">
+      <div class="container">
+        <div class="section-header center fade-in">
+          <p class="section-eyebrow">See it in action</p>
+          <h2 class="section-title" id="demo-h2">This is what a<br>Concept Test looks like</h2>
+          <p class="section-sub">Real output. Real structure. Ready to share with your team before end of day.</p>
+        </div>
+
+        <div class="browser-window fade-in">
+          <!-- Browser chrome -->
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot browser-dot-red"></span>
+              <span class="browser-dot browser-dot-yellow"></span>
+              <span class="browser-dot browser-dot-green"></span>
+            </div>
+            <div class="browser-url">app.boses.io / projects / oat-milk-launch / concept-test / results</div>
+          </div>
+
+          <!-- Body: sidebar + main -->
+          <div class="browser-body">
+            <!-- Persona list sidebar -->
+            <div class="browser-sidebar">
+              <div class="sidebar-label">Personas · 8 total</div>
+
+              <div class="persona-item active">
+                <div class="persona-avatar" style="background:#3730a3;color:#a5b4fc;">A</div>
+                <div class="persona-info">
+                  <div class="persona-name">Aisha Malik</div>
+                  <div class="persona-meta">28 · Jakarta</div>
+                </div>
+                <span class="sentiment-badge badge-pos">Pos</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#065f46;color:#6ee7b7;">R</div>
+                <div class="persona-info">
+                  <div class="persona-name">Rico Santos</div>
+                  <div class="persona-meta">34 · Manila</div>
+                </div>
+                <span class="sentiment-badge badge-pos">Pos</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#78350f;color:#fcd34d;">N</div>
+                <div class="persona-info">
+                  <div class="persona-name">Nattaporn W.</div>
+                  <div class="persona-meta">26 · Bangkok</div>
+                </div>
+                <span class="sentiment-badge badge-neu">Neu</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#1e1b4b;color:#c4b5fd;">L</div>
+                <div class="persona-info">
+                  <div class="persona-name">Linh Nguyen</div>
+                  <div class="persona-meta">31 · Ho Chi Minh</div>
+                </div>
+                <span class="sentiment-badge badge-pos">Pos</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#7f1d1d;color:#fca5a5;">B</div>
+                <div class="persona-info">
+                  <div class="persona-name">Budi Santoso</div>
+                  <div class="persona-meta">42 · Surabaya</div>
+                </div>
+                <span class="sentiment-badge badge-neg">Neg</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#14532d;color:#86efac;">S</div>
+                <div class="persona-info">
+                  <div class="persona-name">Siti Rahman</div>
+                  <div class="persona-meta">29 · KL</div>
+                </div>
+                <span class="sentiment-badge badge-pos">Pos</span>
+              </div>
+            </div>
+
+            <!-- Selected persona result -->
+            <div class="browser-main">
+              <div class="result-persona-header">
+                <div class="persona-avatar" style="background:#3730a3;color:#a5b4fc;width:40px;height:40px;font-size:0.9rem;">A</div>
+                <div>
+                  <div class="result-persona-name">Aisha Malik</div>
+                  <div class="result-persona-meta">28 · Female · Urban professional · Jakarta, Indonesia</div>
+                </div>
+                <span class="sentiment-badge badge-pos" style="margin-left:auto;font-size:0.7rem;padding:4px 10px;">Positive</span>
+              </div>
+
+              <p class="result-reaction">
+                The oat milk concept immediately registers as relevant to Aisha's lifestyle. She is health-conscious and already avoids dairy when possible, but has struggled to find affordable local options. The Boses-branded packaging and "locally sourced" callout are strong pull factors — she associates imported oat milks with excessive cost and environmental guilt.
+              </p>
+
+              <div class="result-quote">
+                <p>"This is exactly what I've been looking for — something that feels premium but isn't priced for expats. I'd switch from my current brand immediately if this hit Indomaret."</p>
+              </div>
+
+              <div class="result-themes">
+                <span class="theme-chip">Price sensitivity</span>
+                <span class="theme-chip">Local sourcing</span>
+                <span class="theme-chip">Health-conscious</span>
+                <span class="theme-chip">Retail availability</span>
+                <span class="theme-chip">Packaging trust</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sentiment distribution footer -->
+          <div class="browser-sentiment">
+            <div class="sentiment-dist-title">Overall sentiment distribution · 8 personas</div>
+            <div class="sentiment-bars">
+              <div class="sent-row">
+                <span class="sent-label">Positive</span>
+                <div class="sent-track">
+                  <div class="sent-fill sent-fill-pos" data-width="67"></div>
+                </div>
+                <span class="sent-pct">67%</span>
+              </div>
+              <div class="sent-row">
+                <span class="sent-label">Neutral</span>
+                <div class="sent-track">
+                  <div class="sent-fill sent-fill-neu" data-width="22"></div>
+                </div>
+                <span class="sent-pct">22%</span>
+              </div>
+              <div class="sent-row">
+                <span class="sent-label">Negative</span>
+                <div class="sent-track">
+                  <div class="sent-fill sent-fill-neg" data-width="11"></div>
+                </div>
+                <span class="sent-pct">11%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════
          FAQ
     ═══════════════════════════════════════ -->
     <section class="faq" id="faq" aria-labelledby="faq-h2">
@@ -1584,6 +1926,28 @@
       });
     }, { threshold: 0.5 });
     document.querySelectorAll('.counter').forEach(el => counterIO.observe(el));
+
+    // ── Sentiment bar animation ──────────────────────────────────
+    const sentIO = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.querySelectorAll('.sent-fill[data-width]').forEach(bar => {
+          const target = +bar.dataset.width;
+          const duration = 1200;
+          const start = performance.now();
+          const tick = (now) => {
+            const p = Math.min((now - start) / duration, 1);
+            const ease = 1 - Math.pow(1 - p, 3);
+            bar.style.width = (ease * target) + '%';
+            if (p < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        });
+        sentIO.unobserve(e.target);
+      });
+    }, { threshold: 0.6 });
+    const sentSection = document.querySelector('.browser-sentiment');
+    if (sentSection) sentIO.observe(sentSection);
   </script>
 
 </body>

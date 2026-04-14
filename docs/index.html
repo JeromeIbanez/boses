@@ -162,14 +162,18 @@
     .fade-in {
       opacity: 0;
       transform: translateY(28px);
-      transition: opacity 0.65s ease, transform 0.65s ease;
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .fade-in.visible { opacity: 1; transform: translateY(0); }
-    .fade-in.d1 { transition-delay: 0.08s; }
-    .fade-in.d2 { transition-delay: 0.16s; }
-    .fade-in.d3 { transition-delay: 0.24s; }
-    .fade-in.d4 { transition-delay: 0.32s; }
-    .fade-in.d5 { transition-delay: 0.4s; }
+    .fade-in.d1 { transition-delay: 0.07s; }
+    .fade-in.d2 { transition-delay: 0.14s; }
+    .fade-in.d3 { transition-delay: 0.21s; }
+    .fade-in.d4 { transition-delay: 0.28s; }
+    .fade-in.d5 { transition-delay: 0.35s; }
+    .fade-in.d6 { transition-delay: 0.42s; }
+    .fade-in.d7 { transition-delay: 0.49s; }
+    .fade-in.d8 { transition-delay: 0.56s; }
 
     /* ============================================================
        NAVIGATION
@@ -1654,7 +1658,7 @@
             <p>Chat live with an AI persona yourself. Follow your instincts, explore unexpected angles, and generate a report whenever you're done.</p>
           </article>
 
-          <article class="sim-card fade-in d1">
+          <article class="sim-card fade-in d4">
             <div class="sim-icon" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             </div>
@@ -1662,7 +1666,7 @@
             <p>Upload your existing survey. Every persona fills it out independently. Get per-question aggregates, Likert distributions, and open-ended theme analysis.</p>
           </article>
 
-          <article class="sim-card fade-in d2">
+          <article class="sim-card fade-in d5">
             <div class="sim-icon" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
@@ -1670,7 +1674,7 @@
             <p>Personas discuss a topic together in a two-round moderated session — reacting to each other's statements. Surface genuine consensus and disagreement.</p>
           </article>
 
-          <article class="sim-card fade-in d3">
+          <article class="sim-card fade-in d6">
             <div class="sim-icon" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             </div>

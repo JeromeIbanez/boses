@@ -554,6 +554,34 @@
     }
 
     /* ============================================================
+       METRICS BAR
+    ============================================================ */
+    .metrics {
+      background: #fff;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .metrics-inner {
+      display: flex; align-items: stretch;
+    }
+    .metric {
+      flex: 1; padding: 44px 28px; text-align: center;
+      border-right: 1px solid #f0f0f0;
+    }
+    .metric:last-child { border-right: none; }
+    .metric-num {
+      font-size: 2.75rem; font-weight: 800;
+      color: #0f0f0f; letter-spacing: -0.045em;
+      line-height: 1; margin-bottom: 8px;
+      display: flex; align-items: baseline;
+      justify-content: center; gap: 2px;
+    }
+    .metric-num .accent { color: #6366f1; }
+    .metric-label {
+      font-size: 0.875rem; color: #9ca3af; font-weight: 500;
+    }
+
+    /* ============================================================
        PROBLEM SECTION
     ============================================================ */
     .problem { background: #fff; }
@@ -917,6 +945,13 @@
       .scroll-hint { display: none; }
       .hero-flags { gap: 6px; }
 
+      /* Metrics bar: 2×2 grid */
+      .metrics-inner { flex-wrap: wrap; }
+      .metric { flex: 0 0 50%; border-right: none; border-bottom: 1px solid #f0f0f0; padding: 32px 20px; }
+      .metric:nth-child(odd) { border-right: 1px solid #f0f0f0; }
+      .metric:nth-child(3), .metric:nth-child(4) { border-bottom: none; }
+      .metric-num { font-size: 2.25rem; }
+
       /* How mid CTA */
       .how-mid-cta { flex-direction: column; text-align: center; padding: 32px 24px; }
 
@@ -1118,6 +1153,43 @@
       </div>
     </section>
 
+
+    <!-- ═══════════════════════════════════════
+         METRICS BAR
+    ═══════════════════════════════════════ -->
+    <div class="metrics" role="region" aria-label="Platform stats">
+      <div class="metrics-inner">
+        <div class="metric fade-in d1">
+          <div class="metric-num">
+            <span class="counter" data-target="6">0</span>
+            <span class="accent"> markets</span>
+          </div>
+          <div class="metric-label">across Southeast Asia</div>
+        </div>
+        <div class="metric fade-in d2">
+          <div class="metric-num">
+            <span class="counter" data-target="6">0</span>
+            <span class="accent"> methods</span>
+          </div>
+          <div class="metric-label">research formats, one platform</div>
+        </div>
+        <div class="metric fade-in d3">
+          <div class="metric-num">
+            <span class="counter" data-target="90">0</span>
+            <span class="accent">%</span>
+            <span style="font-size:1.5rem;color:#0f0f0f;font-weight:700"> faster</span>
+          </div>
+          <div class="metric-label">than traditional fieldwork</div>
+        </div>
+        <div class="metric fade-in d4">
+          <div class="metric-num">
+            <span class="counter" data-target="2">0</span>
+            <span class="accent"> hrs</span>
+          </div>
+          <div class="metric-label">average time to full report</div>
+        </div>
+      </div>
+    </div>
 
     <!-- ═══════════════════════════════════════
          PROBLEM
@@ -1494,6 +1566,26 @@
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -32px 0px' });
     document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+
+    // ── Counter animation ────────────────────────────────────────
+    const counterIO = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        const target = +el.dataset.target;
+        const duration = 1400;
+        const start = performance.now();
+        const tick = (now) => {
+          const p = Math.min((now - start) / duration, 1);
+          const ease = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(ease * target);
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+        counterIO.unobserve(el);
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.counter').forEach(el => counterIO.observe(el));
   </script>
 
 </body>

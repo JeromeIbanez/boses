@@ -1119,9 +1119,9 @@
       display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
     }
 
-    .cta-note {
-      margin-top: 20px; color: rgba(255,255,255,0.25);
-      font-size: 0.8125rem;
+    .cta-box .cta-note {
+      margin: 24px auto 0; color: rgba(255,255,255,0.25);
+      font-size: 0.8125rem; max-width: 440px;
     }
 
     /* ============================================================
@@ -1476,7 +1476,7 @@
     ============================================================ */
     @media (max-width: 1024px) {
       /* Hero: stack to single column, re-center */
-      .hero-inner { grid-template-columns: 1fr; text-align: center; gap: 56px; }
+      .hero-inner { grid-template-columns: minmax(0, 1fr); text-align: center; gap: 56px; }
       .hero-sub { margin-left: auto; margin-right: auto; }
       .hero-actions { justify-content: center; }
       .hero-flags { justify-content: center; }
@@ -1509,8 +1509,7 @@
       .hero { padding: 80px 0 56px; min-height: auto; }
       .hero-right { display: none; }
       .scroll-hint { display: none; }
-      .hero-flags { gap: 6px; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
-      .hero-flags::-webkit-scrollbar { display: none; }
+      .hero-flags { gap: 8px; flex-wrap: wrap; justify-content: center; overflow-x: unset; padding-bottom: 0; }
       .section-header { margin-bottom: 32px; }
 
       /* Metrics bar: 2×2 CSS grid */
@@ -1561,9 +1560,10 @@
       .why { padding: 56px 0; }
 
       /* CTA box */
-      .cta-box { padding: 48px 20px; }
+      .cta-box { padding: 56px 24px; }
       .cta-actions { flex-direction: column; }
       .cta-actions .btn-primary { width: 100%; justify-content: center; }
+      .cta-box .cta-note { margin-top: 28px; }
 
       /* Footer */
       .footer-top { flex-direction: column; gap: 24px; }
@@ -1572,6 +1572,7 @@
 
     @media (max-width: 480px) {
       .hero h1 { font-size: 2.1rem; }
+      .hero-sub { max-width: 100%; }
       .section-title { font-size: 1.75rem; }
       .hero-actions { flex-direction: column; width: 100%; }
       .hero-actions .btn-primary, .hero-actions .btn-ghost { width: 100%; justify-content: center; }

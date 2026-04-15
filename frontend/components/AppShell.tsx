@@ -43,7 +43,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (isLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-50">
-        <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-700 rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-zinc-300 border-t-indigo-500 rounded-full animate-spin" />
       </div>
     );
   }

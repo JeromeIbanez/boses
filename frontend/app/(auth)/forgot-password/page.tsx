@@ -43,14 +43,14 @@ export default function ForgotPasswordPage() {
                 autoFocus
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
                 placeholder="you@company.com"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-zinc-900 text-white text-sm font-medium py-2 rounded-lg hover:bg-zinc-700 transition-colors disabled:opacity-50"
+              className="w-full bg-indigo-500 text-white text-sm font-medium py-2 rounded-[10px] hover:bg-indigo-600 transition-colors disabled:opacity-50"
             >
               {loading ? "Sending…" : "Send reset link"}
             </button>

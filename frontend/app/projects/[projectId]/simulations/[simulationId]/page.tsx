@@ -1194,7 +1194,7 @@ export default function SimulationResultsPage() {
           <p className="text-xs text-zinc-400 mb-5">Your manual interview session is still active.</p>
           <button
             onClick={() => router.push(`/projects/${projectId}/simulations/${simulationId}/chat`)}
-            className="px-4 py-2 text-sm font-medium bg-zinc-900 text-white rounded-lg hover:bg-zinc-700 transition-colors"
+            className="px-4 py-2 text-sm font-medium bg-indigo-500 text-white rounded-[10px] hover:bg-indigo-600 transition-colors"
           >
             Resume Interview
           </button>
@@ -1204,7 +1204,7 @@ export default function SimulationResultsPage() {
       {/* Running / generating state */}
       {isRunning && (
         <div className="flex flex-col items-center justify-center py-16 max-w-md mx-auto">
-          <Spinner className="h-7 w-7 border-zinc-200 border-t-zinc-700 mb-6" />
+          <Spinner className="h-7 w-7 border-zinc-200 border-t-indigo-500 mb-6" />
           {showAbortConfirm ? (
             <div className="w-full mb-4 border border-red-200 bg-red-50 rounded-xl px-4 py-3 text-center">
               <p className="text-sm font-medium text-red-700 mb-3">Stop this simulation?</p>

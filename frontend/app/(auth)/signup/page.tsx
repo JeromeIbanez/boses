@@ -65,7 +65,7 @@ function SignupForm() {
   if (tokenState === "loading") {
     return (
       <div className="flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-700 rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-zinc-300 border-t-indigo-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -110,7 +110,7 @@ function SignupForm() {
             autoFocus
             value={form.company_name}
             onChange={set("company_name")}
-            className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+            className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
             placeholder="Acme Corp"
           />
         </div>
@@ -121,7 +121,7 @@ function SignupForm() {
             type="text"
             value={form.full_name}
             onChange={set("full_name")}
-            className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+            className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
             placeholder="Jane Santos"
           />
         </div>
@@ -134,7 +134,7 @@ function SignupForm() {
             value={form.email}
             readOnly={!!inviteEmail}
             onChange={set("email")}
-            className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400 read-only:bg-zinc-50 read-only:text-zinc-500"
+            className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 read-only:bg-zinc-50 read-only:text-zinc-500"
             placeholder="you@company.com"
           />
         </div>
@@ -146,7 +146,7 @@ function SignupForm() {
             required
             value={form.password}
             onChange={set("password")}
-            className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+            className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
             placeholder="Min. 8 characters"
           />
         </div>
@@ -154,7 +154,7 @@ function SignupForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-zinc-900 text-white text-sm font-medium py-2 rounded-lg hover:bg-zinc-700 transition-colors disabled:opacity-50"
+          className="w-full bg-indigo-500 text-white text-sm font-medium py-2 rounded-[10px] hover:bg-indigo-600 transition-colors disabled:opacity-50"
         >
           {loading ? "Creating account…" : "Create account"}
         </button>
@@ -175,7 +175,7 @@ export default function SignupPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center">
-          <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-700 rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-zinc-300 border-t-indigo-500 rounded-full animate-spin" />
         </div>
       }
     >

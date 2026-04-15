@@ -41,7 +41,7 @@ export default function Sidebar() {
             className={cn(
               "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
               pathname.startsWith(href)
-                ? "bg-zinc-100 text-zinc-900 font-medium"
+                ? "bg-indigo-50 text-indigo-700 font-medium"
                 : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
             )}
           >
@@ -85,7 +85,7 @@ export default function Sidebar() {
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
                   pathname.startsWith(href)
-                    ? "bg-zinc-100 text-zinc-900 font-medium"
+                    ? "bg-indigo-50 text-indigo-700 font-medium"
                     : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
                 )}
               >

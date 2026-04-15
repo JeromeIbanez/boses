@@ -105,12 +105,12 @@ export default function AdminInvitesPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="user@company.com"
-            className="flex-1 text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+            className="flex-1 text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
           />
           <button
             type="submit"
             disabled={sendMut.isPending || !email.trim()}
-            className="px-4 py-2 bg-zinc-900 text-white text-sm rounded-lg hover:bg-zinc-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+            className="px-4 py-2 bg-indigo-500 text-white text-sm rounded-[10px] hover:bg-indigo-600 transition-colors disabled:opacity-50 whitespace-nowrap"
           >
             {sendMut.isPending ? "Sending…" : "Send invite"}
           </button>

@@ -135,7 +135,7 @@ export default function BosesAdminPage() {
         </div>
         <Link
           href="/boses-admin/personas/new"
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white text-sm rounded-md hover:bg-zinc-800 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white text-sm rounded-[10px] hover:bg-indigo-600 transition-colors"
         >
           <Plus size={15} />
           New Persona

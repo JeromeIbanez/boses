@@ -322,7 +322,7 @@ export default function NewCuratedPersonaPage() {
           <button
             onClick={() => aiMutation.mutate()}
             disabled={!demographicsComplete || !researchNotes || aiMutation.isPending}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 text-white text-sm rounded-md hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white text-sm rounded-[10px] hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {aiMutation.isPending ? (
               <>
@@ -340,7 +340,7 @@ export default function NewCuratedPersonaPage() {
           <button
             onClick={() => manualMutation.mutate()}
             disabled={!demographicsComplete || manualMutation.isPending}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 text-white text-sm rounded-md hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white text-sm rounded-[10px] hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {manualMutation.isPending ? (
               <>

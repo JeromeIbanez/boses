@@ -105,7 +105,7 @@ export default function EditCuratedPersonaPage({ params }: { params: Promise<{ i
   if (isLoading || !persona) {
     return (
       <div className="flex h-full items-center justify-center py-24">
-        <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-700 rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-zinc-300 border-t-indigo-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -194,7 +194,7 @@ export default function EditCuratedPersonaPage({ params }: { params: Promise<{ i
         <button
           onClick={() => saveMut.mutate()}
           disabled={!dirty || saveMut.isPending}
-          className="flex items-center gap-2 px-5 py-2 bg-zinc-900 text-white text-sm rounded-md hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 px-5 py-2 bg-indigo-500 text-white text-sm rounded-[10px] hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {saveMut.isPending ? (
             <>

@@ -217,7 +217,7 @@ export default function LibraryPage() {
         <div className="flex flex-col gap-1">
           <label className="text-xs text-zinc-500 font-medium">Location</label>
           <input
-            className="text-sm border border-zinc-200 rounded-md px-3 py-1.5 w-44 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+            className="text-sm border border-zinc-200 rounded-md px-3 py-1.5 w-44 focus:outline-none focus:ring-1 focus:ring-indigo-500/20"
             placeholder="e.g. Metro Manila"
             value={filters.location}
             onChange={(e) => setFilters({ ...filters, location: e.target.value })}
@@ -228,7 +228,7 @@ export default function LibraryPage() {
         <div className="flex flex-col gap-1">
           <label className="text-xs text-zinc-500 font-medium">Gender</label>
           <select
-            className="text-sm border border-zinc-200 rounded-md px-3 py-1.5 w-32 focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white"
+            className="text-sm border border-zinc-200 rounded-md px-3 py-1.5 w-32 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 bg-white"
             value={filters.gender}
             onChange={(e) => setFilters({ ...filters, gender: e.target.value })}
           >
@@ -242,7 +242,7 @@ export default function LibraryPage() {
         <div className="flex flex-col gap-1">
           <label className="text-xs text-zinc-500 font-medium">Income Level</label>
           <select
-            className="text-sm border border-zinc-200 rounded-md px-3 py-1.5 w-40 focus:outline-none focus:ring-1 focus:ring-zinc-400 bg-white"
+            className="text-sm border border-zinc-200 rounded-md px-3 py-1.5 w-40 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 bg-white"
             value={filters.income_level}
             onChange={(e) => setFilters({ ...filters, income_level: e.target.value })}
           >
@@ -260,7 +260,7 @@ export default function LibraryPage() {
           <div className="flex items-center gap-1.5">
             <input
               type="number"
-              className="text-sm border border-zinc-200 rounded-md px-2 py-1.5 w-16 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+              className="text-sm border border-zinc-200 rounded-md px-2 py-1.5 w-16 focus:outline-none focus:ring-1 focus:ring-indigo-500/20"
               placeholder="Min"
               value={filters.age_min}
               onChange={(e) => setFilters({ ...filters, age_min: e.target.value })}
@@ -268,7 +268,7 @@ export default function LibraryPage() {
             <span className="text-zinc-400 text-xs">–</span>
             <input
               type="number"
-              className="text-sm border border-zinc-200 rounded-md px-2 py-1.5 w-16 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+              className="text-sm border border-zinc-200 rounded-md px-2 py-1.5 w-16 focus:outline-none focus:ring-1 focus:ring-indigo-500/20"
               placeholder="Max"
               value={filters.age_max}
               onChange={(e) => setFilters({ ...filters, age_max: e.target.value })}
@@ -278,7 +278,7 @@ export default function LibraryPage() {
 
         <button
           onClick={applyFilters}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-zinc-900 text-white text-sm rounded-md hover:bg-zinc-700 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-500 text-white text-sm rounded-[10px] hover:bg-indigo-600 transition-colors"
         >
           <Search size={13} />
           Search

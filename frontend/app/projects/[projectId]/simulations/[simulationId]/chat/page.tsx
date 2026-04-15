@@ -176,7 +176,7 @@ export default function IDIChatPage() {
             <div
               className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                 msg.role === "user"
-                  ? "bg-zinc-900 text-white rounded-tr-sm"
+                  ? "bg-indigo-500 text-white rounded-tr-sm"
                   : "bg-zinc-100 text-zinc-800 rounded-tl-sm"
               }`}
             >
@@ -214,13 +214,13 @@ export default function IDIChatPage() {
             placeholder="Ask a question… (Enter to send, Shift+Enter for newline)"
             rows={1}
             disabled={send.isPending}
-            className="flex-1 resize-none rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-300 max-h-32 overflow-y-auto disabled:opacity-50"
+            className="flex-1 resize-none rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 max-h-32 overflow-y-auto disabled:opacity-50"
             style={{ minHeight: "42px" }}
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || send.isPending}
-            className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             <Send size={14} />
           </button>

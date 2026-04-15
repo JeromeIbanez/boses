@@ -36,7 +36,7 @@ def upgrade() -> None:
         ),
         sa.Column("rating", sa.Integer(), nullable=False),
         sa.Column("feedback", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
     )
     op.create_index(
         "ix_simulation_ratings_simulation_id",

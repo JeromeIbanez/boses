@@ -158,25 +158,47 @@ def _generate_and_save(client: OpenAI, persona_id: str) -> None:
     """
     Worker run in a thread: generate avatar, write to project persona,
     and propagate to the linked LibraryPersona if one exists.
+
+    DB connections are held only during the brief read and write phases —
+    not during the slow OpenAI call — so the connection isn't killed by
+    the server's idle timeout mid-generation.
     """
     from app.models.library_persona import LibraryPersona
     from app.models.persona import Persona
+
+    # Phase 1: read persona data, then immediately release the connection.
+    pid = uuid.UUID(persona_id)
     db = SessionLocal()
     try:
-        persona = db.get(Persona, uuid.UUID(persona_id))
+        persona = db.get(Persona, pid)
         if not persona:
             return
-        url = generate_avatar(client, persona)
-        if url:
-            persona.avatar_url = url
-            # Propagate to the library record so the library page shows the same avatar
-            if persona.library_persona_id:
-                lib = db.get(LibraryPersona, persona.library_persona_id)
-                if lib:
-                    lib.avatar_url = url
-            db.commit()
+        library_persona_id = persona.library_persona_id
+        db.expunge(persona)
     except Exception as e:
-        logger.warning(f"Background avatar worker failed for {persona_id}: {e}")
+        logger.warning(f"Background avatar worker failed for {persona_id} (fetch): {e}")
+        return
+    finally:
+        db.close()
+
+    # Phase 2: generate the avatar with no DB connection held.
+    url = generate_avatar(client, persona)
+    if not url:
+        return
+
+    # Phase 3: write back with a fresh connection.
+    db = SessionLocal()
+    try:
+        persona = db.get(Persona, pid)
+        if persona:
+            persona.avatar_url = url
+        if library_persona_id:
+            lib = db.get(LibraryPersona, library_persona_id)
+            if lib:
+                lib.avatar_url = url
+        db.commit()
+    except Exception as e:
+        logger.warning(f"Background avatar worker failed for {persona_id} (save): {e}")
         db.rollback()
     finally:
         db.close()

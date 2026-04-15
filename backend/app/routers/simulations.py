@@ -328,7 +328,7 @@ def send_idi_message(
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """Send a message as the interviewer and receive the persona's response."""
-    from app.services.idi_engine import _build_persona_system_prompt
+    from app.services.prompts import idi_system_prompt
 
     _get_project_or_404(project_id, db, current_user.company_id)
     simulation = db.get(Simulation, simulation_id)
@@ -362,7 +362,7 @@ def send_idi_message(
 
     from app.services.briefing_utils import combine_briefing_texts
     briefing_text = combine_briefing_texts(simulation.briefings)
-    system_prompt = _build_persona_system_prompt(persona, briefing_text)
+    system_prompt = idi_system_prompt(persona, briefing_text)
 
     # Build script context block if available
     script_block = ""

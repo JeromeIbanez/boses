@@ -10,6 +10,11 @@
   <meta name="keywords" content="market research Southeast Asia, AI market simulation, consumer insights Philippines Indonesia Vietnam, synthetic personas, product testing SEA, AI-powered research" />
   <link rel="canonical" href="https://www.temujintechnologies.com" />
   <meta name="robots" content="index, follow" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.svg" />
+  <meta name="theme-color" content="#080810" />
   <meta name="author" content="Temujin Technologies" />
 
   <!-- Open Graph -->
@@ -41,6 +46,10 @@
         "@type": "Organization",
         "name": "Temujin Technologies",
         "url": "https://www.temujintechnologies.com",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.temujintechnologies.com/favicon.svg"
+        },
         "description": "Temujin Technologies builds Boses, an AI-powered market research simulation platform purpose-built for Southeast Asia.",
         "contactPoint": {
           "@type": "ContactPoint",
@@ -117,12 +126,31 @@
             }
           }
         ]
+      },
+      {
+        "@type": "WebSite",
+        "name": "Boses",
+        "url": "https://www.temujintechnologies.com",
+        "description": "AI-powered market research simulation for Southeast Asia.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Temujin Technologies"
+        }
       }
     ]
   }
   </script>
 
-  <style>
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3TTNTSB0B"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-C3TTNTSB0B');
+  </script>
+
+<style>
     /* ============================================================
        RESET & BASE
     ============================================================ */
@@ -1274,6 +1302,43 @@
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -32px 0px' });
     document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+
+    // ── GA4 CTA click events ──────────────────────────────────────
+    ['hero-cta', 'how-cta', 'cta-main'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', function () {
+        if (typeof gtag === 'function') gtag('event', 'cta_click', { location: id });
+      });
+    });
+
+    // ── Scroll depth (GA4) ───────────────────────────────────────
+    (function () {
+      var milestones = [25, 50, 75, 90], reached = {};
+      function pct() {
+        var d = document.documentElement;
+        return Math.round(((window.scrollY + window.innerHeight) / d.scrollHeight) * 100);
+      }
+      window.addEventListener('scroll', function () {
+        var p = pct();
+        milestones.forEach(function (m) {
+          if (!reached[m] && p >= m) {
+            reached[m] = true;
+            if (typeof gtag === 'function')
+              gtag('event', 'scroll_depth', { depth_percent: m });
+          }
+        });
+      }, { passive: true });
+    })();
+
+    // ── FAQ open tracking (GA4) ───────────────────────────────────
+    document.querySelectorAll('.faq-list details').forEach(function (el) {
+      el.addEventListener('toggle', function () {
+        if (!el.open) return;
+        var q = el.querySelector('summary').textContent.trim().substring(0, 60);
+        if (typeof gtag === 'function')
+          gtag('event', 'faq_open', { question: q });
+      });
+    });
   </script>
 
 </body>

@@ -150,10 +150,7 @@
     gtag('config', 'G-C3TTNTSB0B');
   </script>
 
-  <!-- Plausible Analytics — privacy-first, no cookies -->
-  <script defer data-domain="temujintechnologies.com" src="https://plausible.io/js/script.tagged-events.js"></script>
-
-  <style>
+<style>
     /* ============================================================
        RESET & BASE
     ============================================================ */
@@ -857,7 +854,7 @@
       <a href="#faq" role="listitem">FAQ</a>
     </div>
 
-    <a href="#cta" class="btn-nav desktop" aria-label="Request access to Boses" data-analytics='"CTA Click", {"props":{"location":"nav","label":"Request Access"}}'>Request Access</a>
+    <a href="#cta" class="btn-nav desktop" aria-label="Request access to Boses">Request Access</a>
 
     <button class="hamburger" id="hamburger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
       <span></span><span></span><span></span>
@@ -868,7 +865,7 @@
     <a href="#how-it-works">How it works</a>
     <a href="#simulations">Features</a>
     <a href="#faq">FAQ</a>
-    <a href="#cta" class="btn-nav" data-analytics='"CTA Click", {"props":{"location":"mobile_nav","label":"Request Access"}}'>Request Access</a>
+    <a href="#cta" class="btn-nav">Request Access</a>
   </div>
 
 
@@ -901,7 +898,7 @@
         </p>
 
         <div class="hero-actions fade-in d3">
-          <a href="#" class="btn-primary lg" id="hero-cta" data-analytics='"CTA Click", {"props":{"location":"hero","label":"Request Early Access"}}'>
+          <a href="#" class="btn-primary lg" id="hero-cta">
             Request Early Access
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
@@ -1034,7 +1031,7 @@
             <h3>Ready to run your first simulation?</h3>
             <p>Book a 30-minute walkthrough — we'll tailor it to your market and research challenge.</p>
           </div>
-          <a href="#" class="btn-white" id="how-cta" data-analytics='"CTA Click", {"props":{"location":"how_it_works","label":"Book a Call"}}'>
+          <a href="#" class="btn-white" id="how-cta">
             Book a Call
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
@@ -1242,7 +1239,7 @@
               tailored to your market and research challenge.
             </p>
             <div class="cta-actions">
-              <a href="#" class="btn-primary lg" id="cta-main" data-analytics='"CTA Click", {"props":{"location":"cta_section","label":"Book a Call"}}'>
+              <a href="#" class="btn-primary lg" id="cta-main">
                 Book a Call
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </a>
@@ -1314,7 +1311,7 @@
       });
     });
 
-    // ── Scroll depth (Plausible + GA4) ───────────────────────────
+    // ── Scroll depth (GA4) ───────────────────────────────────────
     (function () {
       var milestones = [25, 50, 75, 90], reached = {};
       function pct() {
@@ -1326,8 +1323,6 @@
         milestones.forEach(function (m) {
           if (!reached[m] && p >= m) {
             reached[m] = true;
-            if (typeof window.plausible === 'function')
-              window.plausible('Scroll Depth', { props: { depth: m + '%' } });
             if (typeof gtag === 'function')
               gtag('event', 'scroll_depth', { depth_percent: m });
           }
@@ -1335,13 +1330,11 @@
       }, { passive: true });
     })();
 
-    // ── FAQ open tracking (Plausible + GA4) ──────────────────────
+    // ── FAQ open tracking (GA4) ───────────────────────────────────
     document.querySelectorAll('.faq-list details').forEach(function (el) {
       el.addEventListener('toggle', function () {
         if (!el.open) return;
         var q = el.querySelector('summary').textContent.trim().substring(0, 60);
-        if (typeof window.plausible === 'function')
-          window.plausible('FAQ Opened', { props: { question: q } });
         if (typeof gtag === 'function')
           gtag('event', 'faq_open', { question: q });
       });

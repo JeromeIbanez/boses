@@ -11,12 +11,8 @@
   <link rel="canonical" href="https://www.temujintechnologies.com" />
   <meta name="robots" content="index, follow" />
   <meta name="google-site-verification" content="raGH1WTqnNYzsM7PViJQRqT0c_uGLkyrNSZhNfueRPY" />
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.svg" />
-  <meta name="theme-color" content="#080810" />
   <meta name="author" content="Temujin Technologies" />
+  <meta name="theme-color" content="#080810" />
 
   <!-- Open Graph -->
   <meta property="og:title" content="Boses — AI-Powered Market Research for Southeast Asia" />
@@ -33,10 +29,23 @@
   <meta name="twitter:description" content="Simulate how real SEA consumers react to your product. AI personas grounded in local fieldwork. Results in hours." />
   <meta name="twitter:image" content="https://www.temujintechnologies.com/og-image.svg" />
 
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.svg" sizes="any" />
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3TTNTSB0B"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-C3TTNTSB0B');
+  </script>
 
   <!-- JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -142,22 +151,13 @@
   }
   </script>
 
-  <!-- Google Analytics 4 -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3TTNTSB0B"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-C3TTNTSB0B');
-  </script>
-
-<style>
+  <style>
     /* ============================================================
        RESET & BASE
     ============================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html { scroll-behavior: smooth; font-size: 16px; }
+    html { scroll-behavior: smooth; font-size: 16px; scroll-padding-top: 72px; overflow-x: hidden; }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -165,6 +165,7 @@
       -moz-osx-font-smoothing: grayscale;
       color: #0f0f0f;
       background: #fafafa;
+      overflow-x: hidden;
       line-height: 1.6;
     }
 
@@ -191,14 +192,18 @@
     .fade-in {
       opacity: 0;
       transform: translateY(28px);
-      transition: opacity 0.65s ease, transform 0.65s ease;
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .fade-in.visible { opacity: 1; transform: translateY(0); }
-    .fade-in.d1 { transition-delay: 0.08s; }
-    .fade-in.d2 { transition-delay: 0.16s; }
-    .fade-in.d3 { transition-delay: 0.24s; }
-    .fade-in.d4 { transition-delay: 0.32s; }
-    .fade-in.d5 { transition-delay: 0.4s; }
+    .fade-in.d1 { transition-delay: 0.07s; }
+    .fade-in.d2 { transition-delay: 0.14s; }
+    .fade-in.d3 { transition-delay: 0.21s; }
+    .fade-in.d4 { transition-delay: 0.28s; }
+    .fade-in.d5 { transition-delay: 0.35s; }
+    .fade-in.d6 { transition-delay: 0.42s; }
+    .fade-in.d7 { transition-delay: 0.49s; }
+    .fade-in.d8 { transition-delay: 0.56s; }
 
     /* ============================================================
        NAVIGATION
@@ -352,12 +357,11 @@
        HERO
     ============================================================ */
     .hero {
-      position: relative; min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-      text-align: center;
+      position: relative; min-height: 100vh; overflow: hidden;
+      display: flex; align-items: center;
       background: #080810;
       overflow: hidden;
-      padding: 128px 24px 96px;
+      padding: 100px 0 80px;
     }
 
     .hero-grid {
@@ -366,8 +370,8 @@
         linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px),
         linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px);
       background-size: 56px 56px;
-      mask-image: radial-gradient(ellipse 80% 65% at 50% 50%, black 30%, transparent 100%);
-      -webkit-mask-image: radial-gradient(ellipse 80% 65% at 50% 50%, black 30%, transparent 100%);
+      mask-image: radial-gradient(ellipse 90% 70% at 50% 40%, black 20%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 40%, black 20%, transparent 100%);
     }
 
     .hero-glow {
@@ -375,29 +379,36 @@
       pointer-events: none; filter: blur(90px);
     }
     .hero-glow-top {
-      width: 700px; height: 480px;
-      background: radial-gradient(ellipse, rgba(99,102,241,0.18) 0%, transparent 70%);
-      top: -80px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 500px;
+      background: radial-gradient(ellipse, rgba(99,102,241,0.16) 0%, transparent 70%);
+      top: -120px; left: 50%; transform: translateX(-50%);
     }
     .hero-glow-left {
       width: 360px; height: 360px;
-      background: radial-gradient(circle, rgba(167,139,250,0.1) 0%, transparent 70%);
-      bottom: 10%; left: 5%;
+      background: radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%);
+      bottom: 10%; left: 2%;
     }
     .hero-glow-right {
-      width: 280px; height: 280px;
+      width: 320px; height: 320px;
       background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
-      top: 20%; right: 8%;
+      top: 10%; right: 5%;
     }
 
-    .hero-content { position: relative; z-index: 1; max-width: 820px; }
+    /* Two-column hero layout */
+    .hero-inner {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 48px; align-items: center;
+      width: 100%; max-width: 1140px;
+      margin: 0 auto; padding: 0 28px;
+    }
 
     .hero-badge {
       display: inline-flex; align-items: center; gap: 8px;
       background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.22);
       color: #a5b4fc; font-size: 0.8125rem; font-weight: 600;
       letter-spacing: 0.05em; text-transform: uppercase;
-      padding: 6px 14px; border-radius: 100px; margin-bottom: 32px;
+      padding: 6px 14px; border-radius: 100px; margin-bottom: 28px;
     }
     .hero-badge-dot {
       width: 6px; height: 6px; background: #818cf8;
@@ -410,10 +421,10 @@
     }
 
     .hero h1 {
-      font-size: clamp(2.25rem, 5.5vw, 4rem);
+      font-size: clamp(2.25rem, 3.8vw, 3.5rem);
       font-weight: 800; color: #fff;
       letter-spacing: -0.035em; line-height: 1.12;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .hero h1 em {
       font-style: normal;
@@ -424,34 +435,145 @@
     }
 
     .hero-sub {
-      font-size: clamp(1rem, 2vw, 1.25rem);
-      color: rgba(255,255,255,0.55);
-      max-width: 580px; margin: 0 auto 44px;
+      font-size: 1.0625rem;
+      color: rgba(255,255,255,0.5);
+      max-width: 480px; margin-bottom: 36px;
       line-height: 1.75;
     }
 
     .hero-actions {
-      display: flex; align-items: center; justify-content: center;
-      gap: 12px; flex-wrap: wrap; margin-bottom: 52px;
+      display: flex; align-items: center;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 44px;
     }
 
     .hero-proof {
-      color: rgba(255,255,255,0.28); font-size: 0.8125rem;
-      letter-spacing: 0.02em; margin-bottom: 20px;
+      color: rgba(255,255,255,0.28); font-size: 0.8rem;
+      letter-spacing: 0.02em; margin-bottom: 16px;
     }
     .hero-proof strong { color: rgba(255,255,255,0.5); font-weight: 600; }
 
     .hero-flags {
-      display: flex; align-items: center; justify-content: center;
-      flex-wrap: wrap; gap: 8px;
+      display: flex; flex-wrap: wrap; gap: 6px;
     }
     .flag-chip {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 100px; padding: 5px 12px;
-      font-size: 0.8125rem; color: rgba(255,255,255,0.4);
+      border-radius: 100px; padding: 4px 11px;
+      font-size: 0.78rem; color: rgba(255,255,255,0.35);
     }
+
+    /* ── Floating mockup cards ── */
+    .hero-right {
+      position: relative; height: 520px;
+    }
+
+    .mock-card {
+      position: absolute;
+      background: #111120;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+      overflow: hidden;
+    }
+
+    /* Card 1 — Persona result (main, center) */
+    .mock-result {
+      width: 300px; top: 30px; left: 50%; transform: translateX(-50%);
+      animation: floatA 6s ease-in-out infinite;
+      z-index: 3;
+    }
+    @keyframes floatA {
+      0%,100% { transform: translateX(-50%) translateY(0); }
+      50%      { transform: translateX(-50%) translateY(-10px); }
+    }
+    .mock-result-header {
+      padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .mock-av {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .mock-av-name { font-size: 0.8rem; font-weight: 600; color: #e5e7eb; }
+    .mock-av-meta { font-size: 0.68rem; color: rgba(255,255,255,0.3); }
+    .mock-pill {
+      font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+      border-radius: 100px; margin-left: auto; flex-shrink: 0;
+    }
+    .pill-pos { background: rgba(16,185,129,0.15); color: #34d399; }
+    .pill-neu { background: rgba(156,163,175,0.1);  color: #9ca3af; }
+    .pill-neg { background: rgba(239,68,68,0.12);   color: #f87171; }
+    .mock-result-body { padding: 12px 14px; }
+    .mock-quote {
+      font-size: 0.8rem; color: rgba(255,255,255,0.48); line-height: 1.6;
+      font-style: italic; border-left: 2px solid #6366f1;
+      padding-left: 10px; margin-bottom: 12px;
+    }
+    .mock-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .mock-tag {
+      font-size: 0.68rem; font-weight: 500; color: #a5b4fc;
+      background: rgba(99,102,241,0.1); border-radius: 4px; padding: 2px 7px;
+    }
+
+    /* Card 2 — Sentiment distribution (bottom-left) */
+    .mock-dist {
+      width: 196px; bottom: 56px; left: 0;
+      animation: floatB 7s ease-in-out infinite 0.8s;
+      z-index: 2;
+    }
+    @keyframes floatB {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    .mock-dist-inner { padding: 13px; }
+    .mock-section-label {
+      font-size: 0.63rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: rgba(255,255,255,0.28); margin-bottom: 10px;
+    }
+    .mock-bar-row { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+    .mock-bar-label { font-size: 0.68rem; color: rgba(255,255,255,0.4); width: 48px; flex-shrink: 0; }
+    .mock-bar-track { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+    .mock-bar-fill { height: 100%; border-radius: 3px; }
+    .mock-bar-pct { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.4); width: 26px; text-align: right; }
+
+    /* Card 3 — Persona stack (top-right) */
+    .mock-cohort {
+      width: 188px; top: 20px; right: 0;
+      animation: floatC 8s ease-in-out infinite 0.4s;
+      z-index: 2;
+    }
+    @keyframes floatC {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-12px); }
+    }
+    .mock-cohort-inner { padding: 12px 13px; }
+    .mock-persona-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .mock-persona-row:last-child { margin-bottom: 0; }
+    .mock-pa { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .mock-pname { font-size: 0.72rem; font-weight: 600; color: #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mock-prole { font-size: 0.63rem; color: rgba(255,255,255,0.28); }
+
+    /* Card 4 — Key insight (bottom-right) */
+    .mock-insight {
+      width: 196px; bottom: 40px; right: 0;
+      background: linear-gradient(135deg, #1e1b4b, #2e1065) !important;
+      animation: floatD 6.5s ease-in-out infinite 1.2s;
+      z-index: 2;
+    }
+    @keyframes floatD {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    .mock-insight-inner { padding: 14px; }
+    .mock-insight-icon {
+      width: 30px; height: 30px; background: rgba(99,102,241,0.2);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .mock-insight-label { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,255,255,0.28); margin-bottom: 4px; }
+    .mock-insight-text { font-size: 0.78rem; font-weight: 600; color: #e5e7eb; line-height: 1.45; }
 
     .scroll-hint {
       position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
@@ -463,6 +585,34 @@
     @keyframes scrollbounce {
       0%, 100% { transform: translateY(0); }
       55% { transform: translateY(7px); }
+    }
+
+    /* ============================================================
+       METRICS BAR
+    ============================================================ */
+    .metrics {
+      background: #fff;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .metrics-inner {
+      display: flex; align-items: stretch;
+    }
+    .metric {
+      flex: 1; padding: 44px 28px; text-align: center;
+      border-right: 1px solid #f0f0f0;
+    }
+    .metric:last-child { border-right: none; }
+    .metric-num {
+      font-size: 2.75rem; font-weight: 800;
+      color: #0f0f0f; letter-spacing: -0.045em;
+      line-height: 1; margin-bottom: 8px;
+      display: flex; align-items: baseline;
+      justify-content: center; gap: 2px;
+    }
+    .metric-num .accent { color: #6366f1; }
+    .metric-label {
+      font-size: 0.875rem; color: #9ca3af; font-weight: 500;
     }
 
     /* ============================================================
@@ -481,20 +631,20 @@
       transition: border-color 0.2s, box-shadow 0.2s;
     }
     .problem-card:hover {
-      border-color: #fca5a5;
-      box-shadow: 0 4px 20px rgba(239,68,68,0.06);
+      border-color: #a5b4fc;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.06);
     }
 
     .problem-icon {
-      width: 48px; height: 48px; background: #fef2f2;
+      width: 48px; height: 48px; background: #eef2ff;
       border-radius: 12px; display: flex;
       align-items: center; justify-content: center;
-      color: #ef4444; margin-bottom: 20px;
+      color: #6366f1; margin-bottom: 20px;
     }
 
     .problem-stat {
       font-size: 2.25rem; font-weight: 800;
-      color: #ef4444; letter-spacing: -0.04em;
+      color: #6366f1; letter-spacing: -0.04em;
       line-height: 1; margin-bottom: 8px;
     }
 
@@ -635,6 +785,248 @@
     .text-link:hover { gap: 10px; color: #4f46e5; }
 
     /* ============================================================
+       PRODUCT SCREENSHOTS
+    ============================================================ */
+    .product-shots { background: #f5f5f9; }
+
+    .tab-bar {
+      display: flex; gap: 4px;
+      background: #e4e4e7; border-radius: 10px; padding: 4px;
+      width: fit-content; margin: 48px auto 36px;
+    }
+
+    .tab-btn {
+      padding: 8px 22px; border-radius: 7px; border: none;
+      background: transparent; font-size: 0.875rem; font-weight: 500;
+      color: #71717a; cursor: pointer; transition: all 0.18s; font-family: inherit;
+    }
+    .tab-btn.active {
+      background: #fff; color: #18181b;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .app-window {
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06);
+      display: flex; height: 500px;
+    }
+
+    .app-sidebar {
+      width: 210px; background: #18181b; flex-shrink: 0;
+      padding: 18px 10px; display: flex; flex-direction: column; gap: 2px;
+    }
+
+    .app-sidebar-logo {
+      font-size: 1rem; font-weight: 800; color: #fff;
+      letter-spacing: -0.03em; padding: 4px 10px 18px;
+    }
+    .app-sidebar-logo span { color: #6366f1; }
+
+    .app-nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: 7px;
+      font-size: 0.8125rem; font-weight: 500;
+      color: rgba(255,255,255,0.38);
+    }
+    .app-nav-item.on {
+      background: rgba(255,255,255,0.09); color: #fff;
+    }
+    .app-nav-item svg { flex-shrink: 0; }
+
+    .app-main {
+      flex: 1; background: #f4f4f5; display: flex;
+      flex-direction: column; overflow: hidden;
+    }
+
+    .app-topbar {
+      background: #fff; border-bottom: 1px solid #e4e4e7;
+      padding: 14px 22px; display: flex; align-items: center;
+      justify-content: space-between; flex-shrink: 0;
+    }
+
+    .app-topbar-title { font-size: 1rem; font-weight: 600; color: #18181b; }
+
+    .app-topbar-right { display: flex; align-items: center; gap: 8px; }
+
+    .app-btn-dark {
+      background: #18181b; color: #fff; border: none;
+      border-radius: 7px; padding: 7px 14px;
+      font-size: 0.8rem; font-weight: 500;
+      font-family: inherit; cursor: default;
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    .app-badge-complete {
+      background: #ecfdf5; border: 1px solid #a7f3d0;
+      color: #065f46; border-radius: 20px;
+      padding: 3px 10px; font-size: 0.75rem; font-weight: 600;
+    }
+    .app-badge-grey {
+      background: #f4f4f5; border: 1px solid #e4e4e7;
+      color: #52525b; border-radius: 20px;
+      padding: 3px 10px; font-size: 0.75rem; font-weight: 500;
+    }
+
+    .app-body { padding: 18px 22px; overflow: hidden; flex: 1; }
+
+    /* Project cards */
+    .app-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+
+    .app-proj-card {
+      background: #fff; border: 1px solid #e4e4e7;
+      border-radius: 9px; padding: 16px; cursor: default;
+    }
+
+    .app-proj-icon {
+      width: 32px; height: 32px; background: #f4f4f5;
+      border-radius: 7px; display: flex; align-items: center;
+      justify-content: center; color: #71717a; margin-bottom: 12px;
+    }
+
+    .app-proj-name {
+      font-size: 0.875rem; font-weight: 600;
+      color: #18181b; margin-bottom: 4px; line-height: 1.35;
+    }
+
+    .app-proj-desc {
+      font-size: 0.75rem; color: #a1a1aa; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    .app-proj-date {
+      font-size: 0.7rem; color: #d4d4d8; margin-top: 12px;
+    }
+
+    /* Persona cards */
+    .app-grid-3-sm { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+
+    .app-persona-card {
+      background: #fff; border: 1px solid #e4e4e7;
+      border-radius: 9px; padding: 14px;
+    }
+
+    .app-persona-hd {
+      display: flex; align-items: center; gap: 9px; margin-bottom: 10px;
+    }
+
+    .app-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #e4e4e7; color: #fff; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 600; flex-shrink: 0;
+    }
+    .app-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .app-persona-name { font-size: 0.8125rem; font-weight: 600; color: #18181b; }
+    .app-persona-meta { font-size: 0.7rem; color: #a1a1aa; }
+
+    .app-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+
+    .app-chip {
+      background: #f4f4f5; color: #52525b; border-radius: 20px;
+      padding: 2px 8px; font-size: 0.6875rem; font-weight: 500;
+    }
+
+    .app-persona-bio {
+      font-size: 0.73rem; color: #71717a; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    /* Results screen */
+    .app-summary-card {
+      background: #fff; border: 1px solid #e4e4e7;
+      border-radius: 9px; padding: 16px; margin-bottom: 10px;
+    }
+
+    .app-section-lbl {
+      font-size: 0.6875rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: #a1a1aa; margin-bottom: 10px;
+    }
+
+    .app-sent-bar {
+      display: flex; height: 8px; border-radius: 4px;
+      overflow: hidden; margin-bottom: 8px;
+    }
+    .sseg-pos { background: #34d399; }
+    .sseg-neu { background: #d4d4d8; }
+    .sseg-neg { background: #f87171; }
+
+    .app-sent-legend {
+      display: flex; gap: 14px; margin-bottom: 12px;
+    }
+    .app-sent-dot {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.75rem; color: #52525b;
+    }
+    .dot-pos { width: 8px; height: 8px; border-radius: 50%; background: #34d399; flex-shrink: 0; }
+    .dot-neu { width: 8px; height: 8px; border-radius: 50%; background: #d4d4d8; flex-shrink: 0; }
+    .dot-neg { width: 8px; height: 8px; border-radius: 50%; background: #f87171; flex-shrink: 0; }
+
+    .app-theme-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .app-theme-chip {
+      background: #f4f4f5; color: #52525b; border-radius: 20px;
+      padding: 3px 10px; font-size: 0.75rem;
+    }
+
+    .app-result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .app-result-card {
+      background: #fff; border: 1px solid #e4e4e7;
+      border-radius: 9px; padding: 14px;
+    }
+
+    .app-result-hd {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    }
+
+    .app-sbadge-pos {
+      background: #ecfdf5; border: 1px solid #d1fae5; color: #065f46;
+      border-radius: 20px; padding: 2px 8px;
+      font-size: 0.6875rem; font-weight: 500; margin-left: auto;
+    }
+    .app-sbadge-neu {
+      background: #fafafa; border: 1px solid #e4e4e7; color: #52525b;
+      border-radius: 20px; padding: 2px 8px;
+      font-size: 0.6875rem; font-weight: 500; margin-left: auto;
+    }
+    .app-sbadge-neg {
+      background: #fef2f2; border: 1px solid #fee2e2; color: #991b1b;
+      border-radius: 20px; padding: 2px 8px;
+      font-size: 0.6875rem; font-weight: 500; margin-left: auto;
+    }
+
+    .app-result-text {
+      font-size: 0.75rem; color: #52525b; line-height: 1.6;
+      display: -webkit-box; -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px;
+    }
+
+    .app-quote {
+      border-left: 2px solid #e4e4e7; padding-left: 9px;
+      font-size: 0.73rem; color: #71717a; font-style: italic; line-height: 1.55;
+    }
+
+    @media (max-width: 768px) {
+      .app-window { height: auto; flex-direction: column; }
+      .app-sidebar { width: 100%; flex-direction: row; padding: 10px 12px; gap: 0; }
+      .app-sidebar-logo { padding: 0 12px 0 0; white-space: nowrap; }
+      .app-nav-item span { display: none; }
+      .app-nav-item { padding: 8px; }
+      .app-grid-3, .app-grid-3-sm, .app-result-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .app-grid-3, .app-grid-3-sm, .app-result-grid { grid-template-columns: 1fr; }
+      .tab-bar { width: 100%; justify-content: center; }
+    }
+
+    /* ============================================================
        WHY BOSES
     ============================================================ */
     .why { background: #080810; }
@@ -708,7 +1100,7 @@
 
     .cta-box {
       background: linear-gradient(135deg, #0d0b1e 0%, #1e1b4b 55%, #0d0b1e 100%);
-      border-radius: 28px; padding: 88px 56px;
+      border-radius: 28px; padding: 80px 56px 72px;
       text-align: center; position: relative; overflow: hidden;
     }
 
@@ -752,9 +1144,324 @@
       display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
     }
 
-    .cta-note {
-      margin-top: 20px; color: rgba(255,255,255,0.25);
-      font-size: 0.8125rem;
+    .cta-box .cta-note {
+      margin: 24px auto 0; color: rgba(255,255,255,0.25);
+      font-size: 0.8125rem; max-width: 440px;
+    }
+
+    /* ============================================================
+       DEMO TEASER
+    ============================================================ */
+    .demo-teaser {
+      background: #080812;
+      padding: 120px 0;
+    }
+
+    .demo-teaser .section-eyebrow { color: rgba(165,180,252,0.65); }
+    .demo-teaser .section-title { color: #fff; }
+    .demo-teaser .section-sub { color: rgba(255,255,255,0.4); }
+
+    .browser-window {
+      max-width: 960px;
+      margin: 64px auto 0;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 48px 120px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07);
+      background: #13131f;
+    }
+
+    .browser-chrome {
+      background: #1c1c2a;
+      padding: 11px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .browser-dots { display: flex; gap: 6px; }
+
+    .browser-dot {
+      width: 11px; height: 11px; border-radius: 50%;
+    }
+    .browser-dot-red    { background: #ff5f57; }
+    .browser-dot-yellow { background: #febc2e; }
+    .browser-dot-green  { background: #28c840; }
+
+    .browser-url {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.73rem;
+      color: rgba(255,255,255,0.25);
+      font-family: inherit;
+      letter-spacing: 0.01em;
+    }
+
+    .browser-body {
+      display: grid;
+      grid-template-columns: 216px 1fr;
+      min-height: 400px;
+    }
+
+    .browser-sidebar {
+      background: #0e0e1a;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      padding: 18px 0;
+    }
+
+    .sidebar-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.22);
+      padding: 0 14px 10px;
+    }
+
+    .persona-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      cursor: default;
+    }
+
+    .persona-item.active {
+      background: rgba(99,102,241,0.13);
+      border-right: 2px solid #6366f1;
+    }
+
+    .persona-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+    }
+
+    .persona-info { flex: 1; min-width: 0; }
+
+    .persona-name {
+      font-size: 0.8125rem; font-weight: 600; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .persona-meta { font-size: 0.6875rem; color: rgba(255,255,255,0.28); }
+
+    .sentiment-badge {
+      font-size: 0.6rem; font-weight: 700;
+      padding: 2px 6px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
+    }
+    .badge-pos { background: rgba(16,185,129,0.15); color: #34d399; }
+    .badge-neu { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+    .badge-neg { background: rgba(239,68,68,0.15);   color: #f87171; }
+
+    .browser-main {
+      padding: 26px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .result-persona-header {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .result-persona-name { font-size: 1rem; font-weight: 700; color: #fff; }
+    .result-persona-meta { font-size: 0.8125rem; color: rgba(255,255,255,0.38); }
+
+    .result-reaction {
+      font-size: 0.895rem; color: rgba(255,255,255,0.6); line-height: 1.78;
+    }
+
+    .result-quote {
+      background: rgba(99,102,241,0.1);
+      border-left: 3px solid #6366f1;
+      padding: 13px 18px;
+      border-radius: 0 8px 8px 0;
+    }
+    .result-quote p {
+      font-size: 0.875rem; font-style: italic;
+      color: rgba(255,255,255,0.78); line-height: 1.65; margin: 0;
+    }
+
+    .result-themes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .theme-chip {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 20px; padding: 3px 11px;
+      font-size: 0.75rem; color: rgba(255,255,255,0.42);
+    }
+
+    /* Sentiment distribution bar */
+    .browser-sentiment {
+      background: #0e0e1a;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 18px 30px;
+    }
+
+    .sentiment-dist-title {
+      font-size: 0.6875rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.22); margin-bottom: 14px;
+    }
+
+    .sentiment-bars { display: flex; flex-direction: column; gap: 9px; }
+
+    .sent-row { display: flex; align-items: center; gap: 12px; }
+
+    .sent-label {
+      font-size: 0.8rem; color: rgba(255,255,255,0.4);
+      width: 68px; flex-shrink: 0;
+    }
+
+    .sent-track {
+      flex: 1; height: 7px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px; overflow: hidden;
+    }
+
+    .sent-fill {
+      height: 100%; border-radius: 4px;
+      width: 0%;
+    }
+
+    .sent-fill-pos { background: linear-gradient(90deg, #059669, #34d399); }
+    .sent-fill-neu { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .sent-fill-neg { background: linear-gradient(90deg, #dc2626, #f87171); }
+
+    .sent-pct {
+      font-size: 0.8rem; font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      width: 34px; text-align: right; flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .browser-body { grid-template-columns: 1fr; }
+      .browser-sidebar { display: none; }
+      .browser-main { padding: 20px; }
+      .browser-sentiment { padding: 16px 20px; }
+    }
+
+    /* ============================================================
+       COMPARISON TABLE
+    ============================================================ */
+    .comparison { background: #fafafa; }
+
+    .comp-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 56px;
+      border-radius: 16px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.07);
+    }
+
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      min-width: 620px;
+    }
+
+    .comp-table thead tr {
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .comp-table th {
+      padding: 22px 20px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: -0.01em;
+    }
+
+    .comp-table th:first-child { text-align: left; width: 36%; }
+
+    .comp-th-boses {
+      background: #6366f1;
+      color: #fff;
+    }
+
+    .comp-th-boses .comp-th-sub {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      opacity: 0.75;
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+    }
+
+    .comp-table th.col-trad { color: #374151; background: #f9fafb; }
+    .comp-table th.col-panel { color: #374151; background: #f9fafb; }
+
+    .comp-table td {
+      padding: 16px 20px;
+      font-size: 0.875rem;
+      border-bottom: 1px solid #f3f4f6;
+      text-align: center;
+      vertical-align: middle;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    .comp-table tr:last-child td { border-bottom: none; }
+
+    .comp-table td:first-child {
+      text-align: left;
+      font-weight: 600;
+      color: #111827;
+      font-size: 0.875rem;
+    }
+
+    .comp-table td.col-boses {
+      background: rgba(99,102,241,0.04);
+      border-left: 1px solid rgba(99,102,241,0.12);
+      border-right: 1px solid rgba(99,102,241,0.12);
+    }
+
+    .comp-table tr:hover td { background: #fafafa; }
+    .comp-table tr:hover td.col-boses { background: rgba(99,102,241,0.07); }
+
+    .comp-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px; height: 24px;
+      background: rgba(16,185,129,0.12);
+      border-radius: 50%;
+      color: #059669;
+    }
+
+    .comp-cross {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px; height: 24px;
+      background: rgba(239,68,68,0.1);
+      border-radius: 50%;
+      color: #dc2626;
+    }
+
+    .comp-caveat {
+      font-size: 0.8rem;
+      color: #6b7280;
+      display: block;
+    }
+
+    .comp-value {
+      font-weight: 700;
+      color: #6366f1;
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .comp-wrap { border-radius: 12px; }
     }
 
     /* ============================================================
@@ -792,6 +1499,20 @@
     /* ============================================================
        RESPONSIVE
     ============================================================ */
+    @media (max-width: 1024px) {
+      /* Hero: stack to single column, re-center */
+      .hero-inner { grid-template-columns: minmax(0, 1fr); text-align: center; gap: 56px; }
+      .hero-sub { margin-left: auto; margin-right: auto; }
+      .hero-actions { justify-content: center; }
+      .hero-flags { justify-content: center; }
+      /* Show a condensed mockup beneath the copy on tablet */
+      .hero-right { height: 360px; max-width: 480px; margin: 0 auto; }
+      .mock-result { width: 260px; top: 10px; }
+      .mock-dist { width: 170px; bottom: 10px; left: 0; }
+      .mock-cohort { width: 164px; top: 10px; right: 0; }
+      .mock-insight { width: 170px; bottom: 10px; right: 0; }
+    }
+
     @media (max-width: 900px) {
       .problem-cards { grid-template-columns: 1fr; }
       .steps { grid-template-columns: 1fr; }
@@ -801,7 +1522,7 @@
     }
 
     @media (max-width: 768px) {
-      section { padding: 72px 0; }
+      section { padding: 56px 0; }
 
       /* Nav */
       .nav { padding: 0 20px; }
@@ -809,21 +1530,65 @@
       .btn-nav.desktop { display: none; }
       .hamburger { display: flex; }
 
-      /* Hero */
-      .hero { padding: 104px 20px 80px; min-height: 95vh; }
+      /* Hero: tighter on mobile */
+      .hero { padding: 80px 0 56px; min-height: auto; }
+      .hero-right { display: none; }
       .scroll-hint { display: none; }
-      .hero-flags { gap: 6px; }
+      .hero-flags { gap: 8px; flex-wrap: wrap; justify-content: center; overflow-x: unset; padding-bottom: 0; }
+      .section-header { margin-bottom: 32px; }
+
+      /* Metrics bar: 2×2 CSS grid */
+      .metrics-inner { display: grid; grid-template-columns: 1fr 1fr; flex-wrap: unset; }
+      .metric { flex: unset; border-right: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; padding: 20px 12px; }
+      .metric:nth-child(2n) { border-right: none; }
+      .metric:nth-child(n+3) { border-bottom: none; }
+      .metric-num { font-size: 1.75rem; }
+      .metric-label { font-size: 0.775rem; }
 
       /* How mid CTA */
-      .how-mid-cta { flex-direction: column; text-align: center; padding: 32px 24px; }
+      .how-mid-cta { flex-direction: column; text-align: center; padding: 28px 20px; }
 
       /* Sims */
       .sims-grid { grid-template-columns: 1fr; }
+
+      /* Product screenshots: hide app sidebar row, tighten */
+      .app-window { height: auto; border-radius: 10px; }
+      .tab-bar { width: 100%; }
+      .tab-btn { flex: 1; padding: 8px 10px; font-size: 0.8125rem; }
+      .app-body { padding: 14px 16px; }
+      .app-grid-3, .app-grid-3-sm { grid-template-columns: 1fr; }
+      .app-result-grid { grid-template-columns: 1fr; }
+      .app-topbar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+      .app-topbar-right { flex-wrap: wrap; }
+
+      /* Demo teaser: hide sidebar, compact URL bar */
+      .browser-body { grid-template-columns: 1fr; }
+      .browser-sidebar { display: none; }
+      .browser-main { padding: 18px 16px; gap: 14px; }
+      .browser-sentiment { padding: 14px 16px; }
+      .browser-url { font-size: 0.65rem; }
+      .demo-teaser { padding: 56px 0; }
+
+      /* Comparison table: show scroll hint */
+      .comparison { padding: 56px 0; }
+      .comp-wrap { border-radius: 10px; }
+      .comp-wrap::after {
+        content: 'Scroll to compare →';
+        display: block;
+        text-align: center;
+        font-size: 0.75rem;
+        color: #9ca3af;
+        padding: 10px 0 4px;
+      }
+
+      /* Why Boses */
+      .why { padding: 56px 0; }
 
       /* CTA box */
       .cta-box { padding: 56px 24px; }
       .cta-actions { flex-direction: column; }
       .cta-actions .btn-primary { width: 100%; justify-content: center; }
+      .cta-box .cta-note { margin-top: 28px; }
 
       /* Footer */
       .footer-top { flex-direction: column; gap: 24px; }
@@ -832,9 +1597,22 @@
 
     @media (max-width: 480px) {
       .hero h1 { font-size: 2.1rem; }
+      .hero-sub { max-width: 100%; }
       .section-title { font-size: 1.75rem; }
       .hero-actions { flex-direction: column; width: 100%; }
       .hero-actions .btn-primary, .hero-actions .btn-ghost { width: 100%; justify-content: center; }
+      .result-persona-header { flex-wrap: wrap; }
+
+      /* Comparison table: drop competitor columns, show Boses-only checklist */
+      .comp-wrap { overflow-x: hidden; }
+      .comp-table { min-width: unset; width: 100%; }
+      .comp-table th.col-trad,
+      .comp-table th.col-panel,
+      .comp-table td:nth-child(3),
+      .comp-table td:nth-child(4) { display: none; }
+      .comp-table th:first-child { width: 60%; }
+      .comp-table .comp-th-boses { border-radius: 0 8px 0 0; }
+      .comp-wrap::after { display: none; }
     }
   </style>
 </head>
@@ -881,43 +1659,129 @@
       <div class="hero-glow hero-glow-left" aria-hidden="true"></div>
       <div class="hero-glow hero-glow-right" aria-hidden="true"></div>
 
-      <div class="hero-content">
-        <div class="hero-badge fade-in" aria-label="Category">
-          <span class="hero-badge-dot" aria-hidden="true"></span>
-          AI-Powered Market Research
+      <div class="hero-inner">
+
+        <!-- Left: copy -->
+        <div class="hero-left">
+          <div class="hero-badge fade-in">
+            <span class="hero-badge-dot" aria-hidden="true"></span>
+            Now in Early Access
+          </div>
+
+          <h1 id="hero-h1" class="fade-in d1">
+            AI-powered market research<br>for <em>Southeast Asia.</em>
+          </h1>
+
+          <p class="hero-sub fade-in d2">
+            Run consumer simulations with AI personas grounded in real local fieldwork. Know how your Filipino, Indonesian, and Vietnamese customers will react — in hours, not weeks.
+          </p>
+
+          <div class="hero-actions fade-in d3">
+            <a href="https://calendar.app.google/BUescRvdbQXbgvhu9" target="_blank" rel="noopener noreferrer" class="btn-primary lg" id="hero-cta">
+              Book a Call
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a href="#how-it-works" class="btn-ghost">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+              See how it works
+            </a>
+          </div>
+
+          <p class="hero-proof fade-in d4">The research stack for <strong>SEA-first product &amp; marketing teams</strong></p>
+
+          <div class="hero-flags fade-in d5" aria-label="Supported markets">
+            <span class="flag-chip">🇵🇭 Philippines</span>
+            <span class="flag-chip">🇮🇩 Indonesia</span>
+            <span class="flag-chip">🇻🇳 Vietnam</span>
+            <span class="flag-chip">🇹🇭 Thailand</span>
+            <span class="flag-chip">🇲🇾 Malaysia</span>
+            <span class="flag-chip">🇸🇬 Singapore</span>
+          </div>
         </div>
 
-        <h1 id="hero-h1" class="fade-in d1">
-          Know exactly how<br>
-          <em>Southeast Asia</em><br>
-          will respond — before you launch.
-        </h1>
+        <!-- Right: floating UI mockups -->
+        <div class="hero-right fade-in d2" aria-hidden="true">
 
-        <p class="hero-sub fade-in d2">
-          Boses simulates consumer reactions using AI personas built on real local fieldwork.
-          Get research-grade insights in hours, not months.
-        </p>
+          <!-- Card 1: Persona result (center) -->
+          <div class="mock-card mock-result">
+            <div class="mock-result-header">
+              <div class="mock-av" style="background:#7c3aed">MA</div>
+              <div>
+                <div class="mock-av-name">Maria A.</div>
+                <div class="mock-av-meta">28 · Brand Manager · Manila</div>
+              </div>
+              <span class="mock-pill pill-pos">Positive</span>
+            </div>
+            <div class="mock-result-body">
+              <div class="mock-quote">"This addresses a real gap — I've been doing manual sentiment checks on comment sections for months."</div>
+              <div class="mock-tags">
+                <span class="mock-tag">Time-saving</span>
+                <span class="mock-tag">SEA-relevant</span>
+                <span class="mock-tag">Easy to adopt</span>
+              </div>
+            </div>
+          </div>
 
-        <div class="hero-actions fade-in d3">
-          <a href="#" class="btn-primary lg" id="hero-cta">
-            Request Early Access
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <a href="#how-it-works" class="btn-ghost">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
-            See how it works
-          </a>
-        </div>
+          <!-- Card 2: Sentiment distribution (bottom-left) -->
+          <div class="mock-card mock-dist">
+            <div class="mock-dist-inner">
+              <div class="mock-section-label">Sentiment · 8 personas</div>
+              <div class="mock-bar-row">
+                <span class="mock-bar-label">Positive</span>
+                <div class="mock-bar-track"><div class="mock-bar-fill" style="width:67%;background:linear-gradient(90deg,#10b981,#34d399)"></div></div>
+                <span class="mock-bar-pct">67%</span>
+              </div>
+              <div class="mock-bar-row">
+                <span class="mock-bar-label">Neutral</span>
+                <div class="mock-bar-track"><div class="mock-bar-fill" style="width:22%;background:linear-gradient(90deg,#6b7280,#9ca3af)"></div></div>
+                <span class="mock-bar-pct">22%</span>
+              </div>
+              <div class="mock-bar-row">
+                <span class="mock-bar-label">Negative</span>
+                <div class="mock-bar-track"><div class="mock-bar-fill" style="width:11%;background:linear-gradient(90deg,#ef4444,#f87171)"></div></div>
+                <span class="mock-bar-pct">11%</span>
+              </div>
+            </div>
+          </div>
 
-        <p class="hero-proof fade-in d4">Built for <strong>product &amp; marketing teams</strong> across Southeast Asia</p>
+          <!-- Card 3: Cohort (top-right) -->
+          <div class="mock-card mock-cohort">
+            <div class="mock-cohort-inner">
+              <div class="mock-section-label">Cohort · Manila 25–35</div>
+              <div class="mock-persona-row">
+                <div class="mock-pa" style="background:#7c3aed">MA</div>
+                <div><div class="mock-pname">Maria A.</div><div class="mock-prole">Brand Manager</div></div>
+                <span class="mock-pill pill-pos" style="margin-left:auto">+</span>
+              </div>
+              <div class="mock-persona-row">
+                <div class="mock-pa" style="background:#0891b2">JR</div>
+                <div><div class="mock-pname">Jose R.</div><div class="mock-prole">Mktg Lead</div></div>
+                <span class="mock-pill pill-pos" style="margin-left:auto">+</span>
+              </div>
+              <div class="mock-persona-row">
+                <div class="mock-pa" style="background:#b45309">AL</div>
+                <div><div class="mock-pname">Ana L.</div><div class="mock-prole">Product Mgr</div></div>
+                <span class="mock-pill pill-neu" style="margin-left:auto">~</span>
+              </div>
+              <div class="mock-persona-row">
+                <div class="mock-pa" style="background:#be185d">RC</div>
+                <div><div class="mock-pname">Rico C.</div><div class="mock-prole">Founder</div></div>
+                <span class="mock-pill pill-pos" style="margin-left:auto">+</span>
+              </div>
+            </div>
+          </div>
 
-        <div class="hero-flags fade-in d5" aria-label="Supported markets">
-          <span class="flag-chip">🇵🇭 Philippines</span>
-          <span class="flag-chip">🇮🇩 Indonesia</span>
-          <span class="flag-chip">🇻🇳 Vietnam</span>
-          <span class="flag-chip">🇹🇭 Thailand</span>
-          <span class="flag-chip">🇲🇾 Malaysia</span>
-          <span class="flag-chip">🇸🇬 Singapore</span>
+          <!-- Card 4: Key insight (bottom-right) -->
+          <div class="mock-card mock-insight">
+            <div class="mock-insight-inner">
+              <div class="mock-insight-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div class="mock-insight-label">Top Recommendation</div>
+              <div class="mock-insight-text">Lead with time-savings in onboarding copy for Manila segment</div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -935,8 +1799,8 @@
       <div class="container">
         <div class="section-header fade-in">
           <p class="section-eyebrow">The problem</p>
-          <h2 class="section-title" id="problem-h2">Traditional market research<br>in SEA is broken</h2>
-          <p class="section-sub">Getting real consumer insights shouldn't require a six-figure budget and three months of waiting.</p>
+          <h2 class="section-title" id="problem-h2">Most SEA teams launch blind.<br>Here's why.</h2>
+          <p class="section-sub">Real consumer research in Southeast Asia is locked behind a price tag and a timeline that kills momentum before it starts.</p>
         </div>
 
         <div class="problem-cards">
@@ -944,9 +1808,9 @@
             <div class="problem-icon" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
-            <div class="problem-stat">₱500K+</div>
-            <h3>Prohibitively expensive</h3>
-            <p>A single focus group study in Manila or Jakarta can cost half a million pesos or more. Most startups and growing brands simply can't afford it.</p>
+            <div class="problem-stat">$8K+</div>
+            <h3>So expensive, most teams skip it</h3>
+            <p>A single consumer research study in Manila or Jakarta runs $8,000 or more. So most teams gut-feel their way through — and pay for it later in failed launches.</p>
           </article>
 
           <article class="problem-card fade-in d2">
@@ -954,24 +1818,24 @@
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div class="problem-stat">6–12 wks</div>
-            <h3>Painfully slow</h3>
-            <p>Recruiting participants, running sessions, and synthesising findings takes months. By the time you have answers, your market window has already closed.</p>
+            <h3>So slow, the insight arrives too late</h3>
+            <p>Recruiting, scheduling, running sessions, transcribing, synthesising. By the time findings land in your deck, you're already building on yesterday's assumptions.</p>
           </article>
 
           <article class="problem-card fade-in d3">
             <div class="problem-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             </div>
             <div class="problem-stat">0%</div>
-            <h3>Culturally generic</h3>
-            <p>Off-the-shelf panels rely on Western consumer archetypes. They miss the cultural nuances that actually drive purchase decisions in Southeast Asia.</p>
+            <h3>Built for the West, used in the East</h3>
+            <p>Global survey panels and research firms don't understand how a Manileño, a Jakartan, or a Hanoian actually thinks and buys. You get answers, but not the right ones.</p>
           </article>
         </div>
 
         <div class="bridge-cta fade-in">
-          <span>Sound familiar?</span>
+          <span>Still doing it the hard way?</span>
           <a href="#how-it-works">
-            See how Boses solves this
+            See how Boses fixes this
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
         </div>
@@ -984,10 +1848,10 @@
     ═══════════════════════════════════════ -->
     <section class="how" id="how-it-works" aria-labelledby="how-h2">
       <div class="container">
-        <div class="section-header center fade-in">
+        <div class="section-header fade-in">
           <p class="section-eyebrow">How it works</p>
-          <h2 class="section-title" id="how-h2">From brief to insight<br>in three steps</h2>
-          <p class="section-sub">No recruiting. No scheduling. No transcription. Just fast, deep consumer insight — ready to act on.</p>
+          <h2 class="section-title" id="how-h2">Research-grade insight<br>in an afternoon</h2>
+          <p class="section-sub">No agencies. No recruiting. No six-week timelines. Upload your brief, run your simulation, share your report — all before end of day.</p>
         </div>
 
         <div class="steps">
@@ -1029,10 +1893,10 @@
 
         <div class="how-mid-cta fade-in">
           <div class="how-mid-cta-copy">
-            <h3>Ready to run your first simulation?</h3>
-            <p>Book a 30-minute walkthrough — we'll tailor it to your market and research challenge.</p>
+            <h3>Don't let your next launch be a guess.</h3>
+            <p>Book a 30-minute call and we'll show you exactly what Boses reveals about your market.</p>
           </div>
-          <a href="#" class="btn-white" id="how-cta">
+          <a href="https://calendar.app.google/BUescRvdbQXbgvhu9" target="_blank" rel="noopener noreferrer" class="btn-white" id="how-cta">
             Book a Call
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
@@ -1041,120 +1905,590 @@
     </section>
 
 
+
     <!-- ═══════════════════════════════════════
-         SIMULATION TYPES
+         PRODUCT SCREENSHOTS
     ═══════════════════════════════════════ -->
-    <section class="sims" id="simulations" aria-labelledby="sims-h2">
+    <section class="product-shots" aria-labelledby="shots-h2">
       <div class="container">
-        <div class="section-header center fade-in">
-          <p class="section-eyebrow">Research methods</p>
-          <h2 class="section-title" id="sims-h2">Every research method,<br>one platform</h2>
-          <p class="section-sub">Run any type of consumer research without switching tools, agencies, or workflows.</p>
+        <div class="section-header fade-in">
+          <p class="section-eyebrow">The platform</p>
+          <h2 class="section-title" id="shots-h2">Built for how research<br>actually gets done</h2>
+          <p class="section-sub">From project setup to shareable report — everything lives in one workspace.</p>
         </div>
 
-        <div class="sims-grid">
-          <article class="sim-card fade-in d1">
-            <span class="sim-badge">Most popular</span>
-            <div class="sim-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            </div>
-            <h3>Concept Test</h3>
-            <p>Share a product idea, ad, or concept and see exactly how your target cohort reacts. Get sentiment breakdowns, key themes, and verbatim reactions.</p>
-          </article>
-
-          <article class="sim-card fade-in d2">
-            <div class="sim-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4"/><path d="M19 8v6M16 11h6"/></svg>
-            </div>
-            <h3>In-Depth Interview — AI</h3>
-            <p>Run a scripted 1-on-1 interview with every persona automatically. Boses handles the interviewing; you get full transcripts and a cross-persona report.</p>
-          </article>
-
-          <article class="sim-card fade-in d3">
-            <div class="sim-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </div>
-            <h3>In-Depth Interview — Manual</h3>
-            <p>Chat live with an AI persona yourself. Follow your instincts, explore unexpected angles, and generate a report whenever you're done.</p>
-          </article>
-
-          <article class="sim-card fade-in d1">
-            <div class="sim-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            </div>
-            <h3>Survey</h3>
-            <p>Upload your existing survey. Every persona fills it out independently. Get per-question aggregates, Likert distributions, and open-ended theme analysis.</p>
-          </article>
-
-          <article class="sim-card fade-in d2">
-            <div class="sim-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
-            <h3>Focus Group</h3>
-            <p>Personas discuss a topic together in a two-round moderated session — reacting to each other's statements. Surface genuine consensus and disagreement.</p>
-          </article>
-
-          <article class="sim-card fade-in d3">
-            <div class="sim-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            </div>
-            <h3>Conjoint / Trade-Off</h3>
-            <p>Present product profiles with varying attributes and prices. Discover what consumers actually trade off — brand vs. cost, quality vs. convenience.</p>
-          </article>
+        <!-- Tab bar -->
+        <div class="tab-bar fade-in" role="tablist">
+          <button class="tab-btn active" data-tab="dashboard" role="tab" aria-selected="true">Dashboard</button>
+          <button class="tab-btn" data-tab="personas" role="tab" aria-selected="false">Personas</button>
+          <button class="tab-btn" data-tab="results" role="tab" aria-selected="false">Results</button>
         </div>
 
-        <div class="sims-footer fade-in">
-          <a href="#cta" class="text-link">
-            Talk to us about your research challenge
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
+        <!-- ── Tab 1: Dashboard ── -->
+        <div class="tab-panel active fade-in" data-tab="dashboard" role="tabpanel">
+          <div class="app-window">
+            <div class="app-sidebar">
+              <div class="app-sidebar-logo">B<span>.</span>oses</div>
+              <div class="app-nav-item on">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <span>Dashboard</span>
+              </div>
+              <div class="app-nav-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Personas</span>
+              </div>
+              <div class="app-nav-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span>Simulations</span>
+              </div>
+              <div class="app-nav-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M20 12h2M2 12h2M19.07 19.07l-1.41-1.41M5.34 5.34 3.93 3.93"/></svg>
+                <span>Settings</span>
+              </div>
+            </div>
+            <div class="app-main">
+              <div class="app-topbar">
+                <span class="app-topbar-title">Dashboard</span>
+                <div class="app-topbar-right">
+                  <button class="app-btn-dark">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New project
+                  </button>
+                </div>
+              </div>
+              <div class="app-body">
+                <div class="app-grid-3">
+                  <div class="app-proj-card">
+                    <div class="app-proj-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <div class="app-proj-name">Oat Milk Launch — PH</div>
+                    <div class="app-proj-desc">Concept test for product-market fit across Metro Manila and Cebu consumers.</div>
+                    <div class="app-proj-date">Updated 2 hours ago</div>
+                  </div>
+                  <div class="app-proj-card">
+                    <div class="app-proj-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <div class="app-proj-name">Brand Campaign Q3 — ID</div>
+                    <div class="app-proj-desc">Focus group and IDI sessions with Jakarta and Surabaya urban millennials.</div>
+                    <div class="app-proj-date">Updated yesterday</div>
+                  </div>
+                  <div class="app-proj-card">
+                    <div class="app-proj-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <div class="app-proj-name">Gen Z Value Prop — VN</div>
+                    <div class="app-proj-desc">Conjoint analysis on price vs. brand for 18–24 segment in HCMC and Hanoi.</div>
+                    <div class="app-proj-date">Updated 3 days ago</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Tab 2: Personas ── -->
+        <div class="tab-panel" data-tab="personas" role="tabpanel">
+          <div class="app-window">
+            <div class="app-sidebar">
+              <div class="app-sidebar-logo">B<span>.</span>oses</div>
+              <div class="app-nav-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <span>Dashboard</span>
+              </div>
+              <div class="app-nav-item on">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Personas</span>
+              </div>
+              <div class="app-nav-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span>Simulations</span>
+              </div>
+              <div class="app-nav-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M20 12h2M2 12h2M19.07 19.07l-1.41-1.41M5.34 5.34 3.93 3.93"/></svg>
+                <span>Settings</span>
+              </div>
+            </div>
+            <div class="app-main">
+              <div class="app-topbar">
+                <span class="app-topbar-title">Metro Manila Millennials</span>
+                <div class="app-topbar-right">
+                  <span class="app-badge-grey">Age 25–35</span>
+                  <span class="app-badge-grey">8 personas</span>
+                  <span class="app-badge-grey">Urban</span>
+                </div>
+              </div>
+              <div class="app-body">
+                <div class="app-grid-3-sm">
+                  <div class="app-persona-card">
+                    <div class="app-persona-hd">
+                      <div class="app-avatar"><img src="https://api.dicebear.com/9.x/micah/svg?seed=Aisha&backgroundColor=ddd6fe" alt="Aisha Malik"></div>
+                      <div>
+                        <div class="app-persona-name">Aisha Malik</div>
+                        <div class="app-persona-meta">28 · F · Marketing Manager</div>
+                      </div>
+                    </div>
+                    <div class="app-chips">
+                      <span class="app-chip">Health-conscious</span>
+                      <span class="app-chip">Urban</span>
+                      <span class="app-chip">Brand-aware</span>
+                    </div>
+                    <div class="app-persona-bio">Values sustainability and local sourcing. Price-sensitive but willing to pay a premium for brands she trusts.</div>
+                  </div>
+                  <div class="app-persona-card">
+                    <div class="app-persona-hd">
+                      <div class="app-avatar"><img src="https://api.dicebear.com/9.x/micah/svg?seed=Rico&backgroundColor=bbf7d0" alt="Rico Santos"></div>
+                      <div>
+                        <div class="app-persona-name">Rico Santos</div>
+                        <div class="app-persona-meta">34 · M · Product Manager</div>
+                      </div>
+                    </div>
+                    <div class="app-chips">
+                      <span class="app-chip">Tech-forward</span>
+                      <span class="app-chip">Value-seeker</span>
+                      <span class="app-chip">Practical</span>
+                    </div>
+                    <div class="app-persona-bio">Research-driven buyer who compares options before committing. Heavily influenced by peer reviews and expert endorsements.</div>
+                  </div>
+                  <div class="app-persona-card">
+                    <div class="app-persona-hd">
+                      <div class="app-avatar"><img src="https://api.dicebear.com/9.x/micah/svg?seed=Maria&backgroundColor=fecdd3" alt="Maria Cruz"></div>
+                      <div>
+                        <div class="app-persona-name">Maria Cruz</div>
+                        <div class="app-persona-meta">31 · F · Brand Strategist</div>
+                      </div>
+                    </div>
+                    <div class="app-chips">
+                      <span class="app-chip">Trend-led</span>
+                      <span class="app-chip">Social buyer</span>
+                      <span class="app-chip">Aspirational</span>
+                    </div>
+                    <div class="app-persona-bio">Follows lifestyle influencers and adopts new products early. Packaging and aesthetic are strong purchase drivers.</div>
+                  </div>
+                  <div class="app-persona-card">
+                    <div class="app-persona-hd">
+                      <div class="app-avatar"><img src="https://api.dicebear.com/9.x/micah/svg?seed=Jose&backgroundColor=bfdbfe" alt="Jose Reyes"></div>
+                      <div>
+                        <div class="app-persona-name">Jose Reyes</div>
+                        <div class="app-persona-meta">29 · M · UX Designer</div>
+                      </div>
+                    </div>
+                    <div class="app-chips">
+                      <span class="app-chip">Minimalist</span>
+                      <span class="app-chip">Quality-first</span>
+                      <span class="app-chip">Loyal</span>
+                    </div>
+                    <div class="app-persona-bio">Once he finds a brand he trusts, rarely switches. Word-of-mouth and transparent labelling build his loyalty.</div>
+                  </div>
+                  <div class="app-persona-card">
+                    <div class="app-persona-hd">
+                      <div class="app-avatar"><img src="https://api.dicebear.com/9.x/micah/svg?seed=Clara&backgroundColor=e9d5ff" alt="Clara Lim"></div>
+                      <div>
+                        <div class="app-persona-name">Clara Lim</div>
+                        <div class="app-persona-meta">26 · F · Content Creator</div>
+                      </div>
+                    </div>
+                    <div class="app-chips">
+                      <span class="app-chip">Vocal</span>
+                      <span class="app-chip">Community-led</span>
+                      <span class="app-chip">Ethical</span>
+                    </div>
+                    <div class="app-persona-bio">Posts about her purchases. Amplifies brands she loves organically and calls out greenwashing loudly.</div>
+                  </div>
+                  <div class="app-persona-card">
+                    <div class="app-persona-hd">
+                      <div class="app-avatar"><img src="https://api.dicebear.com/9.x/micah/svg?seed=Diego&backgroundColor=d1fae5" alt="Diego Tan"></div>
+                      <div>
+                        <div class="app-persona-name">Diego Tan</div>
+                        <div class="app-persona-meta">33 · M · Finance Analyst</div>
+                      </div>
+                    </div>
+                    <div class="app-chips">
+                      <span class="app-chip">Budget-first</span>
+                      <span class="app-chip">Rational</span>
+                      <span class="app-chip">Sceptical</span>
+                    </div>
+                    <div class="app-persona-bio">Needs a clear cost-per-value argument. Marketing claims don't move him — clinical proof and price do.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Tab 3: Results ── -->
+        <div class="tab-panel" data-tab="results" role="tabpanel">
+          <div class="app-window">
+            <div class="app-sidebar">
+              <div class="app-sidebar-logo">B<span>.</span>oses</div>
+              <div class="app-nav-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <span>Dashboard</span>
+              </div>
+              <div class="app-nav-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Personas</span>
+              </div>
+              <div class="app-nav-item on">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span>Simulations</span>
+              </div>
+              <div class="app-nav-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M20 12h2M2 12h2M19.07 19.07l-1.41-1.41M5.34 5.34 3.93 3.93"/></svg>
+                <span>Settings</span>
+              </div>
+            </div>
+            <div class="app-main">
+              <div class="app-topbar">
+                <span class="app-topbar-title">Oat Milk Concept Test</span>
+                <div class="app-topbar-right">
+                  <span class="app-badge-complete">Complete</span>
+                  <button class="app-btn-dark">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    Share report
+                  </button>
+                </div>
+              </div>
+              <div class="app-body">
+                <div class="app-summary-card">
+                  <div class="app-section-lbl">Sentiment distribution · 8 personas</div>
+                  <div class="app-sent-bar">
+                    <div class="sseg-pos" style="width:67%"></div>
+                    <div class="sseg-neu" style="width:22%"></div>
+                    <div class="sseg-neg" style="width:11%"></div>
+                  </div>
+                  <div class="app-sent-legend">
+                    <span class="app-sent-dot"><span class="dot-pos"></span>Positive 67%</span>
+                    <span class="app-sent-dot"><span class="dot-neu"></span>Neutral 22%</span>
+                    <span class="app-sent-dot"><span class="dot-neg"></span>Negative 11%</span>
+                  </div>
+                  <div class="app-section-lbl">Top themes</div>
+                  <div class="app-theme-chips">
+                    <span class="app-theme-chip">Price sensitivity</span>
+                    <span class="app-theme-chip">Local sourcing</span>
+                    <span class="app-theme-chip">Retail availability</span>
+                    <span class="app-theme-chip">Health positioning</span>
+                  </div>
+                </div>
+                <div class="app-result-grid">
+                  <div class="app-result-card">
+                    <div class="app-result-hd">
+                      <div class="app-avatar" style="width:30px;height:30px;"><img src="https://api.dicebear.com/9.x/micah/svg?seed=Aisha&backgroundColor=ddd6fe" alt="Aisha Malik"></div>
+                      <div>
+                        <div class="app-persona-name">Aisha Malik</div>
+                        <div class="app-persona-meta">28 · Jakarta</div>
+                      </div>
+                      <span class="app-sbadge-pos">Positive</span>
+                    </div>
+                    <div class="app-result-text">The oat milk concept immediately registers as relevant to Aisha's lifestyle. The "locally sourced" callout and price point hit the right notes for her — she's been looking for a credible alternative to imported brands.</div>
+                    <div class="app-quote">"I'd switch from my current brand immediately if this hit Indomaret."</div>
+                  </div>
+                  <div class="app-result-card">
+                    <div class="app-result-hd">
+                      <div class="app-avatar" style="width:30px;height:30px;"><img src="https://api.dicebear.com/9.x/micah/svg?seed=Budi&backgroundColor=fde68a" alt="Budi Santoso"></div>
+                      <div>
+                        <div class="app-persona-name">Budi Santoso</div>
+                        <div class="app-persona-meta">42 · Surabaya</div>
+                      </div>
+                      <span class="app-sbadge-neg">Negative</span>
+                    </div>
+                    <div class="app-result-text">Budi remains unconvinced. Without a clear nutritional comparison to dairy and a lower price anchor, he sees oat milk as a lifestyle product for a younger demographic — not something he'd bring home.</div>
+                    <div class="app-quote">"Why would I pay more for something that tastes different and isn't even milk?"</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+
+    <!-- ═══════════════════════════════════════
+         DEMO TEASER
+    ═══════════════════════════════════════ -->
+    <section class="demo-teaser" aria-labelledby="demo-h2">
+      <div class="container">
+        <div class="section-header fade-in">
+          <p class="section-eyebrow">See it in action</p>
+          <h2 class="section-title" id="demo-h2">This is what a<br>Concept Test looks like</h2>
+          <p class="section-sub">Real output. Real structure. Ready to share with your team before end of day.</p>
+        </div>
+
+        <div class="browser-window fade-in">
+          <!-- Browser chrome -->
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="browser-dot browser-dot-red"></span>
+              <span class="browser-dot browser-dot-yellow"></span>
+              <span class="browser-dot browser-dot-green"></span>
+            </div>
+            <div class="browser-url">app.boses.io / projects / oat-milk-launch / concept-test / results</div>
+          </div>
+
+          <!-- Body: sidebar + main -->
+          <div class="browser-body">
+            <!-- Persona list sidebar -->
+            <div class="browser-sidebar">
+              <div class="sidebar-label">Personas · 8 total</div>
+
+              <div class="persona-item active">
+                <div class="persona-avatar" style="background:#3730a3;color:#a5b4fc;">A</div>
+                <div class="persona-info">
+                  <div class="persona-name">Aisha Malik</div>
+                  <div class="persona-meta">28 · Jakarta</div>
+                </div>
+                <span class="sentiment-badge badge-pos">Pos</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#065f46;color:#6ee7b7;">R</div>
+                <div class="persona-info">
+                  <div class="persona-name">Rico Santos</div>
+                  <div class="persona-meta">34 · Manila</div>
+                </div>
+                <span class="sentiment-badge badge-pos">Pos</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#78350f;color:#fcd34d;">N</div>
+                <div class="persona-info">
+                  <div class="persona-name">Nattaporn W.</div>
+                  <div class="persona-meta">26 · Bangkok</div>
+                </div>
+                <span class="sentiment-badge badge-neu">Neu</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#1e1b4b;color:#c4b5fd;">L</div>
+                <div class="persona-info">
+                  <div class="persona-name">Linh Nguyen</div>
+                  <div class="persona-meta">31 · Ho Chi Minh</div>
+                </div>
+                <span class="sentiment-badge badge-pos">Pos</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#7f1d1d;color:#fca5a5;">B</div>
+                <div class="persona-info">
+                  <div class="persona-name">Budi Santoso</div>
+                  <div class="persona-meta">42 · Surabaya</div>
+                </div>
+                <span class="sentiment-badge badge-neg">Neg</span>
+              </div>
+
+              <div class="persona-item">
+                <div class="persona-avatar" style="background:#14532d;color:#86efac;">S</div>
+                <div class="persona-info">
+                  <div class="persona-name">Siti Rahman</div>
+                  <div class="persona-meta">29 · KL</div>
+                </div>
+                <span class="sentiment-badge badge-pos">Pos</span>
+              </div>
+            </div>
+
+            <!-- Selected persona result -->
+            <div class="browser-main">
+              <div class="result-persona-header">
+                <div class="persona-avatar" style="background:#3730a3;color:#a5b4fc;width:40px;height:40px;font-size:0.9rem;">A</div>
+                <div>
+                  <div class="result-persona-name">Aisha Malik</div>
+                  <div class="result-persona-meta">28 · Female · Urban professional · Jakarta, Indonesia</div>
+                </div>
+                <span class="sentiment-badge badge-pos" style="margin-left:auto;font-size:0.7rem;padding:4px 10px;">Positive</span>
+              </div>
+
+              <p class="result-reaction">
+                The oat milk concept immediately registers as relevant to Aisha's lifestyle. She is health-conscious and already avoids dairy when possible, but has struggled to find affordable local options. The Boses-branded packaging and "locally sourced" callout are strong pull factors — she associates imported oat milks with excessive cost and environmental guilt.
+              </p>
+
+              <div class="result-quote">
+                <p>"This is exactly what I've been looking for — something that feels premium but isn't priced for expats. I'd switch from my current brand immediately if this hit Indomaret."</p>
+              </div>
+
+              <div class="result-themes">
+                <span class="theme-chip">Price sensitivity</span>
+                <span class="theme-chip">Local sourcing</span>
+                <span class="theme-chip">Health-conscious</span>
+                <span class="theme-chip">Retail availability</span>
+                <span class="theme-chip">Packaging trust</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sentiment distribution footer -->
+          <div class="browser-sentiment">
+            <div class="sentiment-dist-title">Overall sentiment distribution · 8 personas</div>
+            <div class="sentiment-bars">
+              <div class="sent-row">
+                <span class="sent-label">Positive</span>
+                <div class="sent-track">
+                  <div class="sent-fill sent-fill-pos" data-width="67"></div>
+                </div>
+                <span class="sent-pct">67%</span>
+              </div>
+              <div class="sent-row">
+                <span class="sent-label">Neutral</span>
+                <div class="sent-track">
+                  <div class="sent-fill sent-fill-neu" data-width="22"></div>
+                </div>
+                <span class="sent-pct">22%</span>
+              </div>
+              <div class="sent-row">
+                <span class="sent-label">Negative</span>
+                <div class="sent-track">
+                  <div class="sent-fill sent-fill-neg" data-width="11"></div>
+                </div>
+                <span class="sent-pct">11%</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
 
     <!-- ═══════════════════════════════════════
-         WHY BOSES
+         COMPARISON TABLE
     ═══════════════════════════════════════ -->
-    <section class="why" aria-labelledby="why-h2">
+    <section class="comparison" aria-labelledby="comp-h2">
       <div class="container">
         <div class="section-header fade-in">
-          <p class="section-eyebrow">Why Boses</p>
-          <h2 class="section-title" id="why-h2">Built differently,<br>for Southeast Asia</h2>
+          <p class="section-eyebrow">How we compare</p>
+          <h2 class="section-title" id="comp-h2">Boses vs. the alternatives</h2>
+          <p class="section-sub">See how Boses stacks up against a traditional research agency and generic global survey panels.</p>
         </div>
 
-        <div class="why-grid">
-          <article class="why-card fade-in d1">
-            <div class="why-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            </div>
-            <h3>Built for Southeast Asia</h3>
-            <p>Personas reflect real Filipino, Indonesian, Vietnamese, Thai, Malaysian, and Singaporean consumers — not generic global archetypes. Every persona is grounded in on-the-ground local fieldwork.</p>
-          </article>
-
-          <article class="why-card fade-in d2">
-            <div class="why-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-            <h3>Results in hours</h3>
-            <p>What used to take weeks of recruiting, facilitation, and synthesis now happens in a single afternoon. Share a polished, stakeholder-ready report before end of day.</p>
-          </article>
-
-          <article class="why-card fade-in d3">
-            <div class="why-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            </div>
-            <h3>Research-grade output</h3>
-            <p>Sentiment distribution, key themes, verbatim quotes, and strategic recommendations — every simulation produces a structured report you can present to stakeholders immediately.</p>
-          </article>
-
-          <article class="why-card fade-in d4">
-            <div class="why-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            </div>
-            <h3>Shareable, not siloed</h3>
-            <p>Every simulation report has a public share link. Loop in your CEO, agency, or investors instantly — no accounts or logins required on their end.</p>
-          </article>
+        <div class="comp-wrap fade-in">
+          <table class="comp-table" role="table" aria-label="Boses comparison table">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col" class="comp-th-boses">
+                  Boses
+                  <span class="comp-th-sub">AI-native · SEA-built</span>
+                </th>
+                <th scope="col" class="col-trad">Traditional Agency</th>
+                <th scope="col" class="col-panel">Generic Survey Panel</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Time to insight</td>
+                <td class="col-boses"><span class="comp-value">Under 2 hrs</span></td>
+                <td><span class="comp-caveat">6–12 weeks</span></td>
+                <td><span class="comp-caveat">3–7 days</span></td>
+              </tr>
+              <tr>
+                <td>Cost per study</td>
+                <td class="col-boses"><span class="comp-value">Fraction of cost</span></td>
+                <td><span class="comp-caveat">₱500,000+</span></td>
+                <td><span class="comp-caveat">$500–$5,000+</span></td>
+              </tr>
+              <tr>
+                <td>SEA cultural accuracy</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="comp-caveat">If you hire locally</span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">Western archetypes</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Verbatim quotes</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">Aggregates only</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Shareable report link</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">PDF decks only</span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Multiple research methods</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="comp-caveat" style="color:#6366f1;">6 methods, one platform</span>
+                </td>
+                <td>
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="comp-caveat">Separate vendors</span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">Surveys only</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Run on demand</td>
+                <td class="col-boses">
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+                <td>
+                  <span class="comp-cross" aria-label="No">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                  <span class="comp-caveat">Scheduling required</span>
+                </td>
+                <td>
+                  <span class="comp-check" aria-label="Yes">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="comp-caveat">With panel delays</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -1165,7 +2499,7 @@
     ═══════════════════════════════════════ -->
     <section class="faq" id="faq" aria-labelledby="faq-h2">
       <div class="container">
-        <div class="section-header center fade-in">
+        <div class="section-header fade-in">
           <p class="section-eyebrow">FAQ</p>
           <h2 class="section-title" id="faq-h2">Frequently asked questions</h2>
         </div>
@@ -1233,19 +2567,19 @@
           <div class="cta-glow" aria-hidden="true"></div>
           <div class="cta-content">
             <h2 id="cta-h2">
-              Start researching<br><em>smarter.</em>
+              Your next launch deserves<br>real <em>consumer insight.</em>
             </h2>
             <p>
-              Request early access and we'll set you up with a guided walkthrough —
-              tailored to your market and research challenge.
+              Book a 30-minute call. We'll run a live simulation on your market,
+              your product, your personas — so you can see exactly what Boses surfaces before you commit.
             </p>
             <div class="cta-actions">
-              <a href="#" class="btn-primary lg" id="cta-main">
+              <a href="https://calendar.app.google/BUescRvdbQXbgvhu9" target="_blank" rel="noopener noreferrer" class="btn-primary lg" id="cta-main">
                 Book a Call
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </a>
             </div>
-            <p class="cta-note">No commitment. 30 minutes. We'll show you exactly what's possible for your market.</p>
+            <p class="cta-note">No commitment. No deck. Just a live look at what your consumers actually think.</p>
           </div>
         </div>
       </div>
@@ -1265,12 +2599,10 @@
           <p>AI-powered market simulation for Southeast Asia. Built by Temujin Technologies.</p>
         </div>
         <nav class="footer-links" aria-label="Footer links">
-          <a href="mailto:hello@temujintechnologies.com">Contact</a>
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Service</a>
+          <a href="https://calendar.app.google/BUescRvdbQXbgvhu9" target="_blank" rel="noopener noreferrer">Contact</a>
         </nav>
       </div>
-      <p class="footer-copy">© 2025 Temujin Technologies. All rights reserved.</p>
+      <p class="footer-copy">© 2026 Temujin Technologies. All rights reserved.</p>
     </div>
   </footer>
 
@@ -1303,6 +2635,63 @@
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -32px 0px' });
     document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+
+    // ── Counter animation ────────────────────────────────────────
+    const counterIO = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        const target = +el.dataset.target;
+        const duration = 1400;
+        const start = performance.now();
+        const tick = (now) => {
+          const p = Math.min((now - start) / duration, 1);
+          const ease = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(ease * target);
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+        counterIO.unobserve(el);
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.counter').forEach(el => counterIO.observe(el));
+
+    // ── Product screenshot tab switcher ─────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        document.querySelector('.tab-panel[data-tab="' + tab + '"]').classList.add('active');
+      });
+    });
+
+    // ── Sentiment bar animation ──────────────────────────────────
+    const sentIO = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.querySelectorAll('.sent-fill[data-width]').forEach(bar => {
+          const target = +bar.dataset.width;
+          const duration = 1200;
+          const start = performance.now();
+          const tick = (now) => {
+            const p = Math.min((now - start) / duration, 1);
+            const ease = 1 - Math.pow(1 - p, 3);
+            bar.style.width = (ease * target) + '%';
+            if (p < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        });
+        sentIO.unobserve(e.target);
+      });
+    }, { threshold: 0.6 });
+    const sentSection = document.querySelector('.browser-sentiment');
+    if (sentSection) sentIO.observe(sentSection);
 
     // ── GA4 CTA click events ──────────────────────────────────────
     ['hero-cta', 'how-cta', 'cta-main'].forEach(function (id) {

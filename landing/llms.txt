@@ -1,0 +1,49 @@
+# Boses by Temujin Technologies
+
+> Boses is an AI-powered market research simulation platform purpose-built for Southeast Asia. It simulates how real Filipino, Indonesian, Vietnamese, Thai, Malaysian, and Singaporean consumers react to products, campaigns, and concepts — using AI personas grounded in on-the-ground ethnographic fieldwork. Research-grade insights in hours, not months.
+
+## Product
+
+- **Platform:** Web-based SaaS (early access / pre-launch)
+- **Website:** https://www.temujintechnologies.com
+- **Company:** Temujin Technologies
+- **Contact:** hello@temujintechnologies.com
+
+## What Boses Does
+
+Boses lets product managers, marketers, and strategy teams run consumer simulations without traditional market research. Instead of spending ₱500,000+ and 6–12 weeks on focus groups and surveys, teams upload a product brief, select a persona cohort, and run a simulation in minutes to hours.
+
+## Research Methods Supported
+
+1. **Concept Test** — Upload a product concept, ad, or campaign and get sentiment breakdowns and verbatim reactions from your target cohort.
+2. **AI-Assisted In-Depth Interview (IDI)** — Boses automatically conducts scripted 1-on-1 interviews with every persona; delivers full transcripts and a cross-persona report.
+3. **Manual IDI** — The researcher chats live with an AI persona and generates a report when finished.
+4. **Survey** — Upload an existing survey; every persona fills it out independently.
+5. **Focus Group** — Personas discuss a topic in a two-round moderated session, surfacing consensus and disagreement.
+6. **Conjoint / Trade-Off Analysis** — Present product profiles with varying attributes to discover what consumers actually trade off.
+
+## Markets Supported
+
+Philippines, Indonesia, Vietnam, Thailand, Malaysia, Singapore.
+
+## Persona Types
+
+- **AI-generated personas:** Built from target market parameters (age, location, occupation, income).
+- **Boses-curated personas:** Validated against real people through on-the-ground ethnographic fieldwork across Southeast Asia.
+
+## Competitive Differentiation
+
+- 10–100x faster than traditional market research (hours vs. weeks)
+- Fraction of the cost of traditional focus groups (₱500,000+ per study replaced by a platform subscription)
+- Culturally accurate to SEA — not generic global or Western archetypes
+- Single platform for all six major qualitative and quantitative research methods
+- Simulation reports include shareable public links — no login required for stakeholders
+
+## Current Status
+
+Early access / pre-launch. Users request access by booking a 30-minute walkthrough call with the Boses team.
+
+## Optional
+
+- Privacy-first: no PII stored in simulations; all persona data is synthetic
+- Docs: https://www.temujintechnologies.com

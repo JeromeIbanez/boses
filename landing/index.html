@@ -10,6 +10,11 @@
   <meta name="keywords" content="market research Southeast Asia, AI market simulation, consumer insights Philippines Indonesia Vietnam, synthetic personas, product testing SEA, AI-powered research" />
   <link rel="canonical" href="https://www.temujintechnologies.com" />
   <meta name="robots" content="index, follow" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.svg" />
+  <meta name="theme-color" content="#080810" />
   <meta name="author" content="Temujin Technologies" />
 
   <!-- Open Graph -->
@@ -41,6 +46,10 @@
         "@type": "Organization",
         "name": "Temujin Technologies",
         "url": "https://www.temujintechnologies.com",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.temujintechnologies.com/favicon.svg"
+        },
         "description": "Temujin Technologies builds Boses, an AI-powered market research simulation platform purpose-built for Southeast Asia.",
         "contactPoint": {
           "@type": "ContactPoint",
@@ -117,10 +126,32 @@
             }
           }
         ]
+      },
+      {
+        "@type": "WebSite",
+        "name": "Boses",
+        "url": "https://www.temujintechnologies.com",
+        "description": "AI-powered market research simulation for Southeast Asia.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Temujin Technologies"
+        }
       }
     ]
   }
   </script>
+
+  <!-- Google Analytics 4 — replace G-XXXXXXXXXX with your Measurement ID from analytics.google.com -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+
+  <!-- Plausible Analytics — privacy-first, no cookies -->
+  <script defer data-domain="temujintechnologies.com" src="https://plausible.io/js/script.tagged-events.js"></script>
 
   <style>
     /* ============================================================
@@ -826,7 +857,7 @@
       <a href="#faq" role="listitem">FAQ</a>
     </div>
 
-    <a href="#cta" class="btn-nav desktop" aria-label="Request access to Boses">Request Access</a>
+    <a href="#cta" class="btn-nav desktop" aria-label="Request access to Boses" data-analytics='"CTA Click", {"props":{"location":"nav","label":"Request Access"}}'>Request Access</a>
 
     <button class="hamburger" id="hamburger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
       <span></span><span></span><span></span>
@@ -837,7 +868,7 @@
     <a href="#how-it-works">How it works</a>
     <a href="#simulations">Features</a>
     <a href="#faq">FAQ</a>
-    <a href="#cta" class="btn-nav">Request Access</a>
+    <a href="#cta" class="btn-nav" data-analytics='"CTA Click", {"props":{"location":"mobile_nav","label":"Request Access"}}'>Request Access</a>
   </div>
 
 
@@ -870,7 +901,7 @@
         </p>
 
         <div class="hero-actions fade-in d3">
-          <a href="#" class="btn-primary lg" id="hero-cta">
+          <a href="#" class="btn-primary lg" id="hero-cta" data-analytics='"CTA Click", {"props":{"location":"hero","label":"Request Early Access"}}'>
             Request Early Access
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
@@ -1003,7 +1034,7 @@
             <h3>Ready to run your first simulation?</h3>
             <p>Book a 30-minute walkthrough — we'll tailor it to your market and research challenge.</p>
           </div>
-          <a href="#" class="btn-white" id="how-cta">
+          <a href="#" class="btn-white" id="how-cta" data-analytics='"CTA Click", {"props":{"location":"how_it_works","label":"Book a Call"}}'>
             Book a Call
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
@@ -1211,7 +1242,7 @@
               tailored to your market and research challenge.
             </p>
             <div class="cta-actions">
-              <a href="#" class="btn-primary lg" id="cta-main">
+              <a href="#" class="btn-primary lg" id="cta-main" data-analytics='"CTA Click", {"props":{"location":"cta_section","label":"Book a Call"}}'>
                 Book a Call
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </a>
@@ -1274,6 +1305,47 @@
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -32px 0px' });
     document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+
+    // ── GA4 CTA click events ──────────────────────────────────────
+    ['hero-cta', 'how-cta', 'cta-main'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', function () {
+        if (typeof gtag === 'function') gtag('event', 'cta_click', { location: id });
+      });
+    });
+
+    // ── Scroll depth (Plausible + GA4) ───────────────────────────
+    (function () {
+      var milestones = [25, 50, 75, 90], reached = {};
+      function pct() {
+        var d = document.documentElement;
+        return Math.round(((window.scrollY + window.innerHeight) / d.scrollHeight) * 100);
+      }
+      window.addEventListener('scroll', function () {
+        var p = pct();
+        milestones.forEach(function (m) {
+          if (!reached[m] && p >= m) {
+            reached[m] = true;
+            if (typeof window.plausible === 'function')
+              window.plausible('Scroll Depth', { props: { depth: m + '%' } });
+            if (typeof gtag === 'function')
+              gtag('event', 'scroll_depth', { depth_percent: m });
+          }
+        });
+      }, { passive: true });
+    })();
+
+    // ── FAQ open tracking (Plausible + GA4) ──────────────────────
+    document.querySelectorAll('.faq-list details').forEach(function (el) {
+      el.addEventListener('toggle', function () {
+        if (!el.open) return;
+        var q = el.querySelector('summary').textContent.trim().substring(0, 60);
+        if (typeof window.plausible === 'function')
+          window.plausible('FAQ Opened', { props: { question: q } });
+        if (typeof gtag === 'function')
+          gtag('event', 'faq_open', { question: q });
+      });
+    });
   </script>
 
 </body>

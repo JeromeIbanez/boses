@@ -117,7 +117,8 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
     import httpx
 
     _TRANSIENT = (httpx.ConnectError, httpx.RemoteProtocolError, httpx.TimeoutException, OSError)
-    max_attempts = 3
+    max_attempts = 4
+    _RETRY_DELAYS = [5, 15, 30]  # seconds; longer waits survive post-hibernate DNS recovery
 
     for attempt in range(1, max_attempts + 1):
         try:
@@ -158,7 +159,7 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
 
         except _TRANSIENT as e:
             if attempt < max_attempts:
-                delay = 2 ** attempt
+                delay = _RETRY_DELAYS[attempt - 1]
                 logger.warning(f"Avatar transient error for {persona.id} (attempt {attempt}/{max_attempts}), retrying in {delay}s: {e}")
                 time.sleep(delay)
             else:

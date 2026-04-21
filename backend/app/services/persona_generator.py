@@ -403,11 +403,13 @@ def generate_personas(group_id: str) -> None:
                 day_in_the_life=lib_persona.day_in_the_life,
                 data_source=lib_persona.data_source,
                 data_source_references=lib_persona.data_source_references,
+                avatar_url=lib_persona.avatar_url,
                 raw_profile_json=None,
             )
             db.add(persona)
             db.flush()
-            created_persona_ids.append(str(persona.id))
+            if not lib_persona.avatar_url:
+                created_persona_ids.append(str(persona.id))
             save_persona_to_library(db, persona, match_score=match_score, existing_library_id=lib_persona.id)
             used_library_ids.add(lib_persona.id)
             completed_names.append(name)

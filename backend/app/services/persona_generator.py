@@ -16,6 +16,7 @@ delegates to it. The rest of the system never needs to change.
 """
 import json
 import logging
+import threading
 import uuid as _uuid
 from abc import ABC, abstractmethod
 
@@ -529,9 +530,14 @@ def generate_personas(group_id: str) -> None:
         db.commit()
         logger.info(f"Total {personas_created} personas for group {group_id} (source={source_key})")
 
-        # Generate avatars concurrently — all DALL-E calls run in parallel after
-        # text generation is complete so persona creation speed is unaffected.
-        generate_avatars_for_group(client, created_persona_ids)
+        # Fire avatar generation in a daemon thread so this background task
+        # returns immediately — avoids Render hibernate killing the task mid-retry.
+        if created_persona_ids:
+            threading.Thread(
+                target=generate_avatars_for_group,
+                args=(client, created_persona_ids),
+                daemon=True,
+            ).start()
 
     except Exception as e:
         logger.error(f"Persona generation failed for group {group_id}: {e}")

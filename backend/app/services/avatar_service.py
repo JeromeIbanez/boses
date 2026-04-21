@@ -112,7 +112,7 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
     Generate a gpt-image-1 headshot for the persona and save it locally.
     Returns the URL path (e.g. '/uploads/avatars/<id>.png') or None on failure.
     Never raises — avatar failure must not block persona generation.
-    Retries up to 3 times on transient network errors (DNS, connection reset).
+    Retries up to 4 times on transient network errors (DNS, connection reset).
     """
     import httpx
 

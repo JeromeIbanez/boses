@@ -16,6 +16,7 @@ delegates to it. The rest of the system never needs to change.
 """
 import json
 import logging
+import threading
 import uuid as _uuid
 from abc import ABC, abstractmethod
 
@@ -403,11 +404,13 @@ def generate_personas(group_id: str) -> None:
                 day_in_the_life=lib_persona.day_in_the_life,
                 data_source=lib_persona.data_source,
                 data_source_references=lib_persona.data_source_references,
+                avatar_url=lib_persona.avatar_url,
                 raw_profile_json=None,
             )
             db.add(persona)
             db.flush()
-            created_persona_ids.append(str(persona.id))
+            if not lib_persona.avatar_url:
+                created_persona_ids.append(str(persona.id))
             save_persona_to_library(db, persona, match_score=match_score, existing_library_id=lib_persona.id)
             used_library_ids.add(lib_persona.id)
             completed_names.append(name)
@@ -527,9 +530,14 @@ def generate_personas(group_id: str) -> None:
         db.commit()
         logger.info(f"Total {personas_created} personas for group {group_id} (source={source_key})")
 
-        # Generate avatars concurrently — all DALL-E calls run in parallel after
-        # text generation is complete so persona creation speed is unaffected.
-        generate_avatars_for_group(client, created_persona_ids)
+        # Fire avatar generation in a daemon thread so this background task
+        # returns immediately — avoids Render hibernate killing the task mid-retry.
+        if created_persona_ids:
+            threading.Thread(
+                target=generate_avatars_for_group,
+                args=(client, created_persona_ids),
+                daemon=True,
+            ).start()
 
     except Exception as e:
         logger.error(f"Persona generation failed for group {group_id}: {e}")

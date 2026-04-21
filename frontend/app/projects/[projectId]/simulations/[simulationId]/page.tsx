@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText, BarChart2, Share2, Check, X } from "lucide-react";
-import { getSimulation, getSimulationResults, abortSimulation, generateShareLink, revokeShareLink, getReliabilityCheck } from "@/lib/api";
+import { getSimulation, getSimulationResults, abortSimulation, generateShareLink, revokeShareLink, getReliabilityCheck, getPersonas } from "@/lib/api";
 import ConvergencePanel from "@/components/simulations/ConvergencePanel";
 import ReliabilityPanel from "@/components/simulations/ReliabilityPanel";
 import Badge from "@/components/ui/Badge";
@@ -78,9 +78,11 @@ function ConceptIndividualCard({ result, personas }: { result: SimulationResult;
         )}
       </div>
 
-      {result.reaction_text && (
+      {result.reaction_text ? (
         <p className="text-sm text-zinc-700 leading-relaxed">{result.reaction_text}</p>
-      )}
+      ) : !result.notable_quote && !(result.key_themes?.length) ? (
+        <p className="text-sm text-zinc-400 italic">No response recorded.</p>
+      ) : null}
 
       {result.notable_quote && (
         <blockquote className="border-l-2 border-zinc-200 pl-3 text-sm text-zinc-500 italic">
@@ -178,7 +180,7 @@ function IDIPersonaCard({ result, name }: { result: SimulationResult; name: stri
 // IDI report view
 // ---------------------------------------------------------------------------
 
-function IDIReportView({ results, projectId, simulationId }: { results: SimulationResult[]; projectId: string; simulationId: string }) {
+function IDIReportView({ results, projectId, simulationId, personaNameMap = {} }: { results: SimulationResult[]; projectId: string; simulationId: string; personaNameMap?: Record<string, string> }) {
   const aggregate = results.find(r => r.result_type === "idi_aggregate");
   const individuals = results.filter(r => r.result_type === "idi_individual");
 
@@ -189,10 +191,9 @@ function IDIReportView({ results, projectId, simulationId }: { results: Simulati
     recommendations?: string;
   } | null;
 
-  // Build persona name map: index → "Persona N"
   const personaNames: Record<string, string> = {};
   individuals.forEach((r, i) => {
-    if (r.persona_id) personaNames[r.persona_id] = `Persona ${i + 1}`;
+    if (r.persona_id) personaNames[r.persona_id] = personaNameMap[r.persona_id] || `Persona ${i + 1}`;
   });
 
   const hasTranscripts = individuals.some(r => r.transcript);
@@ -308,7 +309,7 @@ const PERSONA_COLORS = [
   "bg-indigo-700",
 ];
 
-function FocusGroupReportView({ results }: { results: SimulationResult[] }) {
+function FocusGroupReportView({ results, personaNameMap = {} }: { results: SimulationResult[]; personaNameMap?: Record<string, string> }) {
   const aggregate = results.find(r => r.result_type === "focus_group_aggregate");
   const individuals = results.filter(r => r.result_type === "focus_group_individual");
 
@@ -335,10 +336,9 @@ function FocusGroupReportView({ results }: { results: SimulationResult[] }) {
   const moderatorOpening = (aggSections?.transcript ?? []).find(e => e.speaker === "Moderator" && e.round === 0);
   const moderatorBridge = (aggSections?.transcript ?? []).find(e => e.speaker === "Moderator" && e.round === 1);
 
-  // Build persona name map
   const personaNames: Record<string, string> = {};
   individuals.forEach((r, i) => {
-    if (r.persona_id) personaNames[r.persona_id] = `Persona ${i + 1}`;
+    if (r.persona_id) personaNames[r.persona_id] = personaNameMap[r.persona_id] || `Persona ${i + 1}`;
   });
 
   return (
@@ -600,10 +600,11 @@ function ChoiceBar({ distribution, options }: { distribution: Record<string, num
   );
 }
 
-function SurveyReportView({ results, projectId, simulationId }: {
+function SurveyReportView({ results, projectId, simulationId, personaNameMap = {} }: {
   results: SimulationResult[];
   projectId: string;
   simulationId: string;
+  personaNameMap?: Record<string, string>;
 }) {
   const aggregate = results.find(r => r.result_type === "survey_aggregate");
   const individuals = results.filter(r => r.result_type === "survey_individual");
@@ -616,7 +617,7 @@ function SurveyReportView({ results, projectId, simulationId }: {
 
   const personaNames: Record<string, string> = {};
   individuals.forEach((r, i) => {
-    if (r.persona_id) personaNames[r.persona_id] = `Persona ${i + 1}`;
+    if (r.persona_id) personaNames[r.persona_id] = personaNameMap[r.persona_id] || `Persona ${i + 1}`;
   });
 
   return (
@@ -1068,12 +1069,25 @@ export default function SimulationResultsPage() {
     enabled: simulation?.status === "complete",
   });
 
+  const { data: allPersonas } = useQuery({
+    queryKey: ["personas-for-sim", simulation?.persona_group_ids],
+    queryFn: async () => {
+      const ids = simulation!.persona_group_ids;
+      const groups = await Promise.all(ids.map(id => getPersonas(projectId, id)));
+      return groups.flat();
+    },
+    enabled: !!simulation && simulation.persona_group_ids.length > 0,
+  });
+
+  const personaNameMap: Record<string, string> = {};
+  allPersonas?.forEach(p => { personaNameMap[p.id] = p.full_name; });
+
   const aggregate = results?.find(r => r.result_type === "aggregate");
   const individual = results?.filter(r => r.result_type === "individual") ?? [];
 
   const personaNames: Record<string, string> = {};
   individual.forEach((r, i) => {
-    if (r.persona_id) personaNames[r.persona_id] = `Persona ${i + 1}`;
+    if (r.persona_id) personaNames[r.persona_id] = personaNameMap[r.persona_id] || `Persona ${i + 1}`;
   });
 
   const { data: reliabilityData } = useQuery({
@@ -1368,11 +1382,11 @@ export default function SimulationResultsPage() {
           {isConjoint ? (
             <ConjointReportView results={results} />
           ) : isFocusGroup ? (
-            <FocusGroupReportView results={results} />
+            <FocusGroupReportView results={results} personaNameMap={personaNameMap} />
           ) : isSurvey ? (
-            <SurveyReportView results={results} projectId={projectId} simulationId={simulationId} />
+            <SurveyReportView results={results} projectId={projectId} simulationId={simulationId} personaNameMap={personaNameMap} />
           ) : isIDI ? (
-            <IDIReportView results={results} projectId={projectId} simulationId={simulationId} />
+            <IDIReportView results={results} projectId={projectId} simulationId={simulationId} personaNameMap={personaNameMap} />
           ) : (
             <div className="space-y-8">
               {/* Aggregate Summary */}

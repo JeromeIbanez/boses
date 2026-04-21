@@ -78,12 +78,12 @@ def concept_test_user_prompt(briefing_text: str, prompt_question: str) -> str:
         f"Here is the briefing material:\n\n"
         f"---\n{briefing_text}\n---\n\n"
         f"Question: {prompt_question}\n\n"
-        "Please respond in character. Structure your response EXACTLY as:\n"
-        "1. REACTION: Your immediate gut response (2–3 sentences in first person, in your own natural voice — not a formal analysis)\n"
-        "2. SENTIMENT: One word — Positive, Neutral, or Negative\n"
-        "3. REASONING: Why you feel this way (3–5 sentences in your own natural voice, citing specifics from the briefing)\n"
-        "4. NOTABLE QUOTE: One sentence that best captures your opinion\n"
-        "5. KEY THEMES: 3 comma-separated themes that came up for you"
+        "Please respond in character. Return a JSON object with exactly these keys:\n"
+        '  "reaction": your immediate gut response (2–3 sentences in first person, natural voice — not a formal analysis)\n'
+        '  "sentiment": one of "Positive", "Neutral", or "Negative"\n'
+        '  "reasoning": why you feel this way (3–5 sentences in your natural voice, citing specifics from the briefing)\n'
+        '  "notable_quote": one sentence that best captures your opinion\n'
+        '  "key_themes": an array of 3 short theme strings that came up for you'
     )
 
 

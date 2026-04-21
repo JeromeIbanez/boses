@@ -121,12 +121,8 @@ def run_survey(simulation_id: str) -> None:
         simulation.status = "running"
         db.commit()
 
-        personas = db.execute(
-            select(Persona).where(Persona.persona_group_id == simulation.persona_group_id)
-        ).scalars().all()
-
-        if not personas:
-            raise ValueError("No personas found for this group.")
+        from app.services.simulation_engine import get_personas_for_simulation
+        personas = get_personas_for_simulation(simulation, db)
 
         questions: list[dict] = (simulation.survey_schema or {}).get("questions", [])
         if not questions:
@@ -285,7 +281,11 @@ def run_survey(simulation_id: str) -> None:
         executive_summary = ""
         recommendations = ""
         try:
-            group = simulation.persona_group
+            sv_groups = simulation.persona_groups or []
+            group = sv_groups[0] if sv_groups else simulation.persona_group
+            sv_group_label = group.name if group else "Persona Group"
+            if len(sv_groups) > 1:
+                sv_group_label = f"{sv_group_label} + {len(sv_groups) - 1} more group{'s' if len(sv_groups) > 2 else ''}"
             summary_context = "\n".join(
                 f"- {p.get('text', '')} ({p.get('type')}): "
                 + (f"avg {p.get('average')}/{p.get('scale')}" if p["type"] == "likert"
@@ -299,8 +299,11 @@ def run_survey(simulation_id: str) -> None:
                     "role": "user",
                     "content": (
                         survey_aggregate_user_prompt(
-                            group.name, group.location, group.occupation,
-                            group.age_min, group.age_max,
+                            sv_group_label,
+                            group.location if group else None,
+                            group.occupation if group else None,
+                            group.age_min if group else None,
+                            group.age_max if group else None,
                             len(individual_results), summary_context,
                         )
                     ),

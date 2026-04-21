@@ -17,6 +17,22 @@ logger = logging.getLogger(__name__)
 SENTIMENT_SCORES = {"Positive": 1.0, "Neutral": 0.0, "Negative": -1.0}
 
 
+def get_personas_for_simulation(simulation: "Simulation", db) -> list["Persona"]:
+    """Return all personas from all linked persona groups, with legacy fallback."""
+    from sqlalchemy.orm import Session
+    group_ids = [g.id for g in (simulation.persona_groups or [])]
+    if not group_ids and simulation.persona_group_id:
+        group_ids = [simulation.persona_group_id]
+    if not group_ids:
+        raise ValueError("No persona groups configured for this simulation.")
+    personas = db.execute(
+        select(Persona).where(Persona.persona_group_id.in_(group_ids))
+    ).scalars().all()
+    if not personas:
+        raise ValueError("No personas found across the selected groups. Please generate personas first.")
+    return personas
+
+
 def _parse_individual_response(text: str) -> dict:
     sections = {
         "reaction": "",
@@ -164,13 +180,7 @@ def run_simulation(simulation_id: str) -> None:
         simulation.status = "running"
         db.commit()
 
-        # Load personas for this group
-        personas = db.execute(
-            select(Persona).where(Persona.persona_group_id == simulation.persona_group_id)
-        ).scalars().all()
-
-        if not personas:
-            raise ValueError("No personas found for this group. Please generate personas first.")
+        personas = get_personas_for_simulation(simulation, db)
 
         from app.services.briefing_utils import combine_briefing_texts
         briefing_text = combine_briefing_texts(simulation.briefings)
@@ -236,7 +246,11 @@ def run_simulation(simulation_id: str) -> None:
             )
 
         # Aggregate summary
-        group = simulation.persona_group
+        groups = simulation.persona_groups or []
+        primary_group = groups[0] if groups else simulation.persona_group
+        group_name = primary_group.name if primary_group else "Persona Group"
+        if len(groups) > 1:
+            group_name = f"{group_name} + {len(groups) - 1} more group{'s' if len(groups) > 2 else ''}"
         reactions_text = "\n".join(
             f"[{p.full_name}, {p.age}, {p.occupation}]: "
             f"{r['reaction']} {r['reasoning']} | Sentiment: {r['sentiment']}"
@@ -245,11 +259,11 @@ def run_simulation(simulation_id: str) -> None:
 
         agg_prompt = concept_test_aggregate_user_prompt(
             n=len(individual_results),
-            group_name=group.name,
-            group_location=group.location,
-            group_occupation=group.occupation,
-            age_min=group.age_min,
-            age_max=group.age_max,
+            group_name=group_name,
+            group_location=primary_group.location if primary_group else None,
+            group_occupation=primary_group.occupation if primary_group else None,
+            age_min=primary_group.age_min if primary_group else None,
+            age_max=primary_group.age_max if primary_group else None,
             prompt_question=simulation.prompt_question,
             reactions_text=reactions_text,
         )

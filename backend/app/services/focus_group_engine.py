@@ -192,17 +192,17 @@ def run_focus_group(simulation_id: str) -> None:
         simulation.status = "running"
         db.commit()
 
-        personas = db.execute(
-            select(Persona).where(Persona.persona_group_id == simulation.persona_group_id)
-        ).scalars().all()
-
-        if not personas:
-            raise ValueError("No personas found for this group. Please generate personas first.")
+        from app.services.simulation_engine import get_personas_for_simulation
+        personas = get_personas_for_simulation(simulation, db)
 
         from app.services.briefing_utils import combine_briefing_texts
         briefing_text = combine_briefing_texts(simulation.briefings)
         topic = simulation.prompt_question or "the topic under discussion"
-        group = simulation.persona_group
+        fg_groups = simulation.persona_groups or []
+        primary_fg_group = fg_groups[0] if fg_groups else simulation.persona_group
+        group_label = primary_fg_group.name if primary_fg_group else "Persona Group"
+        if len(fg_groups) > 1:
+            group_label = f"{group_label} + {len(fg_groups) - 1} more group{'s' if len(fg_groups) > 2 else ''}"
         total_personas = len(personas)
         total_steps = total_personas * 2  # round 1 + round 2 per persona
         step = 0
@@ -365,7 +365,7 @@ def run_focus_group(simulation_id: str) -> None:
         db.commit()
         logger.info(f"[fg:{sim_ref}] Generating aggregate report…")
 
-        agg = _generate_aggregate_report(client, topic, transcript, group.name)
+        agg = _generate_aggregate_report(client, topic, transcript, group_label)
 
         agg_result = SimulationResult(
             simulation_id=simulation_id,

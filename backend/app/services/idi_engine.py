@@ -202,12 +202,8 @@ def run_idi_ai(simulation_id: str) -> None:
         simulation.status = "running"
         db.commit()
 
-        personas = db.execute(
-            select(Persona).where(Persona.persona_group_id == simulation.persona_group_id)
-        ).scalars().all()
-
-        if not personas:
-            raise ValueError("No personas found for this group.")
+        from app.services.simulation_engine import get_personas_for_simulation
+        personas = get_personas_for_simulation(simulation, db)
 
         questions = _parse_questions(simulation.idi_script_text or "")
         if not questions:
@@ -293,8 +289,12 @@ def run_idi_ai(simulation_id: str) -> None:
         }
         db.commit()
 
-        group = simulation.persona_group
-        agg_sections = _generate_aggregate_report(client, group.name, question_summary, persona_analyses)
+        groups = simulation.persona_groups or []
+        primary_group = groups[0] if groups else simulation.persona_group
+        group_label = primary_group.name if primary_group else "Persona Group"
+        if len(groups) > 1:
+            group_label = f"{group_label} + {len(groups) - 1} more group{'s' if len(groups) > 2 else ''}"
+        agg_sections = _generate_aggregate_report(client, group_label, question_summary, persona_analyses)
 
         # Top themes: collect from all individual analyses
         all_themes: list[str] = []
@@ -402,9 +402,12 @@ def generate_idi_report_from_messages(simulation_id: str) -> None:
 
         # For manual IDI (single persona), also generate a summary aggregate result
         # so the results page can render consistently with AI-assisted
+        manual_groups = simulation.persona_groups or []
+        manual_primary = manual_groups[0] if manual_groups else simulation.persona_group
+        manual_group_label = manual_primary.name if manual_primary else "Persona Group"
         agg_sections = _generate_aggregate_report(
             client,
-            simulation.persona_group.name,
+            manual_group_label,
             "Manual in-depth interview",
             [{
                 "name": persona.full_name,

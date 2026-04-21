@@ -288,6 +288,7 @@ def _generate_narrative(
     part_worths: dict[str, dict[str, float]],
     individual_results: list[dict],
     group,
+    group_name_override: str | None = None,
 ) -> tuple[str, str]:
     """Generate executive summary and recommendations via LLM."""
     importance_lines = "\n".join(
@@ -304,11 +305,11 @@ def _generate_narrative(
 
     prompt = conjoint_narrative_user_prompt(
         category=category,
-        group_name=group.name,
-        group_location=group.location,
-        group_occupation=group.occupation,
-        age_min=group.age_min,
-        age_max=group.age_max,
+        group_name=group_name_override or (group.name if group else "Persona Group"),
+        group_location=group.location if group else None,
+        group_occupation=group.occupation if group else None,
+        age_min=group.age_min if group else None,
+        age_max=group.age_max if group else None,
         n=len(individual_results),
         importance_lines=importance_lines,
         reasoning_block=reasoning_block,
@@ -349,12 +350,8 @@ def run_conjoint(simulation_id: str) -> None:
         simulation.status = "running"
         db.commit()
 
-        personas = db.execute(
-            select(Persona).where(Persona.persona_group_id == simulation.persona_group_id)
-        ).scalars().all()
-
-        if not personas:
-            raise ValueError("No personas found for this group. Please generate personas first.")
+        from app.services.simulation_engine import get_personas_for_simulation
+        personas = get_personas_for_simulation(simulation, db)
 
         design = simulation.survey_schema or {}
         attributes: list[dict] = design.get("attributes", [])
@@ -368,7 +365,11 @@ def run_conjoint(simulation_id: str) -> None:
         category = simulation.prompt_question or "the product"
         from app.services.briefing_utils import combine_briefing_texts
         briefing_text = combine_briefing_texts(simulation.briefings)
-        group = simulation.persona_group
+        cj_groups = simulation.persona_groups or []
+        group = cj_groups[0] if cj_groups else simulation.persona_group
+        cj_group_label = group.name if group else "Persona Group"
+        if len(cj_groups) > 1:
+            cj_group_label = f"{cj_group_label} + {len(cj_groups) - 1} more group{'s' if len(cj_groups) > 2 else ''}"
 
         tasks = _generate_choice_sets(attributes, n_tasks)
         total = len(personas)
@@ -502,7 +503,8 @@ def run_conjoint(simulation_id: str) -> None:
 
         # LLM narrative
         executive_summary, recommendations = _generate_narrative(
-            client, category, agg_importances, agg_part_worths, individual_results, group
+            client, category, agg_importances, agg_part_worths, individual_results, group,
+            group_name_override=cj_group_label,
         )
 
         agg_result = SimulationResult(

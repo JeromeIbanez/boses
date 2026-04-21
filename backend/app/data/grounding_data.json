@@ -497,6 +497,111 @@
       "Northeast_Isan": "Largest region by population, predominantly agricultural, lowest incomes, distinct Lao-influenced culture, high rural-urban migration to Bangkok"
     }
   },
+  "malaysia": {
+    "_sources": [
+      "World Bank Malaysia 2024",
+      "DataReportal Digital Malaysia 2024 (We Are Social / Meltwater)",
+      "Department of Statistics Malaysia (DOSM) 2023",
+      "ILO Malaysia Labour Market 2023"
+    ],
+    "population": 34308525,
+    "median_age": 30.4,
+    "gdp_per_capita_usd": 13251,
+    "currency": "MYR",
+    "languages": [
+      "Bahasa Malaysia",
+      "English",
+      "Mandarin",
+      "Tamil"
+    ],
+    "religion": "Islam (official, 63%), Buddhism (19%), Christianity (9%), Hinduism (6%)",
+    "urban_population_pct": 0.779,
+    "income_distribution": {
+      "description": "Approximate share of households per income band (DOSM 2022)",
+      "low": 0.08,
+      "lower_middle": 0.27,
+      "middle": 0.38,
+      "upper_middle": 0.2,
+      "high": 0.07
+    },
+    "age_distribution": {
+      "0_14": 0.232,
+      "15_64": 0.694,
+      "65_plus": 0.074
+    },
+    "gender_split": {
+      "male": 0.514,
+      "female": 0.486
+    },
+    "employment": {
+      "services_pct": 0.62,
+      "industry_pct": 0.27,
+      "agriculture_pct": 0.11,
+      "top_occupations": [
+        "Manufacturing and factory workers (electronics, rubber, palm oil)",
+        "Retail and sales workers",
+        "Construction workers (significant migrant workforce)",
+        "Government civil servants (largest employer of Bumiputera)",
+        "Teachers and education professionals",
+        "IT and technology professionals (MSC Malaysia corridor)",
+        "Grab and delivery drivers (large gig economy)",
+        "Finance and banking professionals",
+        "Healthcare professionals",
+        "Plantation workers (palm oil, rubber)"
+      ],
+      "unemployment_rate": 0.033
+    },
+    "education": {
+      "literacy_rate": 0.949,
+      "tertiary_enrollment_pct": 0.51
+    },
+    "digital": {
+      "internet_penetration_pct": 0.973,
+      "social_media_users_pct": 0.838,
+      "mobile_connections_per_person": 1.44,
+      "avg_daily_internet_hours": 7.58,
+      "avg_daily_social_media_hours": 2.93,
+      "top_platforms_ranked": [
+        "YouTube (highest reach — 94% of internet users)",
+        "WhatsApp (dominant messaging app, near-universal)",
+        "Facebook (strong across all demographics, especially 30+)",
+        "Instagram (millennials and urban youth)",
+        "TikTok (fastest growing, Gen Z dominant)",
+        "Telegram (growing among younger demographics and news consumption)"
+      ],
+      "ecommerce_users_pct": 0.77,
+      "top_ecommerce_platforms": [
+        "Shopee",
+        "Lazada",
+        "TikTok Shop",
+        "Zalora",
+        "PGMall (local)"
+      ]
+    },
+    "consumer_behavior": {
+      "notes": [
+        "Multiracial society (Malay, Chinese, Indian, other) with distinct consumption patterns per ethnic community",
+        "Bumiputera policy shapes employment, education, and business ownership — significant socioeconomic context for Malay consumers",
+        "Halal certification is critical for food, cosmetics, and pharmaceuticals for Muslim consumers (63% of population)",
+        "Chinese Malaysian consumers are highly brand-conscious and price-savvy — strong comparison shopping behaviour",
+        "Indian Malaysian consumers are a smaller but distinct segment with strong community and religious purchasing influences",
+        "Grab super-app is deeply embedded in urban daily life — food delivery, transport, payments, financial services",
+        "Shopping malls are central social and retail hubs — Malaysia has one of the highest mall densities in Asia",
+        "Price sensitivity varies significantly: upper-middle and high-income segments are quality-driven; lower-income segments are highly promotional",
+        "Festive seasons drive major retail spikes: Hari Raya (Eid), Chinese New Year, Deepavali, and year-end",
+        "Cash usage declining rapidly — DuitNow, Touch 'n Go eWallet, and GrabPay widely adopted",
+        "Strong K-pop and Korean cultural influence on beauty, fashion, and food (hallyu effect)",
+        "Rural-urban divide exists but is less extreme than Indonesia or Vietnam — most population within reach of modern retail"
+      ]
+    },
+    "regional_notes": {
+      "Klang_Valley_KL": "Primary economic hub, most cosmopolitan, highest income, multiracial urban mix, tech and finance center, 8M+ metro population",
+      "Penang": "Second economic hub, strong Chinese Malaysian heritage, manufacturing corridor (E&E industry), food capital, growing tech scene",
+      "Johor_JB": "Gateway to Singapore, significant cross-border economy, manufacturing base, fastest-growing property market",
+      "Sabah_Sarawak_East_Malaysia": "Distinct cultural identities (Kadazan, Iban, etc.), resource economies, lower digital penetration, significant indigenous populations",
+      "Selangor_Shah_Alam": "Largest state economy, industrial heartland, large Malay suburban population, strong manufacturing base"
+    }
+  },
   "_template": {
     "_comment": "Copy this template when adding a new country. All fields optional except _sources.",
     "_sources": [],

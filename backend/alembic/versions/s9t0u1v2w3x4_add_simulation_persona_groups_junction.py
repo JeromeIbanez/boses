@@ -46,7 +46,17 @@ def upgrade() -> None:
         )
 
     # 3. Make persona_group_id nullable and change FK to SET NULL (not CASCADE)
-    op.drop_constraint('fk_simulations_persona_group_id', 'simulations', type_='foreignkey')
+    # Look up the actual constraint name — it differs between environments
+    conn = op.get_bind()
+    row = conn.execute(sa.text("""
+        SELECT conname FROM pg_constraint
+        WHERE conrelid = 'simulations'::regclass
+          AND contype = 'f'
+          AND conname LIKE '%persona_group_id%'
+        LIMIT 1
+    """)).fetchone()
+    if row:
+        op.drop_constraint(row[0], 'simulations', type_='foreignkey')
     op.alter_column('simulations', 'persona_group_id', nullable=True)
     op.create_foreign_key(
         'fk_simulations_persona_group_id',
@@ -71,7 +81,15 @@ def downgrade() -> None:
         WHERE s.id = spg.simulation_id AND s.persona_group_id IS NULL
     """))
 
-    op.drop_constraint('fk_simulations_persona_group_id', 'simulations', type_='foreignkey')
+    dg_row = conn.execute(sa.text("""
+        SELECT conname FROM pg_constraint
+        WHERE conrelid = 'simulations'::regclass
+          AND contype = 'f'
+          AND conname LIKE '%persona_group_id%'
+        LIMIT 1
+    """)).fetchone()
+    if dg_row:
+        op.drop_constraint(dg_row[0], 'simulations', type_='foreignkey')
     op.alter_column('simulations', 'persona_group_id', nullable=False)
     op.create_foreign_key(
         'fk_simulations_persona_group_id',

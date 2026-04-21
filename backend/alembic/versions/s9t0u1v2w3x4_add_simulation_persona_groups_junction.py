@@ -46,10 +46,10 @@ def upgrade() -> None:
         )
 
     # 3. Make persona_group_id nullable and change FK to SET NULL (not CASCADE)
-    op.drop_constraint('simulations_persona_group_id_fkey', 'simulations', type_='foreignkey')
+    op.drop_constraint('fk_simulations_persona_group_id', 'simulations', type_='foreignkey')
     op.alter_column('simulations', 'persona_group_id', nullable=True)
     op.create_foreign_key(
-        'simulations_persona_group_id_fkey',
+        'fk_simulations_persona_group_id',
         'simulations', 'persona_groups',
         ['persona_group_id'], ['id'],
         ondelete='SET NULL',
@@ -71,10 +71,10 @@ def downgrade() -> None:
         WHERE s.id = spg.simulation_id AND s.persona_group_id IS NULL
     """))
 
-    op.drop_constraint('simulations_persona_group_id_fkey', 'simulations', type_='foreignkey')
+    op.drop_constraint('fk_simulations_persona_group_id', 'simulations', type_='foreignkey')
     op.alter_column('simulations', 'persona_group_id', nullable=False)
     op.create_foreign_key(
-        'simulations_persona_group_id_fkey',
+        'fk_simulations_persona_group_id',
         'simulations', 'persona_groups',
         ['persona_group_id'], ['id'],
         ondelete='CASCADE',

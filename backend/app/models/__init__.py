@@ -9,6 +9,7 @@ from app.models.persona import Persona  # noqa: F401
 from app.models.briefing import Briefing  # noqa: F401
 from app.models.simulation import Simulation  # noqa: F401
 from app.models.simulation_briefing import SimulationBriefing  # noqa: F401
+from app.models.simulation_persona_group import SimulationPersonaGroup  # noqa: F401
 from app.models.simulation_result import SimulationResult  # noqa: F401
 from app.models.idi_message import IDIMessage  # noqa: F401
 from app.models.reproducibility import ReproducibilityStudy, ReproducibilityRun  # noqa: F401

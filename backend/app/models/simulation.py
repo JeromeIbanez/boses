@@ -13,7 +13,7 @@ class Simulation(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
-    persona_group_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("persona_groups.id", ondelete="CASCADE"), nullable=False)
+    persona_group_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("persona_groups.id", ondelete="SET NULL"), nullable=True)
     prompt_question: Mapped[str | None] = mapped_column(Text, nullable=True)
     simulation_type: Mapped[str] = mapped_column(String(50), default="concept_test", nullable=False)
     idi_script_text: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -28,7 +28,10 @@ class Simulation(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     project: Mapped["Project"] = relationship(back_populates="simulations")
-    persona_group: Mapped["PersonaGroup"] = relationship()
+    persona_group: Mapped["PersonaGroup | None"] = relationship()
+    persona_groups: Mapped[list["PersonaGroup"]] = relationship(
+        "PersonaGroup", secondary="simulation_persona_groups", lazy="selectin"
+    )
     briefings: Mapped[list["Briefing"]] = relationship(
         "Briefing", secondary="simulation_briefings", back_populates="simulations"
     )

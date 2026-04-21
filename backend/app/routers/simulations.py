@@ -89,9 +89,22 @@ def create_simulation(
 
     initial_status = "active" if body.simulation_type == "idi_manual" else "pending"
 
+    # Validate all persona groups exist, belong to this project, and are complete
+    from app.models.persona_group import PersonaGroup as PersonaGroupModel
+    groups = db.execute(
+        select(PersonaGroupModel).where(PersonaGroupModel.id.in_(body.persona_group_ids))
+    ).scalars().all()
+    if len(groups) != len(body.persona_group_ids):
+        raise HTTPException(status_code=422, detail="One or more persona group IDs not found")
+    for g in groups:
+        if str(g.project_id) != project_id:
+            raise HTTPException(status_code=403, detail="Persona group does not belong to this project")
+        if g.generation_status != "complete":
+            raise HTTPException(status_code=422, detail=f"Persona group '{g.name}' has not finished generating personas yet")
+
     simulation = Simulation(
         project_id=project_id,
-        persona_group_id=body.persona_group_id,
+        persona_group_id=body.persona_group_ids[0],  # legacy compat — first group
         prompt_question=body.prompt_question,
         simulation_type=body.simulation_type,
         idi_script_text=body.idi_script_text,
@@ -101,6 +114,8 @@ def create_simulation(
     )
     db.add(simulation)
     db.flush()
+
+    simulation.persona_groups = groups
 
     if body.briefing_ids:
         from app.models.briefing import Briefing as BriefingModel
@@ -597,6 +612,7 @@ def create_reliability_check(
         )
         db.add(repeat_sim)
         db.flush()
+        repeat_sim.persona_groups = list(source.persona_groups)
         repeat_sim.briefings = list(source.briefings)
 
         repro_run = ReproducibilityRun(

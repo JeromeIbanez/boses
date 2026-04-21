@@ -133,7 +133,8 @@ export interface SurveySchema {
 export interface Simulation {
   id: string;
   project_id: string;
-  persona_group_id: string;
+  persona_group_id: string | null;
+  persona_group_ids: string[];
   briefing_ids: string[];
   prompt_question: string | null;
   simulation_type: "concept_test" | "idi_ai" | "idi_manual" | "survey" | "focus_group" | "conjoint";

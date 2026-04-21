@@ -109,10 +109,15 @@ def compute_convergence(
     from app.models.simulation import Simulation
     from app.models.simulation_result import SimulationResult
 
-    query = select(Simulation).where(
-        Simulation.project_id == project_id,
-        Simulation.persona_group_id == persona_group_id,
-        Simulation.status == "complete",
+    from app.models.simulation_persona_group import SimulationPersonaGroup
+    query = (
+        select(Simulation)
+        .join(SimulationPersonaGroup, SimulationPersonaGroup.simulation_id == Simulation.id)
+        .where(
+            Simulation.project_id == project_id,
+            SimulationPersonaGroup.persona_group_id == persona_group_id,
+            Simulation.status == "complete",
+        )
     )
     if briefing_id:
         from app.models.simulation_briefing import SimulationBriefing

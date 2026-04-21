@@ -124,17 +124,17 @@ def maybe_notify_slack(simulation_id: str, status: str) -> None:
             if not company or not company.slack_webhook_url:
                 return
 
-            # Count personas from the persona group
+            # Count personas across all linked groups
             persona_count = 0
-            if simulation.persona_group_id:
-                from app.models.persona import Persona
-                from sqlalchemy import select, func
-                result = db.execute(
-                    select(func.count()).where(
-                        Persona.persona_group_id == simulation.persona_group_id
-                    )
-                )
-                persona_count = result.scalar() or 0
+            from app.models.persona import Persona
+            from sqlalchemy import select, func
+            group_ids = [g.id for g in (simulation.persona_groups or [])]
+            if not group_ids and simulation.persona_group_id:
+                group_ids = [simulation.persona_group_id]
+            if group_ids:
+                persona_count = db.execute(
+                    select(func.count()).where(Persona.persona_group_id.in_(group_ids))
+                ).scalar() or 0
 
             notify_simulation_complete(
                 webhook_url=company.slack_webhook_url,

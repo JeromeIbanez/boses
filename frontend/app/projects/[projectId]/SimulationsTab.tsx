@@ -80,7 +80,7 @@ const SIM_TYPES: { id: SimType; label: string; description: string; icon: React.
 interface WizardState {
   step: number;
   simType: SimType;
-  groupId: string;
+  groupIds: string[];
   briefingIds: string[];
   question: string;
   scriptMode: "text" | "file";
@@ -98,7 +98,7 @@ interface WizardState {
 const INITIAL_WIZARD_STATE: WizardState = {
   step: 0,
   simType: "concept_test",
-  groupId: "",
+  groupIds: [],
   briefingIds: [],
   question: "",
   scriptMode: "text",
@@ -120,7 +120,7 @@ type WizardAction =
   | { type: "RESET" }
   | { type: "SET_STEP"; payload: number }
   | { type: "SET_SIM_TYPE"; payload: SimType }
-  | { type: "SET_GROUP_ID"; payload: string }
+  | { type: "SET_GROUP_IDS"; payload: string[] }
   | { type: "SET_BRIEFING_IDS"; payload: string[] }
   | { type: "SET_QUESTION"; payload: string }
   | { type: "SET_SCRIPT_MODE"; payload: "text" | "file" }
@@ -139,7 +139,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
     case "RESET": return INITIAL_WIZARD_STATE;
     case "SET_STEP": return { ...state, step: action.payload };
     case "SET_SIM_TYPE": return { ...state, simType: action.payload };
-    case "SET_GROUP_ID": return { ...state, groupId: action.payload };
+    case "SET_GROUP_IDS": return { ...state, groupIds: action.payload, idiPersonaId: "" };
     case "SET_BRIEFING_IDS": return { ...state, briefingIds: action.payload };
     case "SET_QUESTION": return { ...state, question: action.payload };
     case "SET_SCRIPT_MODE": return { ...state, scriptMode: action.payload };
@@ -166,7 +166,7 @@ export default function SimulationsTab({ projectId }: Props) {
   const [confirmPending, setConfirmPending] = useState<{ message: string; action: () => void } | null>(null);
 
   const [
-    { step, simType, groupId, briefingIds, question, scriptMode, scriptText, scriptFile,
+    { step, simType, groupIds, briefingIds, question, scriptMode, scriptText, scriptFile,
       idiPersonaId, surveyFile, surveySimId, parsedQuestions, conjointAttributes, conjointNTasks, conjointSimId },
     dispatch,
   ] = useReducer(wizardReducer, INITIAL_WIZARD_STATE);
@@ -189,12 +189,12 @@ export default function SimulationsTab({ projectId }: Props) {
   });
 
   const { data: personas } = useQuery({
-    queryKey: ["personas", groupId],
-    queryFn: () => {
-      const g = groups?.find(g => g.id === groupId);
-      return g ? getPersonas(projectId, groupId) : Promise.resolve([]);
+    queryKey: ["personas", ...groupIds],
+    queryFn: async () => {
+      const results = await Promise.all(groupIds.map(id => getPersonas(projectId, id)));
+      return results.flat();
     },
-    enabled: open && simType === "idi_manual" && !!groupId,
+    enabled: open && simType === "idi_manual" && groupIds.length > 0,
   });
 
   const deleteSim = useMutation({
@@ -218,7 +218,7 @@ export default function SimulationsTab({ projectId }: Props) {
     mutationFn: async () => {
       const sim = await createSimulation(projectId, {
         simulation_type: "conjoint",
-        persona_group_id: groupId,
+        persona_group_ids: groupIds,
         briefing_ids: briefingIds,
         prompt_question: question || "the product",
       });
@@ -233,7 +233,7 @@ export default function SimulationsTab({ projectId }: Props) {
     mutationFn: async () => {
       const sim = await createSimulation(projectId, {
         simulation_type: "survey",
-        persona_group_id: groupId,
+        persona_group_ids: groupIds,
         briefing_ids: briefingIds,
       });
       const fd = new FormData();
@@ -266,7 +266,7 @@ export default function SimulationsTab({ projectId }: Props) {
 
       const body: Parameters<typeof createSimulation>[1] = {
         simulation_type: simType,
-        persona_group_id: groupId,
+        persona_group_ids: groupIds,
         briefing_ids: briefingIds,
       };
 
@@ -310,7 +310,7 @@ export default function SimulationsTab({ projectId }: Props) {
   const totalSteps = simType === "survey" || simType === "conjoint" ? 5 : 4;
   const canProceed = () => {
     if (step === 0) return !!simType;
-    if (step === 1) return !!groupId;
+    if (step === 1) return groupIds.length > 0;
     if (step === 2) return simType !== "concept_test" || briefingIds.length > 0;
     if (step === 3) {
       if (simType === "concept_test") return !!question.trim();
@@ -420,18 +420,37 @@ export default function SimulationsTab({ projectId }: Props) {
             </div>
           )}
 
-          {/* Step 1: Persona group */}
+          {/* Step 1: Persona groups (multi-select) */}
           {step === 1 && (
             <>
-              <p className="text-sm text-zinc-500">Select the persona group to simulate against.</p>
-              <Select label="Persona Group" value={groupId} onChange={e => { dispatch({ type: "SET_GROUP_ID", payload: e.target.value }); dispatch({ type: "SET_IDI_PERSONA_ID", payload: "" }); }}>
-                <option value="">Select a group…</option>
-                {groups?.filter(g => g.generation_status === "complete").map(g => (
-                  <option key={g.id} value={g.id}>{g.name} ({g.persona_count} personas)</option>
-                ))}
-              </Select>
-              {groups && groups.filter(g => g.generation_status === "complete").length === 0 && (
+              <p className="text-sm text-zinc-500">Select one or more persona groups. Personas from all selected groups will be included in the simulation.</p>
+              {groups && groups.filter(g => g.generation_status === "complete").length === 0 ? (
                 <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">No groups with generated personas yet.</p>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {groups?.filter(g => g.generation_status === "complete").map(g => {
+                    const checked = groupIds.includes(g.id);
+                    return (
+                      <label key={g.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${checked ? "border-zinc-800 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300"}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={e => dispatch({ type: "SET_GROUP_IDS", payload: e.target.checked ? [...groupIds, g.id] : groupIds.filter(id => id !== g.id) })}
+                          className="shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-zinc-800 font-medium truncate">{g.name}</p>
+                          <p className="text-xs text-zinc-400">{g.persona_count} personas</p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+              {groupIds.length > 0 && (
+                <p className="text-xs text-zinc-500 bg-zinc-50 px-3 py-2 rounded-md">
+                  {groupIds.reduce((sum, id) => sum + (groups?.find(g => g.id === id)?.persona_count ?? 0), 0)} total personas selected across {groupIds.length} group{groupIds.length !== 1 ? "s" : ""}
+                </p>
               )}
             </>
           )}
@@ -561,8 +580,8 @@ export default function SimulationsTab({ projectId }: Props) {
                       <option key={p.id} value={p.id}>{p.full_name} — {p.age}, {p.occupation}</option>
                     ))}
                   </Select>
-                  {!personas?.length && groupId && (
-                    <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">No personas in this group yet.</p>
+                  {!personas?.length && groupIds.length > 0 && (
+                    <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">No personas in the selected group(s) yet.</p>
                   )}
                 </>
               )}
@@ -705,7 +724,7 @@ export default function SimulationsTab({ projectId }: Props) {
                 ))}
               </div>
               <div className="text-xs text-zinc-400 bg-zinc-50 rounded-lg px-3 py-2">
-                Estimated {conjointNTasks * (groups?.find(g => g.id === groupId)?.persona_count ?? 0)} total choice observations across all personas.
+                Estimated {conjointNTasks * groupIds.reduce((sum, id) => sum + (groups?.find(g => g.id === id)?.persona_count ?? 0), 0)} total choice observations across all personas.
               </div>
             </div>
           )}

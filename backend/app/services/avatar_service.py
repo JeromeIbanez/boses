@@ -13,6 +13,7 @@ Storage (local dev fallback): {UPLOAD_DIR}/avatars/{persona_id}.png
 import base64
 import logging
 import os
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -111,47 +112,61 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
     Generate a gpt-image-1 headshot for the persona and save it locally.
     Returns the URL path (e.g. '/uploads/avatars/<id>.png') or None on failure.
     Never raises — avatar failure must not block persona generation.
+    Retries up to 3 times on transient network errors (DNS, connection reset).
     """
-    try:
-        prompt = _build_prompt(persona)
+    import httpx
 
-        response = client.images.generate(
-            model="gpt-image-1",
-            prompt=prompt,
-            size="1024x1024",
-            quality="medium",
-            n=1,
-        )
+    _TRANSIENT = (httpx.ConnectError, httpx.RemoteProtocolError, httpx.TimeoutException, OSError)
+    max_attempts = 3
 
-        b64_data = response.data[0].b64_json
-        if not b64_data:
-            logger.warning(f"Empty b64 response for persona {persona.id}")
+    for attempt in range(1, max_attempts + 1):
+        try:
+            prompt = _build_prompt(persona)
+
+            response = client.images.generate(
+                model="gpt-image-1",
+                prompt=prompt,
+                size="1024x1024",
+                quality="medium",
+                n=1,
+            )
+
+            b64_data = response.data[0].b64_json
+            if not b64_data:
+                logger.warning(f"Empty b64 response for persona {persona.id}")
+                return None
+
+            image_bytes = base64.b64decode(b64_data)
+
+            if settings.supabase_configured:
+                key = f"avatars/{persona.id}.png"
+                upload_url = f"{settings.SUPABASE_URL}/storage/v1/object/{settings.SUPABASE_AVATARS_BUCKET}/{key}"
+                headers = {
+                    "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+                    "Content-Type": "image/png",
+                }
+                resp = httpx.put(upload_url, content=image_bytes, headers=headers)
+                resp.raise_for_status()
+                return f"{settings.SUPABASE_URL}/storage/v1/object/public/{settings.SUPABASE_AVATARS_BUCKET}/{key}"
+            else:
+                avatars_dir = os.path.join(settings.UPLOAD_DIR, "avatars")
+                os.makedirs(avatars_dir, exist_ok=True)
+                file_path = os.path.join(avatars_dir, f"{persona.id}.png")
+                with open(file_path, "wb") as f:
+                    f.write(image_bytes)
+                return f"/uploads/avatars/{persona.id}.png"
+
+        except _TRANSIENT as e:
+            if attempt < max_attempts:
+                delay = 2 ** attempt
+                logger.warning(f"Avatar transient error for {persona.id} (attempt {attempt}/{max_attempts}), retrying in {delay}s: {e}")
+                time.sleep(delay)
+            else:
+                logger.error(f"Avatar generation failed for persona {persona.id} after {max_attempts} attempts: {type(e).__name__}: {e}")
+                return None
+        except Exception as e:
+            logger.error(f"Avatar generation failed for persona {persona.id}: {type(e).__name__}: {e}")
             return None
-
-        image_bytes = base64.b64decode(b64_data)
-
-        if settings.supabase_configured:
-            import httpx
-            key = f"avatars/{persona.id}.png"
-            upload_url = f"{settings.SUPABASE_URL}/storage/v1/object/{settings.SUPABASE_AVATARS_BUCKET}/{key}"
-            headers = {
-                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
-                "Content-Type": "image/png",
-            }
-            resp = httpx.put(upload_url, content=image_bytes, headers=headers)
-            resp.raise_for_status()
-            return f"{settings.SUPABASE_URL}/storage/v1/object/public/{settings.SUPABASE_AVATARS_BUCKET}/{key}"
-        else:
-            avatars_dir = os.path.join(settings.UPLOAD_DIR, "avatars")
-            os.makedirs(avatars_dir, exist_ok=True)
-            file_path = os.path.join(avatars_dir, f"{persona.id}.png")
-            with open(file_path, "wb") as f:
-                f.write(image_bytes)
-            return f"/uploads/avatars/{persona.id}.png"
-
-    except Exception as e:
-        logger.error(f"Avatar generation failed for persona {persona.id}: {type(e).__name__}: {e}")
-        return None
 
 
 def _generate_and_save(client: OpenAI, persona_id: str) -> None:

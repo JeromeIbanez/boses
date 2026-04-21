@@ -1,3 +1,4 @@
+import json
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -34,40 +35,24 @@ def get_personas_for_simulation(simulation: "Simulation", db) -> list["Persona"]
 
 
 def _parse_individual_response(text: str) -> dict:
-    sections = {
-        "reaction": "",
-        "sentiment": "Neutral",
-        "reasoning": "",
-        "notable_quote": "",
-        "key_themes": [],
-    }
-    current = None
-    for line in text.splitlines():
-        stripped = line.strip()
-        upper = stripped.upper()
-        if upper.startswith("1. REACTION:") or upper.startswith("REACTION:"):
-            current = "reaction"
-            sections["reaction"] = stripped.split(":", 1)[-1].strip()
-        elif upper.startswith("2. SENTIMENT:") or upper.startswith("SENTIMENT:"):
-            current = "sentiment"
-            val = stripped.split(":", 1)[-1].strip().capitalize()
-            sections["sentiment"] = val if val in ("Positive", "Neutral", "Negative") else "Neutral"
-        elif upper.startswith("3. REASONING:") or upper.startswith("REASONING:"):
-            current = "reasoning"
-            sections["reasoning"] = stripped.split(":", 1)[-1].strip()
-        elif upper.startswith("4. NOTABLE QUOTE:") or upper.startswith("NOTABLE QUOTE:"):
-            current = "notable_quote"
-            sections["notable_quote"] = stripped.split(":", 1)[-1].strip()
-        elif upper.startswith("5. KEY THEMES:") or upper.startswith("KEY THEMES:"):
-            current = "key_themes"
-            raw_themes = stripped.split(":", 1)[-1].strip()
-            sections["key_themes"] = [t.strip() for t in raw_themes.split(",") if t.strip()]
-        elif stripped and current:
-            if current == "key_themes":
-                sections["key_themes"].extend([t.strip() for t in stripped.split(",") if t.strip()])
-            else:
-                sections[current] += " " + stripped
-    return sections
+    try:
+        data = json.loads(text)
+        sentiment = str(data.get("sentiment", "Neutral")).capitalize()
+        if sentiment not in ("Positive", "Neutral", "Negative"):
+            sentiment = "Neutral"
+        themes = data.get("key_themes", [])
+        if isinstance(themes, str):
+            themes = [t.strip() for t in themes.split(",") if t.strip()]
+        return {
+            "reaction": str(data.get("reaction", "")),
+            "sentiment": sentiment,
+            "reasoning": str(data.get("reasoning", "")),
+            "notable_quote": str(data.get("notable_quote", "")),
+            "key_themes": themes,
+        }
+    except (json.JSONDecodeError, AttributeError):
+        logger.warning("Failed to parse concept test response as JSON; returning empty result")
+        return {"reaction": "", "sentiment": "Neutral", "reasoning": "", "notable_quote": "", "key_themes": []}
 
 
 def _parse_aggregate_response(text: str) -> dict:
@@ -133,6 +118,7 @@ def _concept_test_persona_worker(
             {"role": "user", "content": user_prompt},
         ],
         temperature=0.9,
+        response_format={"type": "json_object"},
     )
     raw_text = response.choices[0].message.content or ""
     return persona, _parse_individual_response(raw_text)

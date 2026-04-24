@@ -206,6 +206,28 @@ export default function PersonaGroupPage() {
         </div>
       )}
 
+      {/* Generation metadata — shown once generation is complete */}
+      {group.generation_status === "complete" && group.generation_metadata && (
+        <div className="mb-6 border border-zinc-100 rounded-lg px-4 py-3 bg-zinc-50 text-xs text-zinc-500 space-y-1.5">
+          <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-medium mb-2">Generation Parameters</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1.5">
+            <div><span className="text-zinc-400">Model</span><span className="ml-1.5 font-mono text-zinc-600">{group.generation_metadata.model}</span></div>
+            <div><span className="text-zinc-400">Grounding version</span><span className="ml-1.5 font-mono text-zinc-600">{group.generation_metadata.grounding_data_version}</span></div>
+            <div><span className="text-zinc-400">Reddit signals</span><span className="ml-1.5 text-zinc-600">{group.generation_metadata.reddit_signals_used ? "Yes" : "No"}</span></div>
+            <div><span className="text-zinc-400">Ethnography</span><span className="ml-1.5 text-zinc-600">{group.generation_metadata.ethnography_used ? "Yes" : "No"}</span></div>
+            {group.generation_metadata.grounding_sources.length > 0 && (
+              <div className="col-span-2 sm:col-span-3">
+                <span className="text-zinc-400">Sources</span>
+                <span className="ml-1.5 text-zinc-600">{group.generation_metadata.grounding_sources.join(" · ")}</span>
+              </div>
+            )}
+          </div>
+          {group.generation_metadata.reddit_signals_used && group.generation_metadata.reddit_caveat && (
+            <p className="text-[10px] text-zinc-400 italic pt-1 border-t border-zinc-100">{group.generation_metadata.reddit_caveat}</p>
+          )}
+        </div>
+      )}
+
       {avatarsLoading && (
         <div className="flex items-center gap-2 text-xs text-zinc-400 mb-4">
           <Spinner className="h-3 w-3 border-zinc-300 border-t-zinc-500" />

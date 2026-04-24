@@ -49,8 +49,37 @@ async def _cleanup_refresh_tokens() -> None:
             logging.getLogger(__name__).error("Token cleanup failed: %s", e)
 
 
+def _check_grounding_data_staleness() -> None:
+    """Warn if grounding_data.json hasn't been updated in over 90 days."""
+    import json
+    from pathlib import Path
+    _log = logging.getLogger(__name__)
+    try:
+        path = Path(__file__).parent / "data" / "grounding_data.json"
+        meta = json.loads(path.read_text()).get("_meta", {})
+        last_updated_str = meta.get("last_updated")
+        if not last_updated_str:
+            _log.warning("grounding_data.json has no _meta.last_updated field")
+            return
+        last_updated = datetime.strptime(last_updated_str, "%Y-%m-%d")
+        age_days = (datetime.utcnow() - last_updated).days
+        if age_days > 90:
+            msg = (
+                f"grounding_data.json is {age_days} days old (last_updated={last_updated_str}). "
+                "Run scripts/fetch_world_bank.py and update DataReportal figures."
+            )
+            _log.warning(msg)
+            if settings.SENTRY_DSN:
+                sentry_sdk.capture_message(msg, level="warning")
+        else:
+            _log.info("grounding_data.json is %d days old — OK", age_days)
+    except Exception as e:
+        _log.error("Failed to check grounding data staleness: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _check_grounding_data_staleness()
     task = asyncio.create_task(_cleanup_refresh_tokens())
     yield
     task.cancel()
@@ -104,7 +133,7 @@ def health():
 
 
 # Routers registered after models are defined
-from app.routers import projects, persona_groups, personas, briefings, simulations, library, auth, internal, settings as settings_router, share, admin_personas, admin  # noqa: E402
+from app.routers import projects, persona_groups, personas, briefings, simulations, library, auth, internal, settings as settings_router, share, admin_personas, admin, prediction_outcomes  # noqa: E402
 
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(projects.router, prefix="/api/v1")
@@ -112,6 +141,7 @@ app.include_router(persona_groups.router, prefix="/api/v1")
 app.include_router(personas.router, prefix="/api/v1")
 app.include_router(briefings.router, prefix="/api/v1")
 app.include_router(simulations.router, prefix="/api/v1")
+app.include_router(prediction_outcomes.router, prefix="/api/v1")
 app.include_router(library.router, prefix="/api/v1")
 app.include_router(internal.router, prefix="/api/v1")
 app.include_router(settings_router.router, prefix="/api/v1")

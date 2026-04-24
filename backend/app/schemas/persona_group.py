@@ -46,6 +46,7 @@ class PersonaGroupResponse(BaseModel):
     persona_count: int
     generation_status: str
     generation_progress: Optional[Any] = None
+    generation_metadata: Optional[Any] = None
     created_at: datetime
     updated_at: datetime
 

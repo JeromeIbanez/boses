@@ -199,6 +199,45 @@ export const createReliabilityCheck = (projectId: string, simId: string, nRuns =
 export const getReliabilityCheck = (projectId: string, simId: string) =>
   request<ReliabilityCheck>(`/projects/${projectId}/simulations/${simId}/reliability-check`);
 
+// Prediction commitments
+export interface PredictionOutcome {
+  id: string;
+  simulation_id: string;
+  project_id: string;
+  created_by_user_id: string | null;
+  predicted_sentiment: string | null;
+  predicted_themes: string[] | null;
+  kpi_description: string;
+  outcome_due_date: string;
+  actual_outcome_description: string | null;
+  directional_match: boolean | null;
+  notes: string | null;
+  status: "pending" | "received";
+  created_at: string;
+  updated_at: string;
+}
+export const getPredictionCommitment = (projectId: string, simId: string) =>
+  request<PredictionOutcome | null>(`/projects/${projectId}/simulations/${simId}/prediction-commitment`);
+export const createPredictionCommitment = (projectId: string, simId: string, body: {
+  kpi_description: string;
+  outcome_due_date: string;
+  predicted_sentiment?: string | null;
+  predicted_themes?: string[] | null;
+}) =>
+  request<PredictionOutcome>(`/projects/${projectId}/simulations/${simId}/prediction-commitment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+export const updatePredictionCommitment = (projectId: string, simId: string, body: {
+  actual_outcome_description?: string;
+  directional_match?: boolean;
+  notes?: string;
+}) =>
+  request<PredictionOutcome>(`/projects/${projectId}/simulations/${simId}/prediction-commitment`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+
 // Cross-simulation convergence
 export const getConvergence = (projectId: string, personaGroupId: string, briefingId?: string | null) => {
   const qs = new URLSearchParams({ persona_group_id: personaGroupId });

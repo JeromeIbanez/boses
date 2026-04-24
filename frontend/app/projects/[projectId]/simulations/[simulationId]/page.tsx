@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText, BarChart2, Share2, Check, X } from "lucide-react";
 import { getSimulation, getSimulationResults, abortSimulation, generateShareLink, revokeShareLink, getReliabilityCheck, getPersonas } from "@/lib/api";
 import ConvergencePanel from "@/components/simulations/ConvergencePanel";
+import PredictionCommitmentPanel from "@/components/simulations/PredictionCommitmentPanel";
 import ReliabilityPanel from "@/components/simulations/ReliabilityPanel";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
@@ -1373,6 +1374,12 @@ export default function SimulationResultsPage() {
               briefingId={simulation.briefing_ids?.[0] ?? null}
             />
           )}
+          <PredictionCommitmentPanel
+            projectId={projectId}
+            simulationId={simulationId}
+            predictedSentiment={aggregate?.sentiment ?? null}
+            predictedThemes={aggregate?.top_themes ?? null}
+          />
         </div>
       )}
 

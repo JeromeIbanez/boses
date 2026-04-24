@@ -30,10 +30,28 @@ interface Props {
   simulationId: string;
 }
 
+function confidenceLabel(pct: number): { text: string; color: string } {
+  if (pct >= 80) return {
+    text: "Results are highly stable across independent runs.",
+    color: "text-emerald-600",
+  };
+  if (pct >= 60) return {
+    text: "Core findings are consistent; specific percentages may vary ±10%.",
+    color: "text-amber-600",
+  };
+  if (pct >= 40) return {
+    text: "Notable variation between runs. Treat themes as directional only.",
+    color: "text-orange-600",
+  };
+  return {
+    text: "High variability. Findings are unreliable — consider a larger persona group.",
+    color: "text-red-600",
+  };
+}
+
 function ConfidenceBadge({ score }: { score: number }) {
   const pct = Math.round(score * 100);
-  const color = pct >= 80 ? "text-emerald-700" : pct >= 60 ? "text-amber-600" : "text-red-500";
-  const bg = pct >= 80 ? "bg-emerald-50 border-emerald-100" : pct >= 60 ? "bg-amber-50 border-amber-100" : "bg-red-50 border-red-100";
+  const color = pct >= 80 ? "text-emerald-700" : pct >= 60 ? "text-amber-600" : pct >= 40 ? "text-orange-600" : "text-red-500";
   return (
     <span className={`text-2xl font-bold ${color}`}>{pct}%</span>
   );
@@ -136,8 +154,15 @@ export default function ReliabilityPanel({ projectId, simulationId }: Props) {
 
       {data.confidence_score != null ? (
         <>
-          <p className="text-xs text-zinc-500">
-            Confidence score based on {data.n_runs} repeat runs.
+          {(() => {
+            const pct = Math.round(data.confidence_score! * 100);
+            const { text, color } = confidenceLabel(pct);
+            return (
+              <p className={`text-xs font-medium ${color}`}>{text}</p>
+            );
+          })()}
+          <p className="text-xs text-zinc-400">
+            Based on {data.n_runs} independent repeat runs.
           </p>
 
           <div className="space-y-2">

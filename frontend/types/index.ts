@@ -26,6 +26,16 @@ export interface PersonaGroup {
     current_name: string | null;
     completed: string[];
   } | null;
+  generation_metadata: {
+    model: string;
+    prompt_version: string;
+    grounding_data_version: string;
+    grounding_sources: string[];
+    reddit_signals_used: boolean;
+    reddit_caveat: string | null;
+    ethnography_used: boolean;
+    generated_at: string;
+  } | null;
   created_at: string;
   updated_at: string;
 }

@@ -212,6 +212,34 @@ export default function SurveyExportPage() {
         </section>
       )}
 
+      {/* Methodology Transparency */}
+      <section className="mb-10 border-t border-zinc-200 pt-8">
+        <h2 className="text-xs font-semibold text-zinc-800 uppercase tracking-wide mb-4">Methodology</h2>
+        <div className="space-y-3 text-xs text-zinc-600 leading-relaxed">
+          <p>
+            <span className="font-semibold text-zinc-700">Persona generation.</span>{" "}
+            Survey respondents are synthetic consumer personas generated via a two-pass AI pipeline anchored to authoritative demographic data (World Bank, national statistics bureaus, DataReportal). Each persona is grounded with real population distributions for age, income, occupation, and location in the target market. Behavioral specificity is enforced: generic descriptions are prohibited in the generation prompt, and each persona must include concrete brand preferences, media habits, and pain points with specific contextual detail.
+          </p>
+          <p>
+            <span className="font-semibold text-zinc-700">Psychographic framing.</span>{" "}
+            Personas are classified using the VALS psychographic framework (Innovator, Thinker, Achiever, Experiencer, Believer, Striver, Maker, Survivor) and scored on the Big Five personality dimensions (OCEAN). These scores are derived from the qualitative profile — they are model-estimated constructs, not validated psychometric instrument scores.
+          </p>
+          <p>
+            <span className="font-semibold text-zinc-700">Diversity enforcement.</span>{" "}
+            Each persona batch includes at minimum one skeptical, one aspirational, and one pragmatic archetype. Personas are required to include two or more shadow personality traits to prevent uniformly positive profiles. Peer-awareness is applied during generation so personas do not duplicate each other's routines or behaviors.
+          </p>
+          <p>
+            <span className="font-semibold text-zinc-700">Limitations.</span>{" "}
+            Synthetic personas are not a statistically representative sample. Sentiment ratios (e.g., "7 of 10 personas reacted positively") reflect the distribution of consumer archetypes tested, not population-level proportions. Social desirability bias may cause simulated responses to be more articulate than real consumer responses. Reddit-sourced language signals skew toward urban, English-speaking, digitally active consumers and are used for linguistic texture only — not statistical representation.
+          </p>
+          <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-3 mt-2">
+            <p className="text-zinc-500 italic">
+              Boses simulation outputs are statistically grounded and internally consistent. They are validated for demographic representativeness and reproducibility across independent runs. Findings should be treated as directional intelligence. They are not a substitute for primary research where high-stakes decisions require population-level precision.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <style>{`
         @media print {
           body { -webkit-print-color-adjust: exact; }

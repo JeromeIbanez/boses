@@ -149,6 +149,11 @@ def get_country_key(location: str) -> str | None:
     return None
 
 
+def get_grounding_version() -> str:
+    """Return the last_updated date from grounding data metadata, or 'unknown'."""
+    return _load_data().get("_meta", {}).get("last_updated", "unknown")
+
+
 def get_grounding_stats(location: str) -> dict[str, Any] | None:
     """
     Return the full grounding stats dict for a location, or None if not found.

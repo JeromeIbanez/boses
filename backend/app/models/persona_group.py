@@ -27,6 +27,7 @@ class PersonaGroup(Base):
     persona_count: Mapped[int] = mapped_column(Integer, default=5)
     generation_status: Mapped[str] = mapped_column(String(50), default="pending")
     generation_progress: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    generation_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

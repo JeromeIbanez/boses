@@ -35,6 +35,9 @@ class Persona(Base):
     aspirational_identity: Mapped[str | None] = mapped_column(Text, nullable=True)
     digital_behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    dominant_brand_stance: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    ocean_profile: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     persona_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     day_in_the_life: Mapped[str | None] = mapped_column(Text, nullable=True)

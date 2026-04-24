@@ -88,7 +88,7 @@ def _survey_persona_worker(persona, briefing_text: str, questions: list) -> tupl
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        temperature=0.85,
+        temperature=0.70,
     )
     raw = response.choices[0].message.content
     answers = _parse_json(raw, [])

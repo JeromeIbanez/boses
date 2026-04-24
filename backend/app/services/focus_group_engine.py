@@ -75,7 +75,7 @@ def _persona_round1_response(client, system_prompt: str, opening: str) -> str:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": opening},
         ],
-        temperature=0.9,
+        temperature=0.75,
     )
     return (response.choices[0].message.content or "").strip()
 
@@ -98,7 +98,7 @@ def _persona_round2_response(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        temperature=0.9,
+        temperature=0.75,
     )
     return (response.choices[0].message.content or "").strip()
 

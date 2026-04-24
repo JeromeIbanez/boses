@@ -173,7 +173,7 @@ def _idi_persona_worker(persona, briefing_text: str, questions: list) -> tuple:
         response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=messages,
-            temperature=0.85,
+            temperature=0.70,
         )
         answer = response.choices[0].message.content or ""
         messages.append({"role": "assistant", "content": answer})

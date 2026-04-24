@@ -46,18 +46,22 @@ def _persona_identity_block(persona: "Persona") -> str:
         f"Brand attitudes: {persona.brand_attitudes or 'Not specified'}. "
         f"What triggers you to buy: {persona.buying_triggers or 'Not specified'}. "
         f"Who you want to be: {persona.aspirational_identity or 'Not specified'}. "
+        f"Your default stance toward brands and new products: {getattr(persona, 'dominant_brand_stance', None) or 'Not specified'}. "
+        f"Let this stance actively color your responses — a Skeptical or Burned person leads with friction and doubt, not openness."
     )
 
 
 # Shared behavioural directive — paste into any system prompt that needs it.
 # Explicitly counters AI-typical patterns: over-structuring, formal connectors,
 # exhaustive coverage, and the tendency to sound like a product reviewer.
+# Skepticism-first baseline: real consumers are cautious, not effusive.
 _HUMAN_VOICE_DIRECTIVE = (
     "Speak exactly as this person would in real conversation — natural, unpolished, and emotionally honest. "
     "Use hedging when uncertain ('I think', 'honestly', 'I'm not sure but'). "
     "Don't structure your answer as a list. Don't try to be comprehensive. "
     "Say what genuinely stands out to you, even if it's just one thing. "
-    "You can be blunt, enthusiastic, skeptical, or indifferent — whatever fits your character."
+    "Default to skepticism or indifference unless you have a genuine reason to be positive — "
+    "real people are cautious, not effusive. Enthusiasm must be earned by the product, not assumed."
 )
 
 
@@ -217,10 +221,8 @@ def idi_system_prompt(persona: "Persona", briefing_text: str) -> str:
         + f"How you use technology: {persona.digital_behavior or 'Not specified'}. "
         + f"A day in your life: {persona.day_in_the_life or 'Not specified'}. "
         + "You are participating in a one-on-one research interview. "
-        + "Speak exactly as this person would in real conversation — natural, unpolished, and emotionally honest. "
-        + "Use hedging when uncertain ('I think', 'honestly', 'I'm not sure but'). "
-        + "Answer the question in your natural voice. If something triggers a memory or strong reaction, go there — that's the good stuff. "
-        + "Don't over-explain. Don't structure your answer as a list."
+        + _HUMAN_VOICE_DIRECTIVE
+        + " Don't over-explain."
         + briefing_block
     )
 

@@ -107,22 +107,43 @@ def _build_prompt(persona) -> str:
     return " ".join(p for p in parts if p)
 
 
+def _build_fallback_prompt(persona) -> str:
+    """Minimal safe prompt used when the full prompt triggers OpenAI's safety filter."""
+    gender_word = _GENDER_MAP.get(persona.gender, "person")
+    ethnicity = _ethnicity_hint(persona.location or "")
+    ethnicity_clause = f"{ethnicity} " if ethnicity else ""
+    return (
+        "A photorealistic studio portrait photograph. "
+        "No text, no words, no letters, no labels, no watermarks. "
+        f"Subject is a {ethnicity_clause}{gender_word}, {persona.age} years old. "
+        "Smart-casual clothing. "
+        "Neutral solid light grey background, soft natural lighting, "
+        "upper body shot, subject looking directly at camera, sharp focus on face, "
+        "photorealistic, high resolution."
+    )
+
+
 def generate_avatar(client: OpenAI, persona) -> str | None:
     """
     Generate a gpt-image-1 headshot for the persona and save it locally.
     Returns the URL path (e.g. '/uploads/avatars/<id>.png') or None on failure.
     Never raises — avatar failure must not block persona generation.
     Retries up to 4 times on transient network errors (DNS, connection reset).
+    On OpenAI safety rejection (400), retries once with a stripped-down fallback prompt.
     """
     import httpx
+    from openai import BadRequestError
 
     _TRANSIENT = (httpx.ConnectError, httpx.RemoteProtocolError, httpx.TimeoutException, OSError)
     max_attempts = 4
     _RETRY_DELAYS = [5, 15, 30]  # seconds; longer waits survive post-hibernate DNS recovery
 
+    prompts = [_build_prompt(persona), _build_fallback_prompt(persona)]
+    prompt_index = 0
+
     for attempt in range(1, max_attempts + 1):
         try:
-            prompt = _build_prompt(persona)
+            prompt = prompts[min(prompt_index, len(prompts) - 1)]
 
             response = client.images.generate(
                 model="gpt-image-1",
@@ -157,6 +178,13 @@ def generate_avatar(client: OpenAI, persona) -> str | None:
                     f.write(image_bytes)
                 return f"/uploads/avatars/{persona.id}.png"
 
+        except BadRequestError as e:
+            if prompt_index == 0:
+                logger.warning(f"Avatar safety rejection for persona {persona.id}, retrying with fallback prompt: {e}")
+                prompt_index = 1
+            else:
+                logger.error(f"Avatar generation failed for persona {persona.id} even with fallback prompt: {e}")
+                return None
         except _TRANSIENT as e:
             if attempt < max_attempts:
                 delay = _RETRY_DELAYS[attempt - 1]

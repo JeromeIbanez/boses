@@ -220,7 +220,7 @@ export default function PersonasTab({ projectId }: Props) {
               <option>Low</option><option>Middle</option><option>Upper-middle</option><option>High</option>
             </Select>
             <Textarea label="Psychographic notes" rows={2} value={form.psychographic_notes} onChange={set("psychographic_notes")} />
-            <Input label="Number of personas" type="number" min={1} max={10} value={form.persona_count} onChange={set("persona_count")} />
+            <Input label="Number of personas" type="number" min={1} max={50} value={form.persona_count} onChange={set("persona_count")} />
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="secondary" onClick={handleClose}>Cancel</Button>
               <Button onClick={() => create.mutate()} disabled={!form.name || create.isPending}>

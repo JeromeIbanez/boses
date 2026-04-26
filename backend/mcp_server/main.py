@@ -40,5 +40,10 @@ async def inject_api_key(request: Request, call_next):
     return await call_next(request)
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 # Mount the MCP SSE app at root — handles /sse and /messages
 app.mount("/", _mcp_app)

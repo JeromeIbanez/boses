@@ -4,13 +4,24 @@ import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 
+class _RequestIdFilter(logging.Filter):
+    """Injects request_id from the ContextVar into every log record."""
+    def filter(self, record: logging.LogRecord) -> bool:
+        from app.request_context import get_request_id
+        record.request_id = get_request_id()
+        return True
+
+
+_root_handler = logging.StreamHandler()
+_root_handler.addFilter(_RequestIdFilter())
 logging.basicConfig(
     level=logging.INFO,
-    format="%(levelname)s: [%(name)s] %(message)s",
+    format="%(levelname)s: [%(name)s] [req:%(request_id)s] %(message)s",
+    handlers=[_root_handler],
 )
 
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
@@ -125,6 +136,18 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "Accept", "X-Requested-With", "X-API-Key"],
 )
+
+
+@app.middleware("http")
+async def correlation_id_middleware(request: Request, call_next):
+    """Generate a short request ID for every request and propagate it via ContextVar."""
+    from app.request_context import bind_request_id
+    # Honour an upstream-supplied ID (e.g. from Render's load balancer) if present
+    incoming = request.headers.get("X-Request-Id") or request.headers.get("X-Correlation-Id")
+    rid = bind_request_id(incoming)
+    response = await call_next(request)
+    response.headers["X-Request-Id"] = rid
+    return response
 
 
 @app.get("/health")

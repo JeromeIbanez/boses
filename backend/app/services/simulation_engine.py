@@ -149,7 +149,10 @@ def _get_engine_registry() -> dict:
     }
 
 
-def run_simulation(simulation_id: str) -> None:
+def run_simulation(simulation_id: str, request_id: str | None = None) -> None:
+    from app.request_context import bind_request_id
+    bind_request_id(request_id)  # propagate caller's request ID into this thread
+
     # Route to the appropriate engine based on simulation type
     _db = SessionLocal()
     try:

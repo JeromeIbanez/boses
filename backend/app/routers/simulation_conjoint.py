@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.constants import CONJOINT_MAX_TASKS, CONJOINT_MIN_TASKS
 from app.database import get_db
+from app.request_context import get_request_id
 from app.models.simulation import Simulation
 from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.schemas.simulation import ConjointDesignCreate, SimulationResponse
@@ -56,5 +57,5 @@ def run_conjoint_simulation(
     db.commit()
     db.refresh(simulation)
 
-    background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
+    background_tasks.add_task(run_simulation, simulation_id=str(simulation.id), request_id=get_request_id())
     return simulation

@@ -2,6 +2,17 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from app.constants import (
+    CONJOINT_DESIGN_TEMPERATURE,
+    CONJOINT_MAX_TASKS,
+    CONJOINT_MIN_TASKS,
+    RELIABILITY_DEFAULT_RUNS,
+    RELIABILITY_MAX_RUNS,
+    RELIABILITY_MIN_RUNS,
+    SIMULATION_CREATE_RATE_LIMIT,
+    SIMULATION_TIMEOUT_MINUTES,
+    SURVEY_PARSE_TEMPERATURE,
+)
 from fastapi import APIRouter, Depends, File, HTTPException, BackgroundTasks, UploadFile, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -49,7 +60,7 @@ def list_simulations(
 
 
 @router.post("", response_model=SimulationResponse, status_code=201)
-@limiter.limit("20/hour")
+@limiter.limit(SIMULATION_CREATE_RATE_LIMIT)
 def create_simulation(
     request: Request,
     project_id: str,
@@ -171,7 +182,7 @@ def get_simulation(
     # If stuck in running/pending for >20 minutes, mark as failed
     if simulation.status in ("running", "pending", "generating_report"):
         age = datetime.utcnow() - simulation.created_at
-        if age > timedelta(minutes=20):
+        if age > timedelta(minutes=SIMULATION_TIMEOUT_MINUTES):
             simulation.status = "failed"
             simulation.error_message = "Simulation timed out — the background task may have been interrupted. Please try again."
             db.commit()
@@ -290,7 +301,7 @@ async def upload_idi_script(
                     f"DOCUMENT:\n{raw_text}"
                 ),
             }],
-            temperature=0,
+            temperature=SURVEY_PARSE_TEMPERATURE,
         )
         script_text = response.choices[0].message.content or raw_text
     except Exception as e:
@@ -394,7 +405,7 @@ def send_idi_message(
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=oai_messages,
-        temperature=0.85,
+        temperature=CONJOINT_DESIGN_TEMPERATURE,
     )
     answer = response.choices[0].message.content or ""
 
@@ -480,7 +491,7 @@ async def upload_survey_file(
                     f"SURVEY DOCUMENT:\n{raw_text}"
                 ),
             }],
-            temperature=0,
+            temperature=SURVEY_PARSE_TEMPERATURE,
         )
         raw_json = response.choices[0].message.content or ""
         survey_schema = json.loads(raw_json)
@@ -552,7 +563,7 @@ def run_conjoint_simulation(
 
     simulation.survey_schema = {
         "attributes": [{"name": a.name, "levels": a.levels} for a in body.attributes],
-        "n_tasks": min(max(body.n_tasks, 6), 20),
+        "n_tasks": min(max(body.n_tasks, CONJOINT_MIN_TASKS), CONJOINT_MAX_TASKS),
     }
     db.commit()
     db.refresh(simulation)
@@ -585,7 +596,7 @@ def create_reliability_check(
     if source.status != "complete":
         raise HTTPException(status_code=422, detail="Only completed simulations can be checked for reliability")
 
-    n_runs = max(2, min(int(body.get("n_runs", 3)), 5))
+    n_runs = max(RELIABILITY_MIN_RUNS, min(int(body.get("n_runs", RELIABILITY_DEFAULT_RUNS)), RELIABILITY_MAX_RUNS))
 
     study = ReproducibilityStudy(
         project_id=project_id,

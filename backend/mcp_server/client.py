@@ -20,24 +20,54 @@ def _headers() -> dict[str, str]:
     return {"X-API-Key": key, "Content-Type": "application/json"}
 
 
+def _raise_actionable(r: httpx.Response) -> None:
+    """Raise a descriptive RuntimeError instead of a raw HTTP status error."""
+    if r.is_success:
+        return
+    if r.status_code == 401:
+        raise RuntimeError(
+            "Invalid or missing API key. Go to Boses Settings → API Keys and check your key."
+        )
+    if r.status_code == 403:
+        raise RuntimeError(
+            "Access denied. Your API key does not have permission to access this resource."
+        )
+    if r.status_code == 404:
+        raise RuntimeError(
+            f"Resource not found (404). The project, persona group, or simulation ID may be incorrect."
+        )
+    if r.status_code == 422:
+        detail = r.json().get("detail", r.text) if r.headers.get("content-type", "").startswith("application/json") else r.text
+        raise RuntimeError(f"Invalid request: {detail}")
+    if r.status_code == 429:
+        raise RuntimeError(
+            "Rate limit reached. Wait a moment before trying again."
+        )
+    if r.status_code >= 500:
+        raise RuntimeError(
+            f"Boses server error ({r.status_code}). This is likely a temporary issue — try again shortly."
+        )
+    r.raise_for_status()
+
+
 async def _get(path: str, params: dict | None = None) -> Any:
     async with httpx.AsyncClient(base_url=BOSES_API_URL, timeout=_TIMEOUT) as client:
         r = await client.get(path, headers=_headers(), params=params)
-        r.raise_for_status()
+        _raise_actionable(r)
         return r.json()
 
 
 async def _post(path: str, body: dict | None = None) -> Any:
     async with httpx.AsyncClient(base_url=BOSES_API_URL, timeout=_TIMEOUT) as client:
         r = await client.post(path, headers=_headers(), json=body or {})
-        r.raise_for_status()
+        _raise_actionable(r)
         return r.json()
 
 
 async def _delete(path: str) -> None:
     async with httpx.AsyncClient(base_url=BOSES_API_URL, timeout=_TIMEOUT) as client:
         r = await client.delete(path, headers=_headers())
-        r.raise_for_status()
+        _raise_actionable(r)
 
 
 # ---------------------------------------------------------------------------

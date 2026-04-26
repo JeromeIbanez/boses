@@ -307,6 +307,11 @@ def _trigger_post_completion_scoring(simulation_id: str) -> None:
         maybe_score_reproducibility(simulation_id)
     except Exception as e:
         logger.warning(f"Post-completion scoring skipped for {simulation_id[:8]}: {e}")
+        try:
+            import sentry_sdk
+            sentry_sdk.capture_exception(e)
+        except Exception:
+            pass
 
     try:
         from app.services.slack_notifier import maybe_notify_slack

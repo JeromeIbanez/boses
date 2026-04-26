@@ -1,7 +1,4 @@
 import logging
-import uuid
-import shutil
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +15,6 @@ from app.models.persona import Persona
 from app.models.simulation import Simulation
 from app.models.simulation_briefing import SimulationBriefing
 from app.models.simulation_result import SimulationResult
-from app.models.project import Project
 from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.limiter import limiter
 from app.schemas.simulation import (

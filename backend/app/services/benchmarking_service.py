@@ -278,9 +278,59 @@ def score_reproducibility_study(study_id: str) -> None:
                 agg_results.append(agg)
 
         if len(agg_results) < 2:
+            # Before giving up, try spawning replacement runs (cap at 2× original n_runs).
+            total_runs = len(all_runs)
+            max_total = study.n_runs * 2
+
+            if total_runs < max_total:
+                from app.models.simulation import Simulation as SimModel
+                source = db.get(SimModel, study.source_simulation_id)
+                if source:
+                    needed = 2 - len(agg_results)
+                    can_add = max_total - total_runs
+                    to_spawn = min(needed, can_add)
+
+                    replacement_ids: list[str] = []
+                    for offset in range(to_spawn):
+                        repeat_sim = SimModel(
+                            project_id=str(source.project_id),
+                            persona_group_id=source.persona_group_id,
+                            prompt_question=source.prompt_question,
+                            simulation_type=source.simulation_type,
+                            idi_script_text=source.idi_script_text,
+                            survey_schema=source.survey_schema,
+                            status="pending",
+                        )
+                        db.add(repeat_sim)
+                        db.flush()
+                        repeat_sim.persona_groups = list(source.persona_groups)
+                        repeat_sim.briefings = list(source.briefings)
+                        db.add(ReproducibilityRun(
+                            study_id=study.id,
+                            simulation_id=repeat_sim.id,
+                            run_index=total_runs + offset + 1,
+                        ))
+                        replacement_ids.append(str(repeat_sim.id))
+
+                    db.commit()
+                    logger.info(
+                        f"Reliability study {study_id}: spawning {len(replacement_ids)} replacement run(s) "
+                        f"({len(agg_results)} succeeded, {total_runs} total so far, cap={max_total})"
+                    )
+
+                    import threading
+                    from app.services.simulation_engine import run_simulation as _run_sim
+                    for sim_id in replacement_ids:
+                        threading.Thread(target=_run_sim, args=(sim_id,), daemon=True).start()
+                    return  # Study stays "running"; scoring fires when replacements complete
+
+            # At or beyond cap — mark as definitively failed
             study.status = "complete"
             study.confidence_score = None
-            study.score_breakdown = {"error": "Not enough successful runs to score"}
+            study.score_breakdown = {
+                "error": "Not enough successful runs to score",
+                "total_runs_attempted": total_runs,
+            }
             study.completed_at = datetime.utcnow()
             db.commit()
             return

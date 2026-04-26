@@ -364,13 +364,13 @@ function PersonaPage({ p }: { p: PersonaPDFData }) {
         </View>
       )}
 
-      {/* Grounding Sources */}
+      {/* Grounding Sources — count only, no details */}
       {p.data_source_references && p.data_source_references.length > 0 && (
         <View style={s.section}>
-          <Text style={s.sectionTitle}>Grounding Sources</Text>
-          {p.data_source_references.map((ref) => (
-            <Text key={ref} style={s.sourceItem}>· {ref}</Text>
-          ))}
+          <Text style={s.sectionTitle}>Data Grounding</Text>
+          <Text style={s.fieldValue}>
+            Grounded in {p.data_source_references.length} verified source{p.data_source_references.length !== 1 ? "s" : ""}
+          </Text>
         </View>
       )}
 

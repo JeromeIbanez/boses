@@ -9,12 +9,15 @@ from typing import Any
 import httpx
 
 from mcp_server.config import BOSES_API_URL, BOSES_API_KEY
+from mcp_server.context import get_api_key
 
 _TIMEOUT = httpx.Timeout(120.0, connect=10.0)
 
 
 def _headers() -> dict[str, str]:
-    return {"X-API-Key": BOSES_API_KEY, "Content-Type": "application/json"}
+    # Per-session key takes priority over the env fallback (local dev / internal use)
+    key = get_api_key() or BOSES_API_KEY
+    return {"X-API-Key": key, "Content-Type": "application/json"}
 
 
 async def _get(path: str, params: dict | None = None) -> Any:

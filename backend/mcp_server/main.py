@@ -2,15 +2,20 @@
 Boses MCP Server — Streamable HTTP transport
 
 Each researcher connects with their own API key:
-  https://mcp.temujintechnologies.com/   (X-API-Key header)
-  https://mcp.temujintechnologies.com/?key=boses_xxx  (query param fallback)
+  https://mcp.temujintechnologies.com/mcp   (X-API-Key header)
+  https://mcp.temujintechnologies.com/mcp?key=boses_xxx  (query param fallback)
 
 Run locally:
   BOSES_API_URL=http://localhost:8000 uvicorn mcp_server.main:app --port 8001
 """
 import logging
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.routing import Mount, Route
+
 from mcp_server.context import set_api_key
 from mcp_server.tools import mcp
 from mcp_server.config import BOSES_API_URL, MCP_PORT
@@ -20,29 +25,59 @@ logger = logging.getLogger(__name__)
 
 logger.info(f"Boses MCP server starting — backend: {BOSES_API_URL}, port: {MCP_PORT}")
 
-# Wrap the MCP app with a FastAPI app so we can inject middleware
-app = FastAPI(title="Boses MCP Server")
+# Build the MCP Streamable HTTP app first (this creates the session manager lazily)
+_mcp_app = mcp.streamable_http_app()
 
 
-@app.middleware("http")
-async def inject_api_key(request: Request, call_next):
+class APIKeyMiddleware:
     """
-    Extract the API key from the incoming request and store it in the
-    per-session ContextVar before the MCP handler runs.
-    Accepts: X-API-Key header (preferred) or ?key= query param.
+    Pure ASGI middleware — no response buffering, safe for streaming / SSE.
+    FastAPI's BaseHTTPMiddleware buffers responses which breaks Streamable HTTP.
+    Accepts: X-API-Key header (preferred) or ?key= query param (Claude Desktop).
     """
-    api_key = request.headers.get("X-API-Key") or request.headers.get("x-api-key") or request.query_params.get("key", "")
-    if api_key:
-        set_api_key(api_key)
-    return await call_next(request)
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket"):
+            headers = {k.lower(): v for k, v in scope.get("headers", [])}
+            api_key = headers.get(b"x-api-key", b"").decode()
+            if not api_key:
+                qs = scope.get("query_string", b"").decode()
+                for part in qs.split("&"):
+                    if "=" in part:
+                        k, v = part.split("=", 1)
+                        if k == "key":
+                            api_key = v
+                            break
+            if api_key:
+                set_api_key(api_key)
+        await self.app(scope, receive, send)
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+async def health(request: Request) -> JSONResponse:
+    return JSONResponse({"status": "ok"})
 
 
-# Mount the MCP Streamable HTTP app at root.
-# Streamable HTTP is the modern MCP transport — supports both POST (request/response)
-# and GET (SSE streaming), and works correctly through HTTP/2 proxies like Render.
-app.mount("/", mcp.streamable_http_app())
+@asynccontextmanager
+async def lifespan(app: Starlette):
+    """
+    Start the MCP session manager before serving requests.
+    streamable_http_app()'s own lifespan is never called when it's mounted
+    as a sub-app, so we run it manually here.
+    """
+    async with mcp.session_manager.run():
+        yield
+
+
+_inner = Starlette(
+    lifespan=lifespan,
+    routes=[
+        Route("/health", health),
+        Mount("/", app=_mcp_app),
+    ],
+)
+
+# Wrap with pure ASGI middleware for API key injection
+app = APIKeyMiddleware(_inner)

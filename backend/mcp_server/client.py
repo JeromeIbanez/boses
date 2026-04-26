@@ -78,6 +78,13 @@ async def list_projects() -> list[dict]:
     return await _get("/api/v1/projects")
 
 
+async def create_project(name: str, description: str = "") -> dict:
+    payload: dict = {"name": name}
+    if description:
+        payload["description"] = description
+    return await _post("/api/v1/projects", payload)
+
+
 # ---------------------------------------------------------------------------
 # Persona groups
 # ---------------------------------------------------------------------------

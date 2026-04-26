@@ -33,7 +33,33 @@ async def list_projects() -> str:
 
 
 # ---------------------------------------------------------------------------
-# 2. list_persona_groups
+# 2. create_project
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def create_project(
+    name: str,
+    description: str = "",
+) -> str:
+    """
+    Create a new project in the Boses workspace.
+    Returns the new project's ID and name.
+    Use this before creating persona groups or running simulations.
+
+    Args:
+        name: A short, descriptive name for the project, e.g. "Q3 Snack Launch SEA".
+        description: Optional context about the project's research goals.
+    """
+    project = await client.create_project(name, description)
+    return (
+        f"Project '{project['name']}' created.\n"
+        f"- ID: {project['id']}\n"
+        f"Use project_id '{project['id']}' when calling list_persona_groups or run_simulation."
+    )
+
+
+# ---------------------------------------------------------------------------
+# 3. list_persona_groups
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -65,7 +91,7 @@ async def list_persona_groups(project_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 3. create_persona_group
+# 4. create_persona_group
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -158,7 +184,7 @@ async def create_persona_group(
 
 
 # ---------------------------------------------------------------------------
-# 4. run_simulation
+# 5. run_simulation
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -217,7 +243,7 @@ async def run_simulation(
 
 
 # ---------------------------------------------------------------------------
-# 5. get_simulation_status
+# 6. get_simulation_status
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -261,7 +287,7 @@ async def get_simulation_status(project_id: str, simulation_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 6. get_simulation_results
+# 7. get_simulation_results
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -351,7 +377,7 @@ async def get_simulation_results(project_id: str, simulation_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 7. get_simulation_url
+# 8. get_simulation_url
 # ---------------------------------------------------------------------------
 
 @mcp.tool()

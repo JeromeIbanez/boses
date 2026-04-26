@@ -33,11 +33,8 @@ async def inject_api_key(request: Request, call_next):
     per-session ContextVar before the MCP handler runs.
     Accepts: X-API-Key header (preferred) or ?key= query param.
     """
-    api_key = (
-        request.headers.get("X-API-Key")
-        or request.headers.get("x-api-key")
-        or request.query_params.get("key", "")
-    )
+    # Accept X-API-Key header only — never query params (would leak into logs)
+    api_key = request.headers.get("X-API-Key") or request.headers.get("x-api-key", "")
     if api_key:
         set_api_key(api_key)
     return await call_next(request)

@@ -7,6 +7,12 @@ from app.services.openai_client import get_openai_client
 from sqlalchemy import select
 
 from app.config import settings
+from app.constants import (
+    CONCEPT_TEST_AGGREGATE_TEMPERATURE,
+    CONCEPT_TEST_TEMPERATURE,
+    MAX_PARALLEL_PERSONAS,
+    SENTIMENT_SCORES,
+)
 from app.database import SessionLocal
 from app.models.persona import Persona
 from app.models.simulation import Simulation
@@ -14,8 +20,6 @@ from app.models.simulation_result import SimulationResult
 from app.services.prompts import concept_test_system_prompt, concept_test_user_prompt, concept_test_aggregate_user_prompt
 
 logger = logging.getLogger(__name__)
-
-SENTIMENT_SCORES = {"Positive": 1.0, "Neutral": 0.0, "Negative": -1.0}
 
 
 def get_personas_for_simulation(simulation: "Simulation", db) -> list["Persona"]:
@@ -99,7 +103,7 @@ def _parse_aggregate_response(text: str) -> dict:
     return sections
 
 
-_MAX_PARALLEL_PERSONAS = 5
+# MAX_PARALLEL_PERSONAS imported from app.constants
 
 
 def _concept_test_persona_worker(
@@ -117,16 +121,35 @@ def _concept_test_persona_worker(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        temperature=0.9,
+        temperature=CONCEPT_TEST_TEMPERATURE,
         response_format={"type": "json_object"},
     )
     raw_text = response.choices[0].message.content or ""
     return persona, _parse_individual_response(raw_text)
 
 
-def run_simulation(simulation_id: str) -> None:
-    from app.services.idi_engine import run_idi_ai  # local import avoids circular dependency
+def _get_engine_registry() -> dict:
+    """
+    Returns a mapping of simulation_type → callable(simulation_id).
+    Uses a factory function (not a module-level dict) to keep imports lazy
+    and avoid circular dependency issues at import time.
+    """
+    from app.services.idi_engine import run_idi_ai
+    from app.services.survey_engine import run_survey
+    from app.services.focus_group_engine import run_focus_group
+    from app.services.conjoint_engine import run_conjoint
 
+    return {
+        "idi_ai": run_idi_ai,
+        "survey": run_survey,
+        "focus_group": run_focus_group,
+        "conjoint": run_conjoint,
+        # "idi_manual" intentionally omitted — driven by the chat endpoint
+        # "concept_test" intentionally omitted — handled inline below
+    }
+
+
+def run_simulation(simulation_id: str) -> None:
     # Route to the appropriate engine based on simulation type
     _db = SessionLocal()
     try:
@@ -135,25 +158,15 @@ def run_simulation(simulation_id: str) -> None:
     finally:
         _db.close()
 
-    if sim_type == "idi_ai":
-        run_idi_ai(simulation_id)
-        return
     if sim_type == "idi_manual":
         return  # manual sessions are driven by the chat endpoint
-    if sim_type == "survey":
-        from app.services.survey_engine import run_survey
-        run_survey(simulation_id)
-        return
-    if sim_type == "focus_group":
-        from app.services.focus_group_engine import run_focus_group
-        run_focus_group(simulation_id)
-        return
-    if sim_type == "conjoint":
-        from app.services.conjoint_engine import run_conjoint
-        run_conjoint(simulation_id)
+
+    engine = _get_engine_registry().get(sim_type)
+    if engine:
+        engine(simulation_id)
         return
 
-    # concept_test path
+    # concept_test path (inline — no separate engine module)
     client = get_openai_client()
     db = SessionLocal()
     # See idi_engine.py — same reason: prevent concurrent lazy-loads in worker threads.
@@ -185,7 +198,7 @@ def run_simulation(simulation_id: str) -> None:
         }
         db.commit()
 
-        with ThreadPoolExecutor(max_workers=min(total, _MAX_PARALLEL_PERSONAS)) as executor:
+        with ThreadPoolExecutor(max_workers=min(total, MAX_PARALLEL_PERSONAS)) as executor:
             futures = {
                 executor.submit(
                     _concept_test_persona_worker,
@@ -257,7 +270,7 @@ def run_simulation(simulation_id: str) -> None:
         agg_response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[{"role": "user", "content": agg_prompt}],
-            temperature=0.7,
+            temperature=CONCEPT_TEST_AGGREGATE_TEMPERATURE,
         )
 
         agg_text = agg_response.choices[0].message.content or ""
@@ -307,6 +320,11 @@ def _trigger_post_completion_scoring(simulation_id: str) -> None:
         maybe_score_reproducibility(simulation_id)
     except Exception as e:
         logger.warning(f"Post-completion scoring skipped for {simulation_id[:8]}: {e}")
+        try:
+            import sentry_sdk
+            sentry_sdk.capture_exception(e)
+        except Exception:
+            pass
 
     try:
         from app.services.slack_notifier import maybe_notify_slack

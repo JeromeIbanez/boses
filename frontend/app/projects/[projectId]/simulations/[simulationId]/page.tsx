@@ -1022,6 +1022,7 @@ export default function SimulationResultsPage() {
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [showFailedDetails, setShowFailedDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState<"results" | "validation">("results");
 
   const share = useMutation({
     mutationFn: () => generateShareLink(projectId, simulationId),
@@ -1138,15 +1139,6 @@ export default function SimulationResultsPage() {
                 <Badge variant="default">{simTypeLabel()}</Badge>
               </>
             )}
-            {reliabilityData?.status === "complete" && reliabilityData.confidence_score != null && (() => {
-              const pct = Math.round(reliabilityData.confidence_score * 100);
-              const color = pct >= 80 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : pct >= 60 ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-red-50 text-red-600 border-red-200";
-              return (
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full border flex items-center gap-1 ${color}`}>
-                  <span>🛡</span>{pct}% reliable
-                </span>
-              );
-            })()}
           </div>
           {simulation?.status === "complete" && (
             <div className="flex items-center gap-2">
@@ -1363,94 +1355,128 @@ export default function SimulationResultsPage() {
         </div>
       )}
 
-      {/* Trust panels — shown once simulation is complete */}
+      {/* Tabs — only shown once simulation is complete */}
       {simulation?.status === "complete" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-          <ReliabilityPanel projectId={projectId} simulationId={simulationId} />
-          {simulation.persona_group_id && (
-            <ConvergencePanel
-              projectId={projectId}
-              personaGroupId={simulation.persona_group_id}
-              briefingId={simulation.briefing_ids?.[0] ?? null}
-            />
-          )}
-          <PredictionCommitmentPanel
-            projectId={projectId}
-            simulationId={simulationId}
-            predictedSentiment={aggregate?.sentiment ?? null}
-            predictedThemes={aggregate?.top_themes ?? null}
-          />
-        </div>
-      )}
-
-      {/* Results */}
-      {simulation?.status === "complete" && results && (
         <>
-          {isConjoint ? (
-            <ConjointReportView results={results} />
-          ) : isFocusGroup ? (
-            <FocusGroupReportView results={results} personaNameMap={personaNameMap} />
-          ) : isSurvey ? (
-            <SurveyReportView results={results} projectId={projectId} simulationId={simulationId} personaNameMap={personaNameMap} />
-          ) : isIDI ? (
-            <IDIReportView results={results} projectId={projectId} simulationId={simulationId} personaNameMap={personaNameMap} />
-          ) : (
-            <div className="space-y-8">
-              {/* Aggregate Summary */}
-              {aggregate && (
-                <div>
-                  <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <TrendingUp size={14} /> Aggregate Summary
-                  </h2>
-                  <Card className="space-y-5">
-                    {aggregate.sentiment_distribution && (
-                      <div>
-                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-3">Sentiment Breakdown</p>
-                        <SentimentBar distribution={aggregate.sentiment_distribution} />
-                      </div>
-                    )}
+          {/* Tab bar */}
+          <div className="flex gap-1 border-b border-zinc-200 mb-6">
+            <button
+              onClick={() => setActiveTab("results")}
+              className={`px-4 py-2 text-sm transition-colors ${
+                activeTab === "results"
+                  ? "border-b-2 border-zinc-800 text-zinc-900 font-medium -mb-px"
+                  : "text-zinc-500 hover:text-zinc-700"
+              }`}
+            >
+              Results
+            </button>
+            <button
+              onClick={() => setActiveTab("validation")}
+              className={`px-4 py-2 text-sm transition-colors flex items-center gap-2 ${
+                activeTab === "validation"
+                  ? "border-b-2 border-zinc-800 text-zinc-900 font-medium -mb-px"
+                  : "text-zinc-500 hover:text-zinc-700"
+              }`}
+            >
+              Validation
+              {reliabilityData?.status === "complete" && reliabilityData.confidence_score != null && (() => {
+                const pct = Math.round(reliabilityData.confidence_score * 100);
+                const color = pct >= 80 ? "text-emerald-600" : pct >= 60 ? "text-amber-600" : "text-red-500";
+                return <span className={`text-xs font-semibold ${color}`}>{pct}%</span>;
+              })()}
+            </button>
+          </div>
 
-                    {aggregate.top_themes && aggregate.top_themes.length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Top Themes</p>
-                        <div className="flex flex-wrap gap-2">
-                          {aggregate.top_themes.map(t => (
-                            <Badge key={t} variant="info">{t}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+          {/* Results tab */}
+          {activeTab === "results" && results && (
+            <>
+              {isConjoint ? (
+                <ConjointReportView results={results} />
+              ) : isFocusGroup ? (
+                <FocusGroupReportView results={results} personaNameMap={personaNameMap} />
+              ) : isSurvey ? (
+                <SurveyReportView results={results} projectId={projectId} simulationId={simulationId} personaNameMap={personaNameMap} />
+              ) : isIDI ? (
+                <IDIReportView results={results} projectId={projectId} simulationId={simulationId} personaNameMap={personaNameMap} />
+              ) : (
+                <div className="space-y-8">
+                  {/* Aggregate Summary */}
+                  {aggregate && (
+                    <div>
+                      <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+                        <TrendingUp size={14} /> Aggregate Summary
+                      </h2>
+                      <Card className="space-y-5">
+                        {aggregate.sentiment_distribution && (
+                          <div>
+                            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-3">Sentiment Breakdown</p>
+                            <SentimentBar distribution={aggregate.sentiment_distribution} />
+                          </div>
+                        )}
 
-                    {aggregate.summary_text && (
-                      <div>
-                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2 flex items-center gap-1.5"><MessageSquare size={12} /> Summary</p>
-                        <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{aggregate.summary_text}</p>
-                      </div>
-                    )}
+                        {aggregate.top_themes && aggregate.top_themes.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Top Themes</p>
+                            <div className="flex flex-wrap gap-2">
+                              {aggregate.top_themes.map(t => (
+                                <Badge key={t} variant="info">{t}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
-                    {aggregate.recommendations && (
-                      <div className="bg-zinc-50 rounded-lg p-4">
-                        <p className="text-xs font-medium text-zinc-600 uppercase tracking-wide mb-2 flex items-center gap-1.5"><Lightbulb size={12} /> Strategic Recommendations</p>
-                        <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{aggregate.recommendations}</p>
+                        {aggregate.summary_text && (
+                          <div>
+                            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2 flex items-center gap-1.5"><MessageSquare size={12} /> Summary</p>
+                            <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{aggregate.summary_text}</p>
+                          </div>
+                        )}
+
+                        {aggregate.recommendations && (
+                          <div className="bg-zinc-50 rounded-lg p-4">
+                            <p className="text-xs font-medium text-zinc-600 uppercase tracking-wide mb-2 flex items-center gap-1.5"><Lightbulb size={12} /> Strategic Recommendations</p>
+                            <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{aggregate.recommendations}</p>
+                          </div>
+                        )}
+                      </Card>
+                    </div>
+                  )}
+
+                  {/* Individual Results */}
+                  {individual.length > 0 && (
+                    <div>
+                      <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+                        <MessageSquare size={14} /> Individual Reactions ({individual.length})
+                      </h2>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {individual.map(r => (
+                          <ConceptIndividualCard key={r.id} result={r} personas={personaNames} />
+                        ))}
                       </div>
-                    )}
-                  </Card>
+                    </div>
+                  )}
                 </div>
               )}
+            </>
+          )}
 
-              {/* Individual Results */}
-              {individual.length > 0 && (
-                <div>
-                  <h2 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <MessageSquare size={14} /> Individual Reactions ({individual.length})
-                  </h2>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {individual.map(r => (
-                      <ConceptIndividualCard key={r.id} result={r} personas={personaNames} />
-                    ))}
-                  </div>
-                </div>
+          {/* Validation tab */}
+          {activeTab === "validation" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <ReliabilityPanel projectId={projectId} simulationId={simulationId} />
+              {simulation.persona_group_id && (
+                <ConvergencePanel
+                  projectId={projectId}
+                  personaGroupId={simulation.persona_group_id}
+                  briefingId={simulation.briefing_ids?.[0] ?? null}
+                />
               )}
+              <PredictionCommitmentPanel
+                projectId={projectId}
+                simulationId={simulationId}
+                predictedSentiment={aggregate?.sentiment ?? null}
+                predictedThemes={aggregate?.top_themes ?? null}
+              />
             </div>
           )}
         </>

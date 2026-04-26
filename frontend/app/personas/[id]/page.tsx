@@ -8,6 +8,7 @@ import { getLibraryPersona, deleteLibraryPersona } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Spinner from "@/components/ui/Spinner";
+import PersonaPDFButton from "@/components/personas/PersonaPDFButton";
 
 const API_ROOT = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace("/api/v1", "");
 
@@ -100,6 +101,7 @@ export default function LibraryPersonaProfilePage() {
               {p.simulation_count} simulation{p.simulation_count !== 1 ? "s" : ""}
             </span>
           )}
+          <PersonaPDFButton personas={[p]} filename={`${libraryCode}.pdf`} />
           <span className="font-mono text-[11px] text-zinc-400 bg-zinc-50 border border-zinc-100 px-2 py-0.5 rounded">
             #{libraryCode}
           </span>

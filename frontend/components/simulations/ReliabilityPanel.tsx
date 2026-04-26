@@ -121,12 +121,12 @@ export default function ReliabilityPanel({ projectId, simulationId }: Props) {
           Not sure how stable these results are? Run this simulation 2 more times automatically and get a confidence score.
         </p>
         <button
-          onClick={() => create.mutate(3)}
+          onClick={() => create.mutate(5)}
           disabled={create.isPending}
           className="flex items-center gap-1.5 text-xs font-medium bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
         >
           {create.isPending ? <Spinner className="h-3 w-3 border-zinc-400 border-t-white" /> : <RefreshCw size={12} />}
-          {create.isPending ? "Starting…" : "Check reliability (3 runs)"}
+          {create.isPending ? "Starting…" : "Check reliability (5 runs)"}
         </button>
       </Card>
     );
@@ -140,7 +140,7 @@ export default function ReliabilityPanel({ projectId, simulationId }: Props) {
         {showExplainer && <ScienceExplainer onClose={() => setShowExplainer(false)} />}
         <div className="flex items-center gap-2 text-xs text-zinc-500">
           <Spinner className="h-3 w-3 border-zinc-200 border-t-zinc-600" />
-          Running {data.n_runs} simulations to assess consistency…
+          Running {data.n_runs} repeat simulation{data.n_runs !== 1 ? "s" : ""} to assess consistency…
         </div>
       </Card>
     );
@@ -173,7 +173,7 @@ export default function ReliabilityPanel({ projectId, simulationId }: Props) {
 
           <div className="pt-1">
             <button
-              onClick={() => create.mutate(3)}
+              onClick={() => create.mutate(5)}
               disabled={create.isPending}
               className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors flex items-center gap-1"
             >
@@ -182,7 +182,17 @@ export default function ReliabilityPanel({ projectId, simulationId }: Props) {
           </div>
         </>
       ) : (
-        <p className="text-xs text-red-500">Reliability check failed — not enough runs completed.</p>
+        <div className="space-y-3">
+          <p className="text-xs text-red-500">Reliability check failed — not enough runs completed.</p>
+          <button
+            onClick={() => create.mutate(5)}
+            disabled={create.isPending}
+            className="flex items-center gap-1.5 text-xs font-medium bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+          >
+            {create.isPending ? <Spinner className="h-3 w-3 border-zinc-400 border-t-white" /> : <RefreshCw size={12} />}
+            {create.isPending ? "Starting…" : "Try again"}
+          </button>
+        </div>
       )}
     </Card>
   );

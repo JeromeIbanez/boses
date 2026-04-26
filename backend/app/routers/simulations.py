@@ -652,6 +652,7 @@ def get_reliability_check(
         sa_select(ReproducibilityStudy)
         .where(ReproducibilityStudy.source_simulation_id == simulation_id)
         .order_by(ReproducibilityStudy.created_at.desc())
+        .limit(1)
     ).scalar_one_or_none()
 
     if not study:

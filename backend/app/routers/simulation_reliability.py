@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.constants import RELIABILITY_DEFAULT_RUNS, RELIABILITY_MAX_RUNS, RELIABILITY_MIN_RUNS
 from app.database import get_db
+from app.request_context import get_request_id
 from app.models.simulation import Simulation
 from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.services.simulation_engine import run_simulation
@@ -72,7 +73,7 @@ def create_reliability_check(
             run_index=i,
         )
         db.add(repro_run)
-        background_tasks.add_task(run_simulation, simulation_id=str(repeat_sim.id))
+        background_tasks.add_task(run_simulation, simulation_id=str(repeat_sim.id), request_id=get_request_id())
 
     db.commit()
     db.refresh(study)

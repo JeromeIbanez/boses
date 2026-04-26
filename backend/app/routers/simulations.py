@@ -21,6 +21,7 @@ from app.models.simulation import Simulation
 from app.models.simulation_result import SimulationResult
 from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.schemas.simulation import SimulationCreate, SimulationResponse, SimulationResultResponse
+from app.request_context import get_request_id
 from app.services.simulation_engine import run_simulation
 
 logger = logging.getLogger(__name__)
@@ -136,7 +137,7 @@ def create_simulation(
     # Schedule background task now only if we already have the script (text mode).
     # File-upload mode (IDI/survey): task is scheduled after the file is processed.
     if body.simulation_type in ("concept_test", "focus_group") or idi_ai_ready:
-        background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
+        background_tasks.add_task(run_simulation, simulation_id=str(simulation.id), request_id=get_request_id())
 
     return simulation
 

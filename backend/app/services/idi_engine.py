@@ -183,7 +183,9 @@ def _idi_persona_worker(persona, briefing_text: str, questions: list) -> tuple:
     return persona, transcript, analysis
 
 
-def run_idi_ai(simulation_id: str) -> None:
+def run_idi_ai(simulation_id: str, request_id: str | None = None) -> None:
+    from app.request_context import bind_request_id
+    bind_request_id(request_id)
     client = get_openai_client()
     db = SessionLocal()
     # Prevent SQLAlchemy from expiring ORM objects after each commit.
@@ -353,7 +355,9 @@ def _trigger_scoring(simulation_id: str) -> None:
 # Manual IDI report generator (called after user ends the session)
 # ---------------------------------------------------------------------------
 
-def generate_idi_report_from_messages(simulation_id: str) -> None:
+def generate_idi_report_from_messages(simulation_id: str, request_id: str | None = None) -> None:
+    from app.request_context import bind_request_id
+    bind_request_id(request_id)
     client = get_openai_client()
     db = SessionLocal()
     sim_ref = simulation_id[:8]

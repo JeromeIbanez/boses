@@ -109,7 +109,9 @@ def _survey_persona_worker(persona, briefing_text: str, questions: list) -> tupl
     return persona, enriched
 
 
-def run_survey(simulation_id: str) -> None:
+def run_survey(simulation_id: str, request_id: str | None = None) -> None:
+    from app.request_context import bind_request_id
+    bind_request_id(request_id)
     client = get_openai_client()
     db = SessionLocal()
     db.expire_on_commit = False  # prevent concurrent lazy-loads in worker threads

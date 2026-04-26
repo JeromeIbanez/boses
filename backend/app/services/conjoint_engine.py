@@ -337,7 +337,9 @@ def _generate_narrative(
 # Main orchestrator
 # ---------------------------------------------------------------------------
 
-def run_conjoint(simulation_id: str) -> None:
+def run_conjoint(simulation_id: str, request_id: str | None = None) -> None:
+    from app.request_context import bind_request_id
+    bind_request_id(request_id)
     client = get_openai_client()
     db = SessionLocal()
     sim_ref = simulation_id[:8]

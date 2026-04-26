@@ -18,6 +18,7 @@ from app.models.persona import Persona
 from app.models.simulation import Simulation
 from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.schemas.simulation import IDIMessageCreate, IDIMessageResponse, SimulationResponse
+from app.request_context import get_request_id
 from app.services.openai_client import get_openai_client
 from app.services.simulation_engine import run_simulation
 from app.utils.file_parsing import extract_text_from_upload
@@ -86,7 +87,7 @@ def upload_idi_script(
 
     # Kick off background task if this idi_ai simulation was waiting on its script
     if simulation.simulation_type == "idi_ai" and simulation.status == "pending":
-        background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
+        background_tasks.add_task(run_simulation, simulation_id=str(simulation.id), request_id=get_request_id())
 
     return simulation
 
@@ -216,5 +217,5 @@ def end_idi_session(
     db.commit()
     db.refresh(simulation)
 
-    background_tasks.add_task(generate_idi_report_from_messages, simulation_id=simulation_id)
+    background_tasks.add_task(generate_idi_report_from_messages, simulation_id=simulation_id, request_id=get_request_id())
     return simulation

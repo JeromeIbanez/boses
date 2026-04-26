@@ -16,6 +16,7 @@ from app.database import get_db
 from app.models.simulation import Simulation
 from app.routers.common import get_project_or_404 as _get_project_or_404
 from app.schemas.simulation import SimulationResponse
+from app.request_context import get_request_id
 from app.services.openai_client import get_openai_client
 from app.services.simulation_engine import run_simulation
 from app.utils.file_parsing import extract_text_from_upload
@@ -124,6 +125,6 @@ def run_survey_simulation(
             detail=f"Multiple choice question(s) {', '.join(bad)} have no options. Please re-upload the survey or edit the questions."
         )
 
-    background_tasks.add_task(run_simulation, simulation_id=str(simulation.id))
+    background_tasks.add_task(run_simulation, simulation_id=str(simulation.id), request_id=get_request_id())
     db.refresh(simulation)
     return simulation

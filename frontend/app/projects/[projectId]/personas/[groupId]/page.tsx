@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Trash2 } from "lucide-react";
+import PersonaPDFButton from "@/components/personas/PersonaPDFButton";
 import { getPersonaGroup, getPersonas, deletePersona, deleteAllPersonas } from "@/lib/api";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { Persona } from "@/types";
@@ -131,15 +132,22 @@ export default function PersonaGroupPage() {
       <div className="flex items-start justify-between gap-4">
         <PageHeader title={group.name} description={`${group.age_min}–${group.age_max} yrs · ${group.gender} · ${group.occupation} · ${group.location}`} />
         {personas && personas.length > 0 && (
-          <button
-            onClick={() => {
-              setConfirmPending({ message: `Delete all ${personas.length} persona(s) in this group?`, action: () => removeAll.mutate() });
-            }}
-            disabled={removeAll.isPending}
-            className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded-md px-3 py-1.5 transition-colors shrink-0 disabled:opacity-50"
-          >
-            <Trash2 size={13} /> Delete All Personas
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <PersonaPDFButton
+              personas={personas}
+              filename={`${group.name.replace(/\s+/g, "-").toLowerCase()}-personas.pdf`}
+              label="Export All as PDF"
+            />
+            <button
+              onClick={() => {
+                setConfirmPending({ message: `Delete all ${personas.length} persona(s) in this group?`, action: () => removeAll.mutate() });
+              }}
+              disabled={removeAll.isPending}
+              className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded-md px-3 py-1.5 transition-colors disabled:opacity-50"
+            >
+              <Trash2 size={13} /> Delete All Personas
+            </button>
+          </div>
         )}
       </div>
 

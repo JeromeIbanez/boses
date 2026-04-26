@@ -9,6 +9,7 @@ import Badge from "@/components/ui/Badge";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import LibraryBadge from "@/components/ui/LibraryBadge";
 import Spinner from "@/components/ui/Spinner";
+import PersonaPDFButton from "@/components/personas/PersonaPDFButton";
 
 const API_ROOT = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace("/api/v1", "");
 
@@ -103,7 +104,11 @@ export default function PersonaProfilePage() {
         </button>
         <span className="text-zinc-200">/</span>
         <span className="text-xs text-zinc-700 font-medium">{persona.full_name}</span>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <PersonaPDFButton
+            personas={[persona]}
+            filename={`${persona.persona_code}.pdf`}
+          />
           <span className="font-mono text-[11px] text-zinc-400 bg-zinc-50 border border-zinc-100 px-2 py-0.5 rounded">
             #{persona.persona_code}
           </span>

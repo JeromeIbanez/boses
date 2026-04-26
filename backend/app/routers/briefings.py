@@ -5,6 +5,7 @@ from pathlib import Path
 
 import magic
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body, Request
+from pydantic import BaseModel
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -115,6 +116,38 @@ async def upload_briefing(
         file_path=save_path,
         file_type=file_type,
         extracted_text=extracted,
+        summary_text=summary,
+    )
+    db.add(briefing)
+    db.commit()
+    db.refresh(briefing)
+    return briefing
+
+
+class BriefingFromTextRequest(BaseModel):
+    title: str
+    content: str
+    description: str | None = None
+
+
+@router.post("/from-text", response_model=BriefingResponse, status_code=201)
+def create_briefing_from_text(
+    project_id: str,
+    body: BriefingFromTextRequest,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Create a briefing from plain text (used by MCP / API clients that can't upload files)."""
+    _get_project_or_404(project_id, db, current_user.company_id)
+    summary = summarize_if_long(body.content, body.title) if body.content else None
+    briefing = Briefing(
+        project_id=project_id,
+        title=body.title,
+        description=body.description,
+        file_name="",
+        file_path="",
+        file_type="text",
+        extracted_text=body.content,
         summary_text=summary,
     )
     db.add(briefing)

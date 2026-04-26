@@ -131,6 +131,17 @@ async def poll_persona_group_until_ready(
 
 
 # ---------------------------------------------------------------------------
+# Briefings
+# ---------------------------------------------------------------------------
+
+async def create_briefing(project_id: str, title: str, content: str, description: str = "") -> dict:
+    payload: dict = {"title": title, "content": content}
+    if description:
+        payload["description"] = description
+    return await _post(f"/api/v1/projects/{project_id}/briefings/from-text", payload)
+
+
+# ---------------------------------------------------------------------------
 # Simulations
 # ---------------------------------------------------------------------------
 

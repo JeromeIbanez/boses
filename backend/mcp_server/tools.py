@@ -184,7 +184,43 @@ async def create_persona_group(
 
 
 # ---------------------------------------------------------------------------
-# 5. run_simulation
+# 5. create_briefing
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def create_briefing(
+    project_id: str,
+    title: str,
+    content: str,
+    description: str = "",
+) -> str:
+    """
+    Upload a research briefing to a Boses project as plain text.
+    The briefing is stored and can be attached to simulations to give personas
+    additional context (brand guidelines, product specs, survey docs, etc.).
+
+    Use this when the user pastes or attaches a document in the chat — extract
+    the full text and pass it as 'content'. The returned briefing_id can then
+    be passed to run_simulation via briefing_ids.
+
+    Args:
+        project_id: The ID of the project to attach the briefing to.
+        title: A short label for this briefing, e.g. "Q3 Brand Guidelines" or "Survey Draft v2".
+        content: The full text content of the document.
+        description: Optional one-line summary of what the document contains.
+    """
+    briefing = await client.create_briefing(project_id, title, content, description)
+    return (
+        f"Briefing '{briefing['title']}' created.\n"
+        f"- ID: {briefing['id']}\n"
+        f"- Characters stored: {len(content)}\n"
+        f"Pass briefing_id '{briefing['id']}' in the briefing_ids list when calling run_simulation."
+    )
+
+
+# ---------------------------------------------------------------------------
+# 6. run_simulation
+
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -243,7 +279,7 @@ async def run_simulation(
 
 
 # ---------------------------------------------------------------------------
-# 6. get_simulation_status
+# 7. get_simulation_status
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -287,7 +323,7 @@ async def get_simulation_status(project_id: str, simulation_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 7. get_simulation_results
+# 8. get_simulation_results
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -377,7 +413,7 @@ async def get_simulation_results(project_id: str, simulation_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 8. get_simulation_url
+# 9. get_simulation_url
 # ---------------------------------------------------------------------------
 
 @mcp.tool()

@@ -334,3 +334,29 @@ export const revokeShareLink = (projectId: string, simId: string) =>
   request<Simulation>(`/projects/${projectId}/simulations/${simId}/share`, { method: "DELETE" });
 export const getSharedSimulation = (shareToken: string) =>
   request<Simulation & { project_name: string; results: SimulationResult[] }>(`/share/${shareToken}`);
+
+// API Keys
+export interface APIKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  is_active: boolean;
+  created_at: string;
+  last_used_at: string | null;
+}
+
+export interface APIKeyCreated extends APIKey {
+  key: string; // full key — shown once
+}
+
+export const listApiKeys = () =>
+  request<APIKey[]>("/settings/api-keys");
+
+export const createApiKey = (name: string) =>
+  request<APIKeyCreated>("/settings/api-keys", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+
+export const revokeApiKey = (id: string) =>
+  request<void>(`/settings/api-keys/${id}`, { method: "DELETE" });

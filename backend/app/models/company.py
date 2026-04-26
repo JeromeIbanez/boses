@@ -20,3 +20,4 @@ class Company(Base):
 
     users: Mapped[list["User"]] = relationship(back_populates="company")
     projects: Mapped[list["Project"]] = relationship(back_populates="company")
+    api_keys: Mapped[list["APIKey"]] = relationship(back_populates="company", cascade="all, delete-orphan")

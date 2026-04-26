@@ -11,7 +11,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp_server import client
 from mcp_server.config import BOSES_APP_URL
 
-mcp = FastMCP("Boses Market Simulation Platform")
+mcp = FastMCP("Boses Market Simulation Platform", host="0.0.0.0")
 
 
 # ---------------------------------------------------------------------------

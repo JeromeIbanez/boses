@@ -182,7 +182,17 @@ export default function ReliabilityPanel({ projectId, simulationId }: Props) {
           </div>
         </>
       ) : (
-        <p className="text-xs text-red-500">Reliability check failed — not enough runs completed.</p>
+        <div className="space-y-3">
+          <p className="text-xs text-red-500">Reliability check failed — not enough runs completed.</p>
+          <button
+            onClick={() => create.mutate(3)}
+            disabled={create.isPending}
+            className="flex items-center gap-1.5 text-xs font-medium bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+          >
+            {create.isPending ? <Spinner className="h-3 w-3 border-zinc-400 border-t-white" /> : <RefreshCw size={12} />}
+            {create.isPending ? "Starting…" : "Try again"}
+          </button>
+        </div>
       )}
     </Card>
   );

@@ -90,6 +90,7 @@ services:
     rootDir: backend
     branch: main
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: BOSES_API_URL
         value: https://api.temujintechnologies.com
@@ -106,6 +107,7 @@ services:
     rootDir: backend
     branch: staging
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: BOSES_API_URL
         value: https://api-staging.temujintechnologies.com

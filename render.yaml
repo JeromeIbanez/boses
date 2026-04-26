@@ -82,6 +82,38 @@ services:
     domains:
       - api-staging.temujintechnologies.com
 
+  # ── Production MCP Server ───────────────────────────────────────────────
+  - type: web
+    name: boses-mcp-prod
+    runtime: docker
+    dockerfilePath: ./Dockerfile.mcp
+    rootDir: backend
+    branch: main
+    plan: free
+    envVars:
+      - key: BOSES_API_URL
+        value: https://api.temujintechnologies.com
+      - key: BOSES_APP_URL
+        value: https://app.temujintechnologies.com
+    domains:
+      - mcp.temujintechnologies.com
+
+  # ── Staging MCP Server ───────────────────────────────────────────────────
+  - type: web
+    name: boses-mcp-staging
+    runtime: docker
+    dockerfilePath: ./Dockerfile.mcp
+    rootDir: backend
+    branch: staging
+    plan: free
+    envVars:
+      - key: BOSES_API_URL
+        value: https://api-staging.temujintechnologies.com
+      - key: BOSES_APP_URL
+        value: https://staging.temujintechnologies.com
+    domains:
+      - mcp-staging.temujintechnologies.com
+
   # ── Production Frontend ─────────────────────────────────────────────────
   - type: web
     name: boses-frontend-prod

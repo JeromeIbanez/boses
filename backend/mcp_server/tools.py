@@ -1,0 +1,369 @@
+"""
+All 7 Boses MCP tool implementations.
+
+Tool descriptions are the primary signal agents use to decide when and how to
+call each tool — keep them accurate and action-oriented.
+"""
+from __future__ import annotations
+
+from mcp.server.fastmcp import FastMCP
+
+from mcp_server import client
+from mcp_server.config import BOSES_APP_URL
+
+mcp = FastMCP("Boses Market Simulation Platform")
+
+
+# ---------------------------------------------------------------------------
+# 1. list_projects
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def list_projects() -> str:
+    """
+    List all projects in the Boses workspace.
+    Returns a list of projects with their IDs and names.
+    Always call this first to get a project_id before doing anything else.
+    """
+    projects = await client.list_projects()
+    if not projects:
+        return "No projects found. Create one in the Boses web app first."
+    lines = [f"- {p['name']} (id: {p['id']})" for p in projects]
+    return "Projects:\n" + "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# 2. list_persona_groups
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def list_persona_groups(project_id: str) -> str:
+    """
+    List all persona groups in a Boses project.
+    Returns each group's ID, name, demographic summary, generation status, and persona count.
+    Use this to find an existing audience before creating a new one.
+
+    Args:
+        project_id: The ID of the project (get this from list_projects).
+    """
+    groups = await client.list_persona_groups(project_id)
+    if not groups:
+        return "No persona groups found in this project."
+
+    lines = []
+    for g in groups:
+        status = g.get("generation_status", "unknown")
+        count = g.get("persona_count", "?")
+        age = f"{g.get('age_min')}–{g.get('age_max')}"
+        gender = g.get("gender", "All")
+        location = g.get("location", "")
+        income = g.get("income_level", "")
+        lines.append(
+            f"- {g['name']} (id: {g['id']}) | {count} personas | {age}yo {gender} | {location} | {income} income | status: {status}"
+        )
+    return "Persona groups:\n" + "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# 3. create_persona_group
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def create_persona_group(
+    project_id: str,
+    name: str,
+    description: str = "",
+    age_min: int = 18,
+    age_max: int = 45,
+    gender: str = "All",
+    location: str = "Southeast Asia",
+    occupation: str = "Mixed",
+    income_level: str = "Middle",
+    psychographic_notes: str = "",
+) -> str:
+    """
+    Create a new AI persona group from a demographic spec and generate all personas.
+    This is a blocking call — it waits until all personas are fully generated (~30–90s).
+
+    You can either:
+    - Pass the 'description' field with a natural-language spec like
+      "Metro Manila mothers, 28–40, middle income, health-conscious" and let Boses
+      extract the structured fields automatically, OR
+    - Pass the structured fields directly (age_min, age_max, gender, location, etc.)
+
+    If both are provided, the structured fields override the parsed description.
+
+    Args:
+        project_id: The ID of the project.
+        name: A short label for this group, e.g. "SEA Millennial Women".
+        description: (Optional) Natural-language demographic description. If provided,
+                     Boses will parse it and use it to fill any unspecified fields.
+        age_min: Minimum age (default 18).
+        age_max: Maximum age (default 45).
+        gender: One of "All", "Female", "Male", "Non-binary" (default "All").
+        location: City, region, or country, e.g. "Jakarta, Indonesia" (default "Southeast Asia").
+        occupation: Job type or work description, e.g. "Office workers" (default "Mixed").
+        income_level: One of "Low", "Middle", "Upper-middle", "High" (default "Middle").
+        psychographic_notes: Optional lifestyle, values, or behavioral context.
+    """
+    payload: dict = {
+        "name": name,
+        "age_min": age_min,
+        "age_max": age_max,
+        "gender": gender,
+        "location": location,
+        "occupation": occupation,
+        "income_level": income_level,
+    }
+    if psychographic_notes:
+        payload["psychographic_notes"] = psychographic_notes
+
+    # If a natural-language description is provided, let the backend parse it
+    # and fill in any fields not explicitly set.
+    if description:
+        try:
+            parsed = await client.parse_persona_prompt(project_id, description)
+            # Merge parsed fields as defaults (explicit args take precedence)
+            for field in ("age_min", "age_max", "gender", "location", "occupation", "income_level", "psychographic_notes"):
+                if field in parsed and payload.get(field) in (None, "", 18, 45, "All", "Southeast Asia", "Mixed", "Middle"):
+                    payload[field] = parsed[field]
+            if not payload.get("name") or payload["name"] == name:
+                # Keep user-supplied name but allow parsed name as fallback
+                payload["name"] = name or parsed.get("name", name)
+        except Exception:
+            pass  # Fall back to the structured fields as-is
+
+    # Step 1: Create the group
+    group = await client.create_persona_group(project_id, payload)
+    group_id = group["id"]
+
+    # Step 2: Trigger generation
+    await client.generate_persona_group(project_id, group_id)
+
+    # Step 3: Poll until complete
+    try:
+        group = await client.poll_persona_group_until_ready(project_id, group_id)
+    except (TimeoutError, RuntimeError) as e:
+        return f"Persona group '{name}' was created (id: {group_id}) but generation did not complete: {e}"
+
+    count = group.get("persona_count", "?")
+    return (
+        f"Persona group '{group['name']}' is ready.\n"
+        f"- ID: {group_id}\n"
+        f"- {count} personas generated\n"
+        f"- Demographics: {group.get('age_min')}–{group.get('age_max')}yo, "
+        f"{group.get('gender')}, {group.get('location')}, {group.get('income_level')} income\n"
+        f"Use group_id '{group_id}' when calling run_simulation."
+    )
+
+
+# ---------------------------------------------------------------------------
+# 4. run_simulation
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def run_simulation(
+    project_id: str,
+    simulation_type: str,
+    persona_group_ids: list[str],
+    prompt_question: str = "",
+    survey_schema: dict | None = None,
+    idi_script_text: str = "",
+    briefing_ids: list[str] | None = None,
+) -> str:
+    """
+    Start a market simulation in Boses. Returns immediately with a simulation_id.
+    Use get_simulation_status to poll until complete, then get_simulation_results.
+
+    Simulation types:
+    - "concept_test": React to a concept, ad copy, product idea. Requires prompt_question.
+    - "focus_group": Group discussion around a topic. Requires prompt_question.
+    - "survey": Structured questionnaire. Requires survey_schema (JSON with questions array).
+    - "idi_ai": AI-conducted in-depth interview. Optional idi_script_text.
+    - "conjoint": Conjoint analysis for feature/price tradeoffs. Requires prompt_question (product category).
+
+    Args:
+        project_id: The ID of the project.
+        simulation_type: One of "concept_test", "focus_group", "survey", "idi_ai", "conjoint".
+        persona_group_ids: List of persona group IDs to use as the audience.
+        prompt_question: The research question or concept to test (required for most types).
+        survey_schema: For survey type — a dict with a "questions" array.
+        idi_script_text: For idi_ai — optional interview script or topic guide.
+        briefing_ids: Optional list of briefing document IDs to include as context.
+    """
+    payload: dict = {
+        "simulation_type": simulation_type,
+        "persona_group_ids": persona_group_ids,
+    }
+    if prompt_question:
+        payload["prompt_question"] = prompt_question
+    if survey_schema:
+        payload["survey_schema"] = survey_schema
+    if idi_script_text:
+        payload["idi_script_text"] = idi_script_text
+    if briefing_ids:
+        payload["briefing_ids"] = briefing_ids
+
+    sim = await client.create_simulation(project_id, payload)
+    sim_id = sim["id"]
+    return (
+        f"Simulation started.\n"
+        f"- ID: {sim_id}\n"
+        f"- Type: {simulation_type}\n"
+        f"- Status: {sim.get('status', 'pending')}\n"
+        f"Now call get_simulation_status(project_id='{project_id}', simulation_id='{sim_id}') "
+        f"every 15 seconds until status is 'complete'."
+    )
+
+
+# ---------------------------------------------------------------------------
+# 5. get_simulation_status
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def get_simulation_status(project_id: str, simulation_id: str) -> str:
+    """
+    Check the current status of a simulation.
+    Poll every 10–15 seconds until status is "complete" or "failed".
+
+    Possible statuses:
+    - "pending" / "running" / "generating_report" — still in progress, keep polling
+    - "complete" — finished, call get_simulation_results now
+    - "failed" — something went wrong
+
+    Args:
+        project_id: The ID of the project.
+        simulation_id: The ID of the simulation (from run_simulation).
+    """
+    sim = await client.get_simulation(project_id, simulation_id)
+    status = sim.get("status", "unknown")
+    progress = sim.get("progress") or {}
+
+    if status == "complete":
+        return f"Simulation is complete. Call get_simulation_results now."
+
+    if status == "failed":
+        error = sim.get("error_message", "Unknown error")
+        return f"Simulation failed: {error}"
+
+    # Show progress if available
+    current = progress.get("current", 0)
+    total = progress.get("total", "?")
+    current_name = progress.get("current_name", "")
+    msg = f"Status: {status}"
+    if total and total != "?":
+        msg += f" ({current}/{total} personas"
+        if current_name:
+            msg += f", currently: {current_name}"
+        msg += ")"
+    msg += ". Keep polling every 15 seconds."
+    return msg
+
+
+# ---------------------------------------------------------------------------
+# 6. get_simulation_results
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def get_simulation_results(project_id: str, simulation_id: str) -> str:
+    """
+    Get a plain-English summary of simulation results.
+    Only call this after get_simulation_status returns "complete".
+
+    Returns: dominant sentiment, full sentiment distribution, top themes,
+    key recommendations, and a narrative summary.
+
+    Args:
+        project_id: The ID of the project.
+        simulation_id: The ID of the simulation.
+    """
+    results = await client.get_simulation_results(project_id, simulation_id)
+    if not results:
+        return "No results found. The simulation may still be running."
+
+    # Find the aggregate result
+    aggregate = next(
+        (r for r in results if r.get("result_type") in (
+            "aggregate", "focus_group_aggregate", "idi_aggregate",
+            "survey_aggregate", "conjoint_aggregate",
+        )),
+        None,
+    )
+
+    individual_results = [r for r in results if r.get("result_type") in (
+        "individual", "idi_individual", "survey_response",
+    )]
+
+    lines: list[str] = []
+
+    if aggregate:
+        # Sentiment distribution
+        dist = aggregate.get("sentiment_distribution") or {}
+        if dist:
+            total = sum(v for v in dist.values() if isinstance(v, (int, float)))
+            if total > 0:
+                pct = {k: round(v / total * 100) for k, v in dist.items() if isinstance(v, (int, float))}
+                dominant = max(pct, key=lambda k: pct[k])
+                lines.append(f"**Dominant sentiment: {dominant}**")
+                dist_str = " | ".join(f"{k}: {v}%" for k, v in sorted(pct.items(), key=lambda x: -x[1]))
+                lines.append(f"Distribution: {dist_str}")
+            lines.append("")
+
+        # Top themes
+        themes = aggregate.get("top_themes") or []
+        report = aggregate.get("report_sections") or {}
+        if not themes and report:
+            themes = report.get("cross_persona_themes") or report.get("themes") or report.get("top_themes") or []
+        if themes:
+            lines.append(f"**Top themes:** {', '.join(themes[:8])}")
+            lines.append("")
+
+        # Summary
+        summary = aggregate.get("summary_text") or report.get("executive_summary") or report.get("summary") or ""
+        if summary:
+            lines.append("**Summary:**")
+            lines.append(summary[:800] + ("…" if len(summary) > 800 else ""))
+            lines.append("")
+
+        # Recommendations
+        recs = aggregate.get("recommendations") or report.get("recommendations") or ""
+        if recs:
+            lines.append("**Recommendations:**")
+            lines.append(recs[:600] + ("…" if len(recs) > 600 else ""))
+            lines.append("")
+
+    # Individual breakdown (top 3)
+    if individual_results:
+        lines.append(f"**Individual responses ({len(individual_results)} personas):**")
+        sentiments: dict[str, int] = {}
+        for r in individual_results:
+            s = r.get("sentiment", "Unknown")
+            sentiments[s] = sentiments.get(s, 0) + 1
+        for s, count in sorted(sentiments.items(), key=lambda x: -x[1]):
+            lines.append(f"  - {s}: {count} persona(s)")
+        lines.append("")
+
+    if not lines:
+        return "Results are available but no structured data was found. View the full report in the Boses app."
+
+    lines.append(f"For charts, per-persona details, and the full report → call get_simulation_url.")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# 7. get_simulation_url
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def get_simulation_url(project_id: str, simulation_id: str) -> str:
+    """
+    Get the direct URL to the full Boses results page for this simulation.
+    Always call this at the end of any simulation workflow and include the link in your response.
+    The Boses app shows charts, per-persona breakdowns, themes, and export options.
+
+    Args:
+        project_id: The ID of the project.
+        simulation_id: The ID of the simulation.
+    """
+    url = f"{BOSES_APP_URL}/projects/{project_id}/simulations/{simulation_id}"
+    return f"Full results in Boses: {url}"

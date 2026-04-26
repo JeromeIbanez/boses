@@ -17,3 +17,4 @@ from app.models.cultural_context import CulturalContextSnapshot  # noqa: F401
 from app.models.simulation_rating import SimulationRating  # noqa: F401
 from app.models.invite_token import InviteToken  # noqa: F401
 from app.models.prediction_outcome import PredictionOutcome  # noqa: F401
+from app.models.api_key import APIKey  # noqa: F401

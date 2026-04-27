@@ -74,6 +74,55 @@ def change_password(
     db.commit()
 
 
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=72)
+
+
+@router.delete("/account", status_code=204)
+def delete_account(
+    body: DeleteAccountRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Permanently delete the calling user's account.
+    Owners with other active members must remove them first.
+    """
+    from sqlalchemy import select
+
+    user = db.get(User, current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(body.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Password is incorrect.")
+
+    # Owners cannot leave if other members still exist
+    if user.role == "owner":
+        other_members = db.execute(
+            select(User).where(
+                User.company_id == current_user.company_id,
+                User.id != user.id,
+                User.is_active == True,  # noqa: E712
+            )
+        ).scalars().first()
+        if other_members:
+            raise HTTPException(
+                status_code=400,
+                detail="You are the workspace owner. Remove all other members before deleting your account.",
+            )
+
+    # Revoke all refresh tokens
+    db.query(RefreshToken).filter(RefreshToken.user_id == user.id).update(
+        {"revoked_at": datetime.now(timezone.utc)}
+    )
+
+    # Soft-delete the user
+    user.is_active = False
+    user.email = f"deleted_{user.id}@deleted.boses"  # free up the email for reuse
+    db.commit()
+
+
 @router.patch("/company", response_model=CompanyResponse)
 def update_company_settings(
     body: CompanySettingsUpdate,

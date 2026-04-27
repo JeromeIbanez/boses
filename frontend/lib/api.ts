@@ -406,3 +406,9 @@ export const changePassword = (current_password: string, new_password: string) =
     method: "PATCH",
     body: JSON.stringify({ current_password, new_password }),
   });
+
+export const deleteAccount = (password: string) =>
+  request<void>("/settings/account", {
+    method: "DELETE",
+    body: JSON.stringify({ password }),
+  });

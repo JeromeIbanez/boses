@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key, Users, Mail, X, Lock } from "lucide-react";
-import { getCompanySettings, updateCompanySettings, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember, changePassword } from "@/lib/api";
+import { getCompanySettings, updateCompanySettings, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember, changePassword, deleteAccount } from "@/lib/api";
 import type { APIKey, TeamMember, PendingInvite } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import PageHeader from "@/components/layout/PageHeader";
@@ -437,12 +438,90 @@ function APIKeysSection() {
 }
 
 // ---------------------------------------------------------------------------
+// Danger zone sub-component
+// ---------------------------------------------------------------------------
+
+function DangerZone() {
+  const { logout } = useAuth();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => deleteAccount(password),
+    onSuccess: async () => {
+      await logout();
+      router.push("/login");
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    mutate();
+  };
+
+  return (
+    <section className="bg-white border border-red-100 rounded-xl p-6">
+      <h2 className="text-sm font-semibold text-red-600 mb-1">Danger zone</h2>
+      <p className="text-xs text-zinc-500 mb-4">
+        Permanently delete your account. This cannot be undone.
+      </p>
+
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="text-xs font-medium text-red-600 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-colors"
+        >
+          Delete my account
+        </button>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-3 max-w-sm">
+          <p className="text-xs text-zinc-600">
+            Enter your password to confirm. If you are the workspace owner, remove all other members first.
+          </p>
+          <Input
+            type="password"
+            placeholder="Your password"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setError(""); }}
+            autoComplete="current-password"
+            required
+          />
+          {error && (
+            <div className="flex items-center gap-2 text-xs text-red-600">
+              <AlertCircle size={13} /> {error}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isPending || !password}
+              className="!bg-red-600 hover:!bg-red-700"
+            >
+              {isPending ? <Spinner /> : "Permanently delete account"}
+            </Button>
+            <Button variant="secondary" type="button" onClick={() => { setOpen(false); setPassword(""); setError(""); }}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main settings page
 // ---------------------------------------------------------------------------
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const router = useRouter();
   const [slackUrl, setSlackUrl] = useState<string>("");
   const [saved, setSaved] = useState(false);
 
@@ -501,6 +580,9 @@ export default function SettingsPage() {
 
         {/* API Keys */}
         <APIKeysSection />
+
+        {/* Danger zone */}
+        <DangerZone />
 
         {/* Slack */}
         <section className="bg-white border border-zinc-200 rounded-xl p-6">

@@ -15,16 +15,6 @@ os.environ.setdefault("ENVIRONMENT", "development")
 # Make sure the upload dir exists so StaticFiles mount in app/main.py succeeds
 os.makedirs(os.path.join("/tmp/boses-test-uploads", "avatars"), exist_ok=True)
 
-# Stub `magic` (libmagic native lib may be unavailable in test env). It's used
-# only by file-upload routes which our tests don't exercise.
-import sys
-import types as _types
-if "magic" not in sys.modules:
-    _stub = _types.ModuleType("magic")
-    _stub.from_buffer = lambda *a, **kw: "application/octet-stream"
-    _stub.from_file = lambda *a, **kw: "application/octet-stream"
-    sys.modules["magic"] = _stub
-
 import uuid
 from unittest.mock import MagicMock
 

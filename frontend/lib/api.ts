@@ -247,7 +247,13 @@ export const getConvergence = (projectId: string, personaGroupId: string, briefi
 
 // Settings
 export const getCompanySettings = () => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company");
-export const updateCompanySettings = (body: { slack_webhook_url?: string | null }) => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company", { method: "PATCH", body: JSON.stringify(body) });
+export const updateCompanySettings = (body: { name?: string; slack_webhook_url?: string | null }) => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company", { method: "PATCH", body: JSON.stringify(body) });
+export const updateNotificationPrefs = (email_notifications: boolean) => request<void>("/settings/notifications", { method: "PATCH", body: JSON.stringify({ email_notifications }) });
+
+// Simulation Ratings
+export interface SimulationRating { id: string; rating: number; feedback: string | null; created_at: string; }
+export const getSimulationRating = (projectId: string, simulationId: string) => request<SimulationRating>(`/projects/${projectId}/simulations/${simulationId}/rating`);
+export const rateSimulation = (projectId: string, simulationId: string, rating: number, feedback?: string) => request<SimulationRating>(`/projects/${projectId}/simulations/${simulationId}/rating`, { method: "POST", body: JSON.stringify({ rating, feedback: feedback ?? null }) });
 
 
 // Admin — Boses-curated personas (staff only)

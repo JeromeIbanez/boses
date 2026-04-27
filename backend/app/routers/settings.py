@@ -17,6 +17,7 @@ router = APIRouter(prefix="/settings", tags=["Settings"])
 
 
 class CompanySettingsUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
     slack_webhook_url: Optional[str] = None
 
     @field_validator("slack_webhook_url")
@@ -130,8 +131,28 @@ def update_company_settings(
     db: Session = Depends(get_db),
 ):
     company = _get_company_or_404(current_user.company_id, db)
+    if "name" in body.model_fields_set and body.name is not None:
+        company.name = body.name
     if "slack_webhook_url" in body.model_fields_set:
         company.slack_webhook_url = body.slack_webhook_url
     db.commit()
     db.refresh(company)
     return company
+
+
+class NotificationPrefsUpdate(BaseModel):
+    email_notifications: bool
+
+
+@router.patch("/notifications", status_code=204)
+def update_notification_prefs(
+    body: NotificationPrefsUpdate,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Toggle email notifications for the current user."""
+    user = db.get(User, current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.email_notifications = body.email_notifications
+    db.commit()

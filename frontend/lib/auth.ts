@@ -50,6 +50,7 @@ export interface AuthUser {
   full_name: string | null;
   role: string;
   is_boses_staff: boolean;
+  email_notifications: boolean;
   company: Company;
   created_at: string;
 }

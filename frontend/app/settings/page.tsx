@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key, Users, Mail, X, Lock } from "lucide-react";
-import { getCompanySettings, updateCompanySettings, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember, changePassword, deleteAccount } from "@/lib/api";
+import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key, Users, Mail, X, Lock, Bell, ArrowRight } from "lucide-react";
+import { getCompanySettings, updateCompanySettings, updateNotificationPrefs, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember, changePassword, deleteAccount } from "@/lib/api";
 import type { APIKey, TeamMember, PendingInvite } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import PageHeader from "@/components/layout/PageHeader";
@@ -515,15 +516,14 @@ function DangerZone() {
 }
 
 // ---------------------------------------------------------------------------
-// Main settings page
+// Workspace (name editable by owner/admin) sub-component
 // ---------------------------------------------------------------------------
 
-export default function SettingsPage() {
+function WorkspaceSection({ currentUserRole }: { currentUserRole: string }) {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const router = useRouter();
-  const [slackUrl, setSlackUrl] = useState<string>("");
+  const [name, setName] = useState("");
   const [saved, setSaved] = useState(false);
+  const isOwner = currentUserRole === "owner" || currentUserRole === "admin";
 
   const { data: company, isLoading } = useQuery({
     queryKey: ["company-settings"],
@@ -531,12 +531,11 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    if (company) setSlackUrl(company.slack_webhook_url ?? "");
+    if (company) setName(company.name ?? "");
   }, [company]);
 
   const { mutate: save, isPending: isSaving, error } = useMutation({
-    mutationFn: () =>
-      updateCompanySettings({ slack_webhook_url: slackUrl.trim() || null }),
+    mutationFn: () => updateCompanySettings({ name: name.trim() }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-settings"] });
       setSaved(true);
@@ -544,36 +543,149 @@ export default function SettingsPage() {
     },
   });
 
-  if (isLoading) {
-    return (
-      <div className="px-8 py-8 flex items-center gap-2 text-zinc-400">
-        <Spinner /> Loading…
+  if (isLoading) return null;
+
+  return (
+    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+      <h2 className="text-sm font-semibold text-zinc-900 mb-4">Workspace</h2>
+      <div className="space-y-4 max-w-sm">
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Company name</label>
+          {isOwner ? (
+            <Input
+              value={name}
+              onChange={(e) => { setName(e.target.value); setSaved(false); }}
+              placeholder="Your company name"
+              maxLength={255}
+            />
+          ) : (
+            <p className="text-sm text-zinc-800 font-medium">{company?.name}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Slug</label>
+          <p className="text-sm text-zinc-500 font-mono">{company?.slug}</p>
+        </div>
+
+        {isOwner && (
+          <>
+            {error && (
+              <div className="flex items-center gap-2 text-xs text-red-600">
+                <AlertCircle size={13} /> {(error as Error).message}
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="primary"
+                onClick={() => name.trim() && save()}
+                disabled={isSaving || !name.trim() || name.trim() === company?.name}
+              >
+                {isSaving ? <Spinner /> : "Save"}
+              </Button>
+              {saved && (
+                <span className="flex items-center gap-1.5 text-xs text-green-600">
+                  <CheckCircle2 size={13} /> Saved
+                </span>
+              )}
+            </div>
+          </>
+        )}
       </div>
-    );
-  }
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Notifications sub-component
+// ---------------------------------------------------------------------------
+
+function NotificationsSection() {
+  const { user } = useAuth();
+  const [enabled, setEnabled] = useState(true);
+  const [saved, setSaved] = useState(false);
+
+  // Initialise from user object when available
+  useEffect(() => {
+    if (user) setEnabled(user.email_notifications ?? true);
+  }, [user]);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: (val: boolean) => updateNotificationPrefs(val),
+    onSuccess: (_, val) => {
+      setEnabled(val);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    },
+  });
+
+  const toggle = () => {
+    const next = !enabled;
+    mutate(next);
+  };
+
+  return (
+    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
+          <Bell size={15} className="text-zinc-500" />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">Notifications</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">Control how Boses contacts you.</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between max-w-sm">
+        <div>
+          <p className="text-sm font-medium text-zinc-800">Simulation completion emails</p>
+          <p className="text-xs text-zinc-400 mt-0.5">Receive an email when a simulation finishes or fails.</p>
+        </div>
+        <button
+          onClick={toggle}
+          disabled={isPending}
+          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-none ${
+            enabled ? "bg-zinc-800" : "bg-zinc-200"
+          } disabled:opacity-50`}
+          aria-checked={enabled}
+          role="switch"
+        >
+          <span
+            className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+              enabled ? "translate-x-4" : "translate-x-1"
+            }`}
+          />
+        </button>
+      </div>
+
+      {saved && (
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-green-600">
+          <CheckCircle2 size={13} /> Saved
+        </p>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main settings page
+// ---------------------------------------------------------------------------
+
+export default function SettingsPage() {
+  const { user } = useAuth();
 
   return (
     <div className="px-8 py-8 max-w-2xl">
       <PageHeader title="Settings" description="Manage your workspace configuration." />
 
       <div className="mt-8 space-y-8">
-        {/* Company */}
-        <section className="bg-white border border-zinc-200 rounded-xl p-6">
-          <h2 className="text-sm font-semibold text-zinc-900 mb-4">Workspace</h2>
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Company name</p>
-              <p className="text-sm text-zinc-800 font-medium">{company?.name}</p>
-            </div>
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Slug</p>
-              <p className="text-sm text-zinc-500 font-mono">{company?.slug}</p>
-            </div>
-          </div>
-        </section>
+        {/* Workspace */}
+        <WorkspaceSection currentUserRole={user?.role ?? "member"} />
 
         {/* Team */}
         <TeamSection currentUserRole={user?.role ?? "member"} />
+
+        {/* Notifications */}
+        <NotificationsSection />
 
         {/* Change password */}
         <ChangePasswordSection />
@@ -581,81 +693,20 @@ export default function SettingsPage() {
         {/* API Keys */}
         <APIKeysSection />
 
+        {/* Integrations link */}
+        <section className="bg-white border border-zinc-200 rounded-xl p-6">
+          <h2 className="text-sm font-semibold text-zinc-900 mb-1">Integrations</h2>
+          <p className="text-xs text-zinc-500 mb-4">Connect Boses to Slack and other tools.</p>
+          <Link
+            href="/integrations"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors"
+          >
+            Manage integrations <ArrowRight size={12} />
+          </Link>
+        </section>
+
         {/* Danger zone */}
         <DangerZone />
-
-        {/* Slack */}
-        <section className="bg-white border border-zinc-200 rounded-xl p-6">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0 overflow-hidden">
-              <img
-                src="/integrations/slack.svg"
-                alt="Slack"
-                className="w-5 h-5 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-zinc-900">Slack</h2>
-              <p className="text-xs text-zinc-500 mt-0.5">
-                Get notified in Slack when a simulation finishes.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-zinc-700 mb-1.5">
-                Incoming Webhook URL
-              </label>
-              <Input
-                placeholder="https://hooks.slack.com/services/..."
-                value={slackUrl}
-                onChange={(e) => {
-                  setSlackUrl(e.target.value);
-                  setSaved(false);
-                }}
-              />
-              <p className="text-xs text-zinc-400 mt-1.5">
-                Create a webhook at{" "}
-                <a
-                  href="https://api.slack.com/messaging/webhooks"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-violet-600 hover:underline"
-                >
-                  api.slack.com/messaging/webhooks
-                </a>
-                , then paste the URL here.
-              </p>
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 text-xs text-red-600">
-                <AlertCircle size={13} />
-                {(error as Error).message}
-              </div>
-            )}
-
-            <div className="flex items-center gap-3 pt-1">
-              <Button
-                variant="primary"
-                onClick={() => save()}
-                disabled={isSaving}
-              >
-                {isSaving ? <Spinner /> : "Save"}
-              </Button>
-              {saved && (
-                <span className="flex items-center gap-1.5 text-xs text-green-600">
-                  <CheckCircle2 size={13} />
-                  Saved
-                </span>
-              )}
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );

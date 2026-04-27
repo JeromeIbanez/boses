@@ -693,6 +693,18 @@ export default function SettingsPage() {
         {/* API Keys */}
         <APIKeysSection />
 
+        {/* Billing link */}
+        <section className="bg-white border border-zinc-200 rounded-xl p-6">
+          <h2 className="text-sm font-semibold text-zinc-900 mb-1">Billing</h2>
+          <p className="text-xs text-zinc-500 mb-4">Manage your plan, usage, and payment details.</p>
+          <Link
+            href="/settings/billing"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors"
+          >
+            Manage billing <ArrowRight size={12} />
+          </Link>
+        </section>
+
         {/* Integrations link */}
         <section className="bg-white border border-zinc-200 rounded-xl p-6">
           <h2 className="text-sm font-semibold text-zinc-900 mb-1">Integrations</h2>

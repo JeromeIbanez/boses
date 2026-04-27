@@ -66,6 +66,12 @@ def create_simulation(
 ):
     _get_project_or_404(project_id, db, current_user.company_id)
 
+    # --- Billing quota gate ---
+    from app.models.company import Company
+    from app.services.stripe_service import check_quota_or_402
+    company = db.get(Company, current_user.company_id)
+    check_quota_or_402(company, db)
+
     # --- Type-specific validation ---
     if body.simulation_type == "concept_test":
         if not body.briefing_ids:

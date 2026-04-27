@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     # File uploads
     MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50 MB
 
+    # Stripe (billing)
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_STARTER_PRICE_ID: str = ""
+    STRIPE_PRO_PRICE_ID: str = ""
+    STRIPE_AGENCY_PRICE_ID: str = ""
+
     @property
     def supabase_configured(self) -> bool:
         return bool(self.SUPABASE_URL and self.SUPABASE_SERVICE_KEY)

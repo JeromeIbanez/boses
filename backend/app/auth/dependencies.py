@@ -1,6 +1,7 @@
 import hashlib
 import uuid
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from fastapi import Cookie, Depends, Header, HTTPException, status
 from jose import JWTError
@@ -22,18 +23,12 @@ class CurrentUser:
     is_boses_staff: bool
 
 
-def get_current_user(
-    access_token: str | None = Cookie(default=None),
-    db: Session = Depends(get_db),
-) -> CurrentUser:
+def _auth_from_cookie(access_token: str, db: Session) -> CurrentUser:
+    """Authenticate from a JWT access-token cookie. Raises HTTPException on any failure."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Not authenticated",
     )
-
-    if not access_token:
-        raise credentials_exception
-
     try:
         payload = decode_access_token(access_token)
         user_id = uuid.UUID(payload["sub"])
@@ -42,11 +37,7 @@ def get_current_user(
         raise credentials_exception
 
     user = db.get(User, user_id)
-    if not user or not user.is_active:
-        raise credentials_exception
-
-    # Sanity check — company_id in token matches DB
-    if user.company_id != company_id:
+    if not user or not user.is_active or user.company_id != company_id:
         raise credentials_exception
 
     return CurrentUser(
@@ -56,6 +47,67 @@ def get_current_user(
         full_name=user.full_name,
         role=user.role,
         is_boses_staff=user.is_boses_staff,
+    )
+
+
+def _auth_from_api_key(x_api_key: str, db: Session) -> CurrentUser:
+    """Authenticate from an X-API-Key header. Raises HTTPException on any failure."""
+    from app.models.api_key import APIKey
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or missing API key",
+        headers={"WWW-Authenticate": "ApiKey"},
+    )
+
+    key_hash = hashlib.sha256(x_api_key.encode()).hexdigest()
+    api_key = db.execute(
+        select(APIKey).where(
+            APIKey.key_hash == key_hash,
+            APIKey.is_active == True,  # noqa: E712
+        )
+    ).scalar_one_or_none()
+
+    if not api_key:
+        raise credentials_exception
+
+    if api_key.is_expired:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key has expired. Go to Boses Settings → API Keys to create a new one.",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+
+    # Update last_used_at (best-effort)
+    try:
+        api_key.last_used_at = datetime.now(timezone.utc)
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    return CurrentUser(
+        id=api_key.created_by_user_id or uuid.UUID(int=0),
+        company_id=api_key.company_id,
+        email="api-key@boses.internal",
+        full_name=f"API Key: {api_key.name}",
+        role="member",
+        is_boses_staff=False,
+    )
+
+
+def get_current_user(
+    access_token: str | None = Cookie(default=None),
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+    db: Session = Depends(get_db),
+) -> CurrentUser:
+    """Accept either a JWT cookie (browser) or an X-API-Key header (MCP / programmatic)."""
+    if access_token:
+        return _auth_from_cookie(access_token, db)
+    if x_api_key:
+        return _auth_from_api_key(x_api_key, db)
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
     )
 
 
@@ -73,57 +125,13 @@ def get_current_user_from_api_key(
     db: Session = Depends(get_db),
 ) -> CurrentUser:
     """
-    Authenticate via X-API-Key header.
-    Returns the same CurrentUser dataclass as cookie auth, scoped to the key's company.
-    Used by the MCP server and any programmatic clients.
+    Authenticate via X-API-Key header only (no cookie fallback).
+    Kept for any routes that must refuse cookie auth entirely.
     """
-    from app.models.api_key import APIKey
-    from datetime import datetime
-
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid or missing API key",
-        headers={"WWW-Authenticate": "ApiKey"},
-    )
-
     if not x_api_key:
-        raise credentials_exception
-
-    key_hash = hashlib.sha256(x_api_key.encode()).hexdigest()
-
-    api_key = db.execute(
-        select(APIKey).where(
-            APIKey.key_hash == key_hash,
-            APIKey.is_active == True,  # noqa: E712
-        )
-    ).scalar_one_or_none()
-
-    if not api_key:
-        raise credentials_exception
-
-    # Reject expired keys
-    if api_key.is_expired:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="API key has expired. Go to Boses Settings → API Keys to create a new one.",
+            detail="Invalid or missing API key",
             headers={"WWW-Authenticate": "ApiKey"},
         )
-
-    # Update last_used_at (best-effort, don't fail the request if this errors)
-    try:
-        from datetime import timezone
-        api_key.last_used_at = datetime.now(timezone.utc)
-        db.commit()
-    except Exception:
-        db.rollback()
-
-    # Return a CurrentUser scoped to this key's company.
-    # We use a sentinel UUID for the user id since API keys are company-scoped, not user-scoped.
-    return CurrentUser(
-        id=api_key.created_by_user_id or uuid.UUID(int=0),
-        company_id=api_key.company_id,
-        email="api-key@boses.internal",
-        full_name=f"API Key: {api_key.name}",
-        role="member",
-        is_boses_staff=False,
-    )
+    return _auth_from_api_key(x_api_key, db)

@@ -16,7 +16,7 @@ from mcp_server.context import get_api_key
 
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP("Boses Market Simulation Platform", host="0.0.0.0", stateless_http=True)
+mcp = FastMCP("Boses Market Simulation Platform", host="0.0.0.0")
 
 
 def _audit(tool_name: str) -> None:

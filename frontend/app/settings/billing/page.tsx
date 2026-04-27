@@ -21,7 +21,18 @@ import {
 // Plan metadata
 // ---------------------------------------------------------------------------
 
-const PLANS = [
+type Plan = {
+  key: string;
+  name: string;
+  price: string;
+  seats: string;
+  sims: string;
+  overage: string;
+  color: string;
+  popular?: boolean;
+};
+
+const PLANS: Plan[] = [
   {
     key: "starter",
     name: "Starter",
@@ -50,7 +61,7 @@ const PLANS = [
     overage: "$10 / extra sim",
     color: "amber",
   },
-] as const;
+];
 
 const PLAN_LABELS: Record<string, string> = {
   free: "Free",

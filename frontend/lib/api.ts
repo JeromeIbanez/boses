@@ -361,3 +361,41 @@ export const createApiKey = (name: string, expires_at?: string | null) =>
 
 export const revokeApiKey = (id: string) =>
   request<void>(`/settings/api-keys/${id}`, { method: "DELETE" });
+
+// Team
+export interface TeamMember {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  created_at: string;
+}
+
+export interface PendingInvite {
+  id: string;
+  email: string;
+  role: string;
+  expires_at: string;
+  created_at: string;
+  invited_by_name: string | null;
+}
+
+export interface TeamResponse {
+  members: TeamMember[];
+  pending_invites: PendingInvite[];
+}
+
+export const getTeam = () =>
+  request<TeamResponse>("/settings/team");
+
+export const inviteMember = (email: string, role = "member") =>
+  request<PendingInvite>("/settings/team/invite", {
+    method: "POST",
+    body: JSON.stringify({ email, role }),
+  });
+
+export const cancelInvite = (id: string) =>
+  request<void>(`/settings/team/invites/${id}`, { method: "DELETE" });
+
+export const removeMember = (id: string) =>
+  request<void>(`/settings/team/members/${id}`, { method: "DELETE" });

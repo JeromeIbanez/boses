@@ -2,14 +2,164 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key } from "lucide-react";
-import { getCompanySettings, updateCompanySettings, listApiKeys, createApiKey, revokeApiKey } from "@/lib/api";
-import type { APIKey } from "@/lib/api";
+import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key, Users, Mail, X } from "lucide-react";
+import { getCompanySettings, updateCompanySettings, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember } from "@/lib/api";
+import type { APIKey, TeamMember, PendingInvite } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import PageHeader from "@/components/layout/PageHeader";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
 import { formatDate } from "@/lib/utils";
+
+// ---------------------------------------------------------------------------
+// Team sub-component
+// ---------------------------------------------------------------------------
+
+function TeamSection({ currentUserRole }: { currentUserRole: string }) {
+  const queryClient = useQueryClient();
+  const [email, setEmail] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const isOwner = currentUserRole === "owner" || currentUserRole === "admin";
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["team"],
+    queryFn: getTeam,
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: (email: string) => inviteMember(email),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["team"] });
+      setEmail("");
+      setShowForm(false);
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => cancelInvite(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["team"] }),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => removeMember(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["team"] }),
+  });
+
+  const roleLabel = (role: string) =>
+    ({ owner: "Owner", admin: "Admin", member: "Member" }[role] ?? role);
+
+  return (
+    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
+          <Users size={15} className="text-zinc-500" />
+        </div>
+        <div className="flex-1">
+          <h2 className="text-sm font-semibold text-zinc-900">Team</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Manage who has access to your workspace.
+          </p>
+        </div>
+        {isOwner && (
+          <button
+            onClick={() => setShowForm(v => !v)}
+            className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 border border-zinc-200 rounded-lg px-2.5 py-1.5 hover:bg-zinc-50 transition-colors"
+          >
+            <Plus size={12} /> Invite
+          </button>
+        )}
+      </div>
+
+      {/* Invite form */}
+      {showForm && (
+        <div className="mb-4 p-4 bg-zinc-50 rounded-lg border border-zinc-200 space-y-3">
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Email address</label>
+          <Input
+            type="email"
+            placeholder="colleague@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && email.trim()) inviteMutation.mutate(email.trim());
+            }}
+          />
+          {inviteMutation.error && (
+            <p className="text-xs text-red-600">{(inviteMutation.error as Error).message}</p>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              onClick={() => email.trim() && inviteMutation.mutate(email.trim())}
+              disabled={!email.trim() || inviteMutation.isPending}
+            >
+              {inviteMutation.isPending ? <Spinner /> : "Send invite"}
+            </Button>
+            <Button variant="secondary" onClick={() => { setShowForm(false); setEmail(""); }}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-xs text-zinc-400 py-2"><Spinner className="h-3 w-3" /> Loading…</div>
+      ) : (
+        <div className="space-y-1">
+          {/* Active members */}
+          {(data?.members ?? []).map((m: TeamMember) => (
+            <div key={m.id} className="flex items-center gap-3 py-2 border-b border-zinc-100 last:border-0">
+              <div className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center shrink-0">
+                <span className="text-xs font-medium text-zinc-500">
+                  {(m.full_name ?? m.email)[0].toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-zinc-800 truncate">{m.full_name ?? m.email}</p>
+                {m.full_name && <p className="text-xs text-zinc-400 truncate">{m.email}</p>}
+              </div>
+              <span className="text-xs text-zinc-400 shrink-0">{roleLabel(m.role)}</span>
+              {isOwner && m.role !== "owner" && (
+                <button
+                  onClick={() => removeMutation.mutate(m.id)}
+                  disabled={removeMutation.isPending}
+                  className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
+                  title="Remove member"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+
+          {/* Pending invites */}
+          {(data?.pending_invites ?? []).map((inv: PendingInvite) => (
+            <div key={inv.id} className="flex items-center gap-3 py-2 border-b border-zinc-100 last:border-0">
+              <div className="w-7 h-7 rounded-full bg-zinc-50 border border-dashed border-zinc-200 flex items-center justify-center shrink-0">
+                <Mail size={11} className="text-zinc-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-zinc-600 truncate">{inv.email}</p>
+                <p className="text-xs text-zinc-400">Invite pending</p>
+              </div>
+              <span className="text-xs text-zinc-400 shrink-0">{roleLabel(inv.role)}</span>
+              {isOwner && (
+                <button
+                  onClick={() => cancelMutation.mutate(inv.id)}
+                  disabled={cancelMutation.isPending}
+                  className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
+                  title="Cancel invite"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // API Keys sub-component
@@ -213,6 +363,7 @@ function APIKeysSection() {
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [slackUrl, setSlackUrl] = useState<string>("");
   const [saved, setSaved] = useState(false);
 
@@ -262,6 +413,9 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
+
+        {/* Team */}
+        <TeamSection currentUserRole={user?.role ?? "member"} />
 
         {/* API Keys */}
         <APIKeysSection />

@@ -56,3 +56,16 @@ class UserResponse(BaseModel):
 
 class AuthResponse(BaseModel):
     user: UserResponse
+
+
+class CompanyInviteValidation(BaseModel):
+    valid: bool
+    email: Optional[str] = None
+    company_name: Optional[str] = None
+    inviter_name: Optional[str] = None
+    role: Optional[str] = None
+
+
+class AcceptInviteRequest(BaseModel):
+    full_name: Optional[str] = Field(default=None, max_length=200)
+    password: str = Field(min_length=8, max_length=72)

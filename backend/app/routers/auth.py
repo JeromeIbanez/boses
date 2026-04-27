@@ -4,6 +4,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.limiter import limiter
@@ -16,11 +17,14 @@ from app.limiter import limiter
 from app.config import settings
 from app.database import get_db
 from app.models.company import Company
+from app.models.company_invite import CompanyInvite
 from app.models.invite_token import InviteToken
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.schemas.auth import (
+    AcceptInviteRequest,
     AuthResponse,
+    CompanyInviteValidation,
     ForgotPasswordRequest,
     InviteTokenValidation,
     LoginRequest,
@@ -247,6 +251,87 @@ def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session =
     # TODO: send email with reset link
     # reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
     # For now, token is stored but email sending is a future step
+
+
+# ---------------------------------------------------------------------------
+# Company invite — validate & accept (workspace multi-user)
+# ---------------------------------------------------------------------------
+
+@router.get("/accept-invite", response_model=CompanyInviteValidation)
+@limiter.limit("30/minute")
+def validate_company_invite(request: Request, token: str, db: Session = Depends(get_db)):
+    """Public endpoint — validate a workspace invite token before showing the accept form."""
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    invite = db.execute(
+        select(CompanyInvite).where(CompanyInvite.token_hash == token_hash)
+    ).scalar_one_or_none()
+
+    if not invite or not invite.is_pending:
+        return CompanyInviteValidation(valid=False)
+
+    company = db.get(Company, invite.company_id)
+    inviter = db.get(User, invite.invited_by_user_id) if invite.invited_by_user_id else None
+
+    return CompanyInviteValidation(
+        valid=True,
+        email=invite.email,
+        company_name=company.name if company else None,
+        inviter_name=inviter.full_name or inviter.email if inviter else None,
+        role=invite.role,
+    )
+
+
+@router.post("/accept-invite", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/hour")
+def accept_company_invite(
+    request: Request,
+    token: str,
+    body: AcceptInviteRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    """Accept a workspace invite — creates a new account under the inviting company."""
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    invite = db.execute(
+        select(CompanyInvite).where(CompanyInvite.token_hash == token_hash)
+    ).scalar_one_or_none()
+
+    if not invite or not invite.is_pending:
+        raise HTTPException(status_code=400, detail="This invite link is invalid or has expired.")
+
+    email_lower = invite.email
+
+    if db.execute(select(User).where(User.email == email_lower)).scalar_one_or_none():
+        raise HTTPException(
+            status_code=400,
+            detail="An account with that email already exists. Try signing in instead.",
+        )
+
+    user = User(
+        company_id=invite.company_id,
+        email=email_lower,
+        hashed_password=hash_password(body.password),
+        full_name=body.full_name,
+        role=invite.role,
+    )
+    db.add(user)
+    db.flush()
+
+    invite.accepted_at = datetime.now(timezone.utc)
+
+    raw_refresh, refresh_hash = create_refresh_token()
+    rt = RefreshToken(
+        user_id=user.id,
+        token_hash=refresh_hash,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+    )
+    db.add(rt)
+    db.commit()
+    db.refresh(user)
+
+    access_token = create_access_token(user.id, user.company_id)
+    set_auth_cookies(response, access_token, raw_refresh)
+    return AuthResponse(user=UserResponse.model_validate(user))
 
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)

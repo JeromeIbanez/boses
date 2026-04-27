@@ -248,9 +248,12 @@ def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session =
     user.password_reset_token_expiry = datetime.now(timezone.utc) + timedelta(hours=2)
     db.commit()
 
-    # TODO: send email with reset link
-    # reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
-    # For now, token is stored but email sending is a future step
+    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={raw_token}"
+    try:
+        from app.services.email_notifier import send_password_reset_email
+        send_password_reset_email(user.email, reset_url)
+    except Exception:
+        pass  # Never leak whether email exists — always return 204
 
 
 # ---------------------------------------------------------------------------

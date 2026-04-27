@@ -1,15 +1,245 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key } from "lucide-react";
-import { getCompanySettings, updateCompanySettings, listApiKeys, createApiKey, revokeApiKey } from "@/lib/api";
-import type { APIKey } from "@/lib/api";
+import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key, Users, Mail, X, Lock } from "lucide-react";
+import { getCompanySettings, updateCompanySettings, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember, changePassword, deleteAccount } from "@/lib/api";
+import type { APIKey, TeamMember, PendingInvite } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import PageHeader from "@/components/layout/PageHeader";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
 import { formatDate } from "@/lib/utils";
+
+// ---------------------------------------------------------------------------
+// Team sub-component
+// ---------------------------------------------------------------------------
+
+function TeamSection({ currentUserRole }: { currentUserRole: string }) {
+  const queryClient = useQueryClient();
+  const [email, setEmail] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const isOwner = currentUserRole === "owner" || currentUserRole === "admin";
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["team"],
+    queryFn: getTeam,
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: (email: string) => inviteMember(email),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["team"] });
+      setEmail("");
+      setShowForm(false);
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => cancelInvite(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["team"] }),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => removeMember(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["team"] }),
+  });
+
+  const roleLabel = (role: string) =>
+    ({ owner: "Owner", admin: "Admin", member: "Member" }[role] ?? role);
+
+  return (
+    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
+          <Users size={15} className="text-zinc-500" />
+        </div>
+        <div className="flex-1">
+          <h2 className="text-sm font-semibold text-zinc-900">Team</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Manage who has access to your workspace.
+          </p>
+        </div>
+        {isOwner && (
+          <button
+            onClick={() => setShowForm(v => !v)}
+            className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 border border-zinc-200 rounded-lg px-2.5 py-1.5 hover:bg-zinc-50 transition-colors"
+          >
+            <Plus size={12} /> Invite
+          </button>
+        )}
+      </div>
+
+      {/* Invite form */}
+      {showForm && (
+        <div className="mb-4 p-4 bg-zinc-50 rounded-lg border border-zinc-200 space-y-3">
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Email address</label>
+          <Input
+            type="email"
+            placeholder="colleague@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && email.trim()) inviteMutation.mutate(email.trim());
+            }}
+          />
+          {inviteMutation.error && (
+            <p className="text-xs text-red-600">{(inviteMutation.error as Error).message}</p>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              onClick={() => email.trim() && inviteMutation.mutate(email.trim())}
+              disabled={!email.trim() || inviteMutation.isPending}
+            >
+              {inviteMutation.isPending ? <Spinner /> : "Send invite"}
+            </Button>
+            <Button variant="secondary" onClick={() => { setShowForm(false); setEmail(""); }}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-xs text-zinc-400 py-2"><Spinner className="h-3 w-3" /> Loading…</div>
+      ) : (
+        <div className="space-y-1">
+          {/* Active members */}
+          {(data?.members ?? []).map((m: TeamMember) => (
+            <div key={m.id} className="flex items-center gap-3 py-2 border-b border-zinc-100 last:border-0">
+              <div className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center shrink-0">
+                <span className="text-xs font-medium text-zinc-500">
+                  {(m.full_name ?? m.email)[0].toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-zinc-800 truncate">{m.full_name ?? m.email}</p>
+                {m.full_name && <p className="text-xs text-zinc-400 truncate">{m.email}</p>}
+              </div>
+              <span className="text-xs text-zinc-400 shrink-0">{roleLabel(m.role)}</span>
+              {isOwner && m.role !== "owner" && (
+                <button
+                  onClick={() => removeMutation.mutate(m.id)}
+                  disabled={removeMutation.isPending}
+                  className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
+                  title="Remove member"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+
+          {/* Pending invites */}
+          {(data?.pending_invites ?? []).map((inv: PendingInvite) => (
+            <div key={inv.id} className="flex items-center gap-3 py-2 border-b border-zinc-100 last:border-0">
+              <div className="w-7 h-7 rounded-full bg-zinc-50 border border-dashed border-zinc-200 flex items-center justify-center shrink-0">
+                <Mail size={11} className="text-zinc-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-zinc-600 truncate">{inv.email}</p>
+                <p className="text-xs text-zinc-400">Invite pending</p>
+              </div>
+              <span className="text-xs text-zinc-400 shrink-0">{roleLabel(inv.role)}</span>
+              {isOwner && (
+                <button
+                  onClick={() => cancelMutation.mutate(inv.id)}
+                  disabled={cancelMutation.isPending}
+                  className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
+                  title="Cancel invite"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Change password sub-component
+// ---------------------------------------------------------------------------
+
+function ChangePasswordSection() {
+  const [form, setForm] = useState({ current: "", next: "", confirm: "" });
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => changePassword(form.current, form.next),
+    onSuccess: () => {
+      setForm({ current: "", next: "", confirm: "" });
+      setError("");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (form.next !== form.confirm) { setError("New passwords don't match."); return; }
+    mutate();
+  };
+
+  const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [field]: e.target.value });
+    setSaved(false);
+  };
+
+  return (
+    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
+          <Lock size={15} className="text-zinc-500" />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">Password</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">Change your login password.</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3 max-w-sm">
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Current password</label>
+          <Input type="password" value={form.current} onChange={set("current")} autoComplete="current-password" required />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">New password</label>
+          <Input type="password" value={form.next} onChange={set("next")} autoComplete="new-password" required minLength={8} placeholder="At least 8 characters" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Confirm new password</label>
+          <Input type="password" value={form.confirm} onChange={set("confirm")} autoComplete="new-password" required />
+        </div>
+
+        {error && (
+          <div className="flex items-center gap-2 text-xs text-red-600">
+            <AlertCircle size={13} /> {error}
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 pt-1">
+          <Button type="submit" variant="primary" disabled={isPending || !form.current || !form.next || !form.confirm}>
+            {isPending ? <Spinner /> : "Update password"}
+          </Button>
+          {saved && (
+            <span className="flex items-center gap-1.5 text-xs text-green-600">
+              <CheckCircle2 size={13} /> Password updated
+            </span>
+          )}
+        </div>
+      </form>
+    </section>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // API Keys sub-component
@@ -208,11 +438,90 @@ function APIKeysSection() {
 }
 
 // ---------------------------------------------------------------------------
+// Danger zone sub-component
+// ---------------------------------------------------------------------------
+
+function DangerZone() {
+  const { logout } = useAuth();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => deleteAccount(password),
+    onSuccess: async () => {
+      await logout();
+      router.push("/login");
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    mutate();
+  };
+
+  return (
+    <section className="bg-white border border-red-100 rounded-xl p-6">
+      <h2 className="text-sm font-semibold text-red-600 mb-1">Danger zone</h2>
+      <p className="text-xs text-zinc-500 mb-4">
+        Permanently delete your account. This cannot be undone.
+      </p>
+
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="text-xs font-medium text-red-600 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-colors"
+        >
+          Delete my account
+        </button>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-3 max-w-sm">
+          <p className="text-xs text-zinc-600">
+            Enter your password to confirm. If you are the workspace owner, remove all other members first.
+          </p>
+          <Input
+            type="password"
+            placeholder="Your password"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setError(""); }}
+            autoComplete="current-password"
+            required
+          />
+          {error && (
+            <div className="flex items-center gap-2 text-xs text-red-600">
+              <AlertCircle size={13} /> {error}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isPending || !password}
+              className="!bg-red-600 hover:!bg-red-700"
+            >
+              {isPending ? <Spinner /> : "Permanently delete account"}
+            </Button>
+            <Button variant="secondary" type="button" onClick={() => { setOpen(false); setPassword(""); setError(""); }}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main settings page
 // ---------------------------------------------------------------------------
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const router = useRouter();
   const [slackUrl, setSlackUrl] = useState<string>("");
   const [saved, setSaved] = useState(false);
 
@@ -263,8 +572,17 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Team */}
+        <TeamSection currentUserRole={user?.role ?? "member"} />
+
+        {/* Change password */}
+        <ChangePasswordSection />
+
         {/* API Keys */}
         <APIKeysSection />
+
+        {/* Danger zone */}
+        <DangerZone />
 
         {/* Slack */}
         <section className="bg-white border border-zinc-200 rounded-xl p-6">

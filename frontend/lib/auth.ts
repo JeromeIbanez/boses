@@ -91,3 +91,20 @@ export const resetPassword = (token: string, new_password: string) =>
 
 export const refreshToken = () =>
   authRequest<AuthResponse>("/auth/refresh", { method: "POST" });
+
+export interface CompanyInviteValidation {
+  valid: boolean;
+  email: string | null;
+  company_name: string | null;
+  inviter_name: string | null;
+  role: string | null;
+}
+
+export const validateCompanyInvite = (token: string) =>
+  authRequest<CompanyInviteValidation>(`/auth/accept-invite?token=${encodeURIComponent(token)}`);
+
+export const acceptCompanyInvite = (token: string, body: { full_name?: string; password: string }) =>
+  authRequest<AuthResponse>(`/auth/accept-invite?token=${encodeURIComponent(token)}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });

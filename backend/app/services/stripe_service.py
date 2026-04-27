@@ -22,6 +22,14 @@ PLAN_LIMITS: dict[str, int] = {
     "enterprise": 9_999,
 }
 
+PLAN_SEAT_LIMITS: dict[str, int] = {
+    "free": 3,
+    "starter": 3,
+    "pro": 10,
+    "agency": 9_999,
+    "enterprise": 9_999,
+}
+
 OVERAGE_CENTS: dict[str, int] = {
     "starter": 2_000,   # $20
     "pro": 1_500,        # $15
@@ -88,3 +96,59 @@ def check_quota_or_402(company, db, user_email: str = "") -> None:
         )
     company.simulations_used += 1
     db.commit()
+
+
+def check_seat_quota_or_402(company, db, inviter_email: str = "") -> None:
+    """
+    Raise HTTP 402 if the workspace has reached its seat limit.
+
+    Counts active members + non-expired pending invites so that the limit is
+    enforced even before an invite is accepted.
+
+    Users with a @temujintechnologies.com email bypass the check entirely.
+    """
+    if inviter_email.lower().endswith(f"@{UNLIMITED_DOMAIN}"):
+        return
+
+    from datetime import datetime, timezone
+    from sqlalchemy import select, func
+    from app.models.user import User
+    from app.models.company_invite import CompanyInvite
+
+    limit = PLAN_SEAT_LIMITS.get(company.plan, 1)
+
+    active_members = db.execute(
+        select(func.count()).where(
+            User.company_id == company.id,
+            User.is_active == True,  # noqa: E712
+        )
+    ).scalar_one()
+
+    now = datetime.now(timezone.utc)
+    pending_invites = db.execute(
+        select(func.count()).where(
+            CompanyInvite.company_id == company.id,
+            CompanyInvite.accepted_at == None,  # noqa: E711
+            CompanyInvite.expires_at > now,
+        )
+    ).scalar_one()
+
+    current_count = active_members + pending_invites
+
+    if current_count >= limit:
+        from fastapi import HTTPException
+
+        plan_label = company.plan.capitalize()
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error": "seat_limit_exceeded",
+                "plan": company.plan,
+                "limit": limit,
+                "current_count": current_count,
+                "message": (
+                    f"Your {plan_label} plan allows up to {limit} seat{'s' if limit != 1 else ''}. "
+                    "Upgrade your plan to invite more team members."
+                ),
+            },
+        )

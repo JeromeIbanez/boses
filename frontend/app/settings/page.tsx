@@ -87,7 +87,14 @@ function TeamSection({ currentUserRole }: { currentUserRole: string }) {
             }}
           />
           {inviteMutation.error && (
-            <p className="text-xs text-red-600">{(inviteMutation.error as Error).message}</p>
+            <p className="text-xs text-red-600">
+              {(inviteMutation.error as Error).message}
+              {(inviteMutation.error as Error).message.includes("Upgrade") && (
+                <Link href="/settings/billing" className="ml-1 underline font-medium">
+                  Manage billing →
+                </Link>
+              )}
+            </p>
           )}
           <div className="flex items-center gap-2">
             <Button

@@ -16,7 +16,7 @@ from mcp_server.context import get_api_key
 
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP("Boses Market Simulation Platform", host="0.0.0.0", stateless_http=True)
+mcp = FastMCP("Boses Market Simulation Platform", host="0.0.0.0")
 
 
 def _audit(tool_name: str) -> None:
@@ -277,17 +277,21 @@ async def create_briefing(
     description: str = "",
 ) -> str:
     """
-    Upload a research briefing to a Boses project as plain text.
-    The briefing is stored and can be attached to simulations to give personas
-    additional context (brand guidelines, product specs, survey docs, etc.).
+    Upload a BACKGROUND or CONTEXT document to a Boses project as plain text.
+    Use for supporting material that gives personas additional context:
+    brand guidelines, product specs, ad copy, competitor reports, etc.
 
-    Use this when the user pastes or attaches a document in the chat — extract
-    the full text and pass it as 'content'. The returned briefing_id can then
-    be passed to run_simulation via briefing_ids.
+    Do NOT use this for survey question documents — if the user shares a survey
+    questionnaire and wants to run a "survey" simulation, extract the questions
+    from it and pass them as survey_schema to run_simulation instead.
+
+    The returned briefing_id can be passed to run_simulation via briefing_ids
+    so all persona types (concept_test, focus_group, idi_ai, conjoint) can
+    reference the document during the simulation.
 
     Args:
         project_id: The ID of the project to attach the briefing to.
-        title: A short label for this briefing, e.g. "Q3 Brand Guidelines" or "Survey Draft v2".
+        title: A short label for this briefing, e.g. "Q3 Brand Guidelines".
         content: The full text content of the document.
         description: Optional one-line summary of what the document contains.
     """
@@ -355,12 +359,19 @@ async def run_simulation(
     - "idi_ai": AI-conducted in-depth interview. Optional idi_script_text.
     - "conjoint": Conjoint analysis for feature/price tradeoffs. Requires prompt_question (product category).
 
+    IMPORTANT — handling uploaded files:
+    - If the user shares a survey questionnaire document → parse the questions out of it
+      and pass them as survey_schema. Do NOT store it as a briefing.
+      survey_schema format: {"questions": [{"id": "q1", "text": "...", "type": "likert|open|multiple_choice", "options": [...]}]}
+    - If the user shares a background/context document (brand guide, product spec, etc.)
+      → call create_briefing first, then pass the returned ID in briefing_ids.
+
     Args:
         project_id: The ID of the project.
         simulation_type: One of "concept_test", "focus_group", "survey", "idi_ai", "conjoint".
         persona_group_ids: List of persona group IDs to use as the audience.
         prompt_question: The research question or concept to test (required for most types).
-        survey_schema: For survey type — a dict with a "questions" array.
+        survey_schema: For survey type — a dict with a "questions" array (see format above).
         idi_script_text: For idi_ai — optional interview script or topic guide.
         briefing_ids: Optional list of briefing document IDs to include as context.
     """
@@ -573,46 +584,17 @@ async def get_simulation_url(project_id: str, simulation_id: str) -> str:
 @mcp.tool()
 async def get_workspace_info() -> str:
     """
-    Get a quick summary of the current Boses workspace.
-    Returns the number of projects, total simulations run, and briefings across all projects.
-    Use this for a high-level overview before diving into a specific project.
+    Get a quick overview of the current Boses workspace: project names and IDs.
+    Use this as a starting point — then call list_persona_groups, list_simulations,
+    or list_briefings on a specific project_id for more detail.
     """
     _audit("get_workspace_info")
     projects = await client.list_projects()
     if not projects:
         return "Workspace is empty — no projects yet. Call create_project to get started."
 
-    total_simulations = 0
-    total_briefings = 0
-    total_persona_groups = 0
-
+    lines = [f"**Workspace has {len(projects)} project(s):**"]
     for p in projects:
-        pid = p["id"]
-        try:
-            sims = await client.list_simulations(pid)
-            total_simulations += len(sims)
-        except Exception:
-            pass
-        try:
-            briefs = await client.list_briefings(pid)
-            total_briefings += len(briefs)
-        except Exception:
-            pass
-        try:
-            groups = await client.list_persona_groups(pid)
-            total_persona_groups += len(groups)
-        except Exception:
-            pass
-
-    project_names = ", ".join(p["name"] for p in projects[:5])
-    if len(projects) > 5:
-        project_names += f" (and {len(projects) - 5} more)"
-
-    return (
-        f"**Workspace summary:**\n"
-        f"- Projects: {len(projects)} ({project_names})\n"
-        f"- Persona groups: {total_persona_groups}\n"
-        f"- Simulations run: {total_simulations}\n"
-        f"- Briefings uploaded: {total_briefings}\n"
-        f"\nCall list_projects to see project IDs, or list_simulations(project_id=...) to see past runs."
-    )
+        lines.append(f"- {p['name']} (id: {p['id']})")
+    lines.append("\nUse list_persona_groups, list_simulations, or list_briefings with a project_id to dive deeper.")
+    return "\n".join(lines)

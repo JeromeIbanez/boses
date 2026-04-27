@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key, Users, Mail, X } from "lucide-react";
-import { getCompanySettings, updateCompanySettings, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember } from "@/lib/api";
+import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key, Users, Mail, X, Lock } from "lucide-react";
+import { getCompanySettings, updateCompanySettings, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember, changePassword } from "@/lib/api";
 import type { APIKey, TeamMember, PendingInvite } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import PageHeader from "@/components/layout/PageHeader";
@@ -157,6 +157,85 @@ function TeamSection({ currentUserRole }: { currentUserRole: string }) {
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Change password sub-component
+// ---------------------------------------------------------------------------
+
+function ChangePasswordSection() {
+  const [form, setForm] = useState({ current: "", next: "", confirm: "" });
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => changePassword(form.current, form.next),
+    onSuccess: () => {
+      setForm({ current: "", next: "", confirm: "" });
+      setError("");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (form.next !== form.confirm) { setError("New passwords don't match."); return; }
+    mutate();
+  };
+
+  const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [field]: e.target.value });
+    setSaved(false);
+  };
+
+  return (
+    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
+          <Lock size={15} className="text-zinc-500" />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">Password</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">Change your login password.</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3 max-w-sm">
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Current password</label>
+          <Input type="password" value={form.current} onChange={set("current")} autoComplete="current-password" required />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">New password</label>
+          <Input type="password" value={form.next} onChange={set("next")} autoComplete="new-password" required minLength={8} placeholder="At least 8 characters" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Confirm new password</label>
+          <Input type="password" value={form.confirm} onChange={set("confirm")} autoComplete="new-password" required />
+        </div>
+
+        {error && (
+          <div className="flex items-center gap-2 text-xs text-red-600">
+            <AlertCircle size={13} /> {error}
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 pt-1">
+          <Button type="submit" variant="primary" disabled={isPending || !form.current || !form.next || !form.confirm}>
+            {isPending ? <Spinner /> : "Update password"}
+          </Button>
+          {saved && (
+            <span className="flex items-center gap-1.5 text-xs text-green-600">
+              <CheckCircle2 size={13} /> Password updated
+            </span>
+          )}
+        </div>
+      </form>
     </section>
   );
 }
@@ -416,6 +495,9 @@ export default function SettingsPage() {
 
         {/* Team */}
         <TeamSection currentUserRole={user?.role ?? "member"} />
+
+        {/* Change password */}
+        <ChangePasswordSection />
 
         {/* API Keys */}
         <APIKeysSection />

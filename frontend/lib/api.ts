@@ -399,3 +399,10 @@ export const cancelInvite = (id: string) =>
 
 export const removeMember = (id: string) =>
   request<void>(`/settings/team/members/${id}`, { method: "DELETE" });
+
+// Password
+export const changePassword = (current_password: string, new_password: string) =>
+  request<void>("/settings/password", {
+    method: "PATCH",
+    body: JSON.stringify({ current_password, new_password }),
+  });

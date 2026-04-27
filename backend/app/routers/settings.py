@@ -1,12 +1,16 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentUser, get_current_user
+from app.auth.hashing import hash_password, verify_password
 from app.database import get_db
 from app.models.company import Company
+from app.models.refresh_token import RefreshToken
+from app.models.user import User
 from app.schemas.auth import CompanyResponse
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
@@ -38,6 +42,36 @@ def get_company_settings(
     db: Session = Depends(get_db),
 ):
     return _get_company_or_404(current_user.company_id, db)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=72)
+    new_password: str = Field(min_length=8, max_length=72)
+
+
+@router.patch("/password", status_code=204)
+def change_password(
+    body: ChangePasswordRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Change password for the currently logged-in user."""
+    user = db.get(User, current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(body.current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect.")
+
+    user.hashed_password = hash_password(body.new_password)
+
+    # Revoke all existing refresh tokens so other sessions are logged out
+    db.query(RefreshToken).filter(
+        RefreshToken.user_id == user.id,
+        RefreshToken.revoked_at == None,  # noqa: E711
+    ).update({"revoked_at": datetime.now(timezone.utc)})
+
+    db.commit()
 
 
 @router.patch("/company", response_model=CompanyResponse)

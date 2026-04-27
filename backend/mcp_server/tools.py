@@ -573,46 +573,17 @@ async def get_simulation_url(project_id: str, simulation_id: str) -> str:
 @mcp.tool()
 async def get_workspace_info() -> str:
     """
-    Get a quick summary of the current Boses workspace.
-    Returns the number of projects, total simulations run, and briefings across all projects.
-    Use this for a high-level overview before diving into a specific project.
+    Get a quick overview of the current Boses workspace: project names and IDs.
+    Use this as a starting point — then call list_persona_groups, list_simulations,
+    or list_briefings on a specific project_id for more detail.
     """
     _audit("get_workspace_info")
     projects = await client.list_projects()
     if not projects:
         return "Workspace is empty — no projects yet. Call create_project to get started."
 
-    total_simulations = 0
-    total_briefings = 0
-    total_persona_groups = 0
-
+    lines = [f"**Workspace has {len(projects)} project(s):**"]
     for p in projects:
-        pid = p["id"]
-        try:
-            sims = await client.list_simulations(pid)
-            total_simulations += len(sims)
-        except Exception:
-            pass
-        try:
-            briefs = await client.list_briefings(pid)
-            total_briefings += len(briefs)
-        except Exception:
-            pass
-        try:
-            groups = await client.list_persona_groups(pid)
-            total_persona_groups += len(groups)
-        except Exception:
-            pass
-
-    project_names = ", ".join(p["name"] for p in projects[:5])
-    if len(projects) > 5:
-        project_names += f" (and {len(projects) - 5} more)"
-
-    return (
-        f"**Workspace summary:**\n"
-        f"- Projects: {len(projects)} ({project_names})\n"
-        f"- Persona groups: {total_persona_groups}\n"
-        f"- Simulations run: {total_simulations}\n"
-        f"- Briefings uploaded: {total_briefings}\n"
-        f"\nCall list_projects to see project IDs, or list_simulations(project_id=...) to see past runs."
-    )
+        lines.append(f"- {p['name']} (id: {p['id']})")
+    lines.append("\nUse list_persona_groups, list_simulations, or list_briefings with a project_id to dive deeper.")
+    return "\n".join(lines)

@@ -1,17 +1,29 @@
 """
-All 7 Boses MCP tool implementations.
+Boses MCP tool implementations.
 
 Tool descriptions are the primary signal agents use to decide when and how to
 call each tool — keep them accurate and action-oriented.
 """
 from __future__ import annotations
 
+import logging
+
 from mcp.server.fastmcp import FastMCP
 
 from mcp_server import client
 from mcp_server.config import BOSES_APP_URL
+from mcp_server.context import get_api_key
 
-mcp = FastMCP("Boses Market Simulation Platform")
+logger = logging.getLogger(__name__)
+
+mcp = FastMCP("Boses Market Simulation Platform", host="0.0.0.0", stateless_http=True)
+
+
+def _audit(tool_name: str) -> None:
+    """Emit a structured audit log line: tool name + first 16 chars of API key."""
+    key = get_api_key() or ""
+    prefix = (key[:16] + "...") if len(key) > 16 else (key or "no-key")
+    logger.info(f"[audit] tool={tool_name} key={prefix}")
 
 
 # ---------------------------------------------------------------------------
@@ -25,15 +37,61 @@ async def list_projects() -> str:
     Returns a list of projects with their IDs and names.
     Always call this first to get a project_id before doing anything else.
     """
+    _audit("list_projects")
     projects = await client.list_projects()
     if not projects:
-        return "No projects found. Create one in the Boses web app first."
+        return "No projects found. Create one first using create_project."
     lines = [f"- {p['name']} (id: {p['id']})" for p in projects]
     return "Projects:\n" + "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
-# 2. list_persona_groups
+# 2. create_project
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def create_project(
+    name: str,
+    description: str = "",
+) -> str:
+    """
+    Create a new project in the Boses workspace.
+    Returns the new project's ID and name.
+    Use this before creating persona groups or running simulations.
+
+    Args:
+        name: A short, descriptive name for the project, e.g. "Q3 Snack Launch SEA".
+        description: Optional context about the project's research goals.
+    """
+    _audit("create_project")
+    project = await client.create_project(name, description)
+    return (
+        f"Project '{project['name']}' created.\n"
+        f"- ID: {project['id']}\n"
+        f"Use project_id '{project['id']}' when calling list_persona_groups or run_simulation."
+    )
+
+
+# ---------------------------------------------------------------------------
+# 3. delete_project
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def delete_project(project_id: str) -> str:
+    """
+    Permanently delete a Boses project and all its data (persona groups, simulations, briefings).
+    This cannot be undone — confirm with the user before calling.
+
+    Args:
+        project_id: The ID of the project to delete.
+    """
+    _audit("delete_project")
+    await client.delete_project(project_id)
+    return f"Project '{project_id}' and all its data have been deleted."
+
+
+# ---------------------------------------------------------------------------
+# 4. list_persona_groups
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -46,6 +104,7 @@ async def list_persona_groups(project_id: str) -> str:
     Args:
         project_id: The ID of the project (get this from list_projects).
     """
+    _audit("list_persona_groups")
     groups = await client.list_persona_groups(project_id)
     if not groups:
         return "No persona groups found in this project."
@@ -65,7 +124,7 @@ async def list_persona_groups(project_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 3. create_persona_group
+# 5. create_persona_group
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -106,6 +165,7 @@ async def create_persona_group(
         income_level: One of "Low", "Middle", "Upper-middle", "High" (default "Middle").
         psychographic_notes: Optional lifestyle, values, or behavioral context.
     """
+    _audit("create_persona_group")
     payload: dict = {
         "name": name,
         "age_min": age_min,
@@ -158,7 +218,120 @@ async def create_persona_group(
 
 
 # ---------------------------------------------------------------------------
-# 4. run_simulation
+# 6. delete_persona_group
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def delete_persona_group(project_id: str, group_id: str) -> str:
+    """
+    Permanently delete a persona group and all its generated personas.
+    This cannot be undone — confirm with the user before calling.
+
+    Args:
+        project_id: The ID of the project.
+        group_id: The ID of the persona group to delete.
+    """
+    _audit("delete_persona_group")
+    await client.delete_persona_group(project_id, group_id)
+    return f"Persona group '{group_id}' has been deleted."
+
+
+# ---------------------------------------------------------------------------
+# 7. list_briefings
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def list_briefings(project_id: str) -> str:
+    """
+    List all briefing documents attached to a Boses project.
+    Returns each briefing's ID, title, file type, and description.
+    Use this to find existing briefings before uploading duplicates —
+    you can reuse a briefing_id across multiple simulations.
+
+    Args:
+        project_id: The ID of the project.
+    """
+    _audit("list_briefings")
+    briefings = await client.list_briefings(project_id)
+    if not briefings:
+        return "No briefings found in this project. Use create_briefing to upload one."
+
+    lines = []
+    for b in briefings:
+        file_type = b.get("file_type", "unknown")
+        description = b.get("description") or ""
+        desc_part = f" — {description}" if description else ""
+        lines.append(f"- {b['title']} (id: {b['id']}) | type: {file_type}{desc_part}")
+    return "Briefings:\n" + "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# 8. create_briefing
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def create_briefing(
+    project_id: str,
+    title: str,
+    content: str,
+    description: str = "",
+) -> str:
+    """
+    Upload a research briefing to a Boses project as plain text.
+    The briefing is stored and can be attached to simulations to give personas
+    additional context (brand guidelines, product specs, survey docs, etc.).
+
+    Use this when the user pastes or attaches a document in the chat — extract
+    the full text and pass it as 'content'. The returned briefing_id can then
+    be passed to run_simulation via briefing_ids.
+
+    Args:
+        project_id: The ID of the project to attach the briefing to.
+        title: A short label for this briefing, e.g. "Q3 Brand Guidelines" or "Survey Draft v2".
+        content: The full text content of the document.
+        description: Optional one-line summary of what the document contains.
+    """
+    _audit("create_briefing")
+    briefing = await client.create_briefing(project_id, title, content, description)
+    return (
+        f"Briefing '{briefing['title']}' created.\n"
+        f"- ID: {briefing['id']}\n"
+        f"- Characters stored: {len(content)}\n"
+        f"Pass briefing_id '{briefing['id']}' in the briefing_ids list when calling run_simulation."
+    )
+
+
+# ---------------------------------------------------------------------------
+# 9. list_simulations
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def list_simulations(project_id: str) -> str:
+    """
+    List all simulations in a Boses project.
+    Returns each simulation's ID, type, status, and creation time.
+    Use this to check what research has already been run before starting a new simulation.
+
+    Args:
+        project_id: The ID of the project.
+    """
+    _audit("list_simulations")
+    simulations = await client.list_simulations(project_id)
+    if not simulations:
+        return "No simulations found in this project."
+
+    lines = []
+    for s in simulations:
+        sim_type = s.get("simulation_type", "unknown")
+        status = s.get("status", "unknown")
+        created = s.get("created_at", "")[:10] if s.get("created_at") else ""
+        created_part = f" | created: {created}" if created else ""
+        lines.append(f"- {sim_type} (id: {s['id']}) | status: {status}{created_part}")
+    return "Simulations:\n" + "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# 10. run_simulation
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -191,6 +364,7 @@ async def run_simulation(
         idi_script_text: For idi_ai — optional interview script or topic guide.
         briefing_ids: Optional list of briefing document IDs to include as context.
     """
+    _audit("run_simulation")
     payload: dict = {
         "simulation_type": simulation_type,
         "persona_group_ids": persona_group_ids,
@@ -217,7 +391,27 @@ async def run_simulation(
 
 
 # ---------------------------------------------------------------------------
-# 5. get_simulation_status
+# 11. abort_simulation
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def abort_simulation(project_id: str, simulation_id: str) -> str:
+    """
+    Abort a running simulation immediately.
+    Use this if the simulation is taking too long or was started by mistake.
+    Aborted simulations cannot be resumed.
+
+    Args:
+        project_id: The ID of the project.
+        simulation_id: The ID of the simulation to abort.
+    """
+    _audit("abort_simulation")
+    await client.abort_simulation(project_id, simulation_id)
+    return f"Simulation '{simulation_id}' has been aborted."
+
+
+# ---------------------------------------------------------------------------
+# 12. get_simulation_status
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -235,6 +429,7 @@ async def get_simulation_status(project_id: str, simulation_id: str) -> str:
         project_id: The ID of the project.
         simulation_id: The ID of the simulation (from run_simulation).
     """
+    _audit("get_simulation_status")
     sim = await client.get_simulation(project_id, simulation_id)
     status = sim.get("status", "unknown")
     progress = sim.get("progress") or {}
@@ -261,7 +456,7 @@ async def get_simulation_status(project_id: str, simulation_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 6. get_simulation_results
+# 13. get_simulation_results
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -277,6 +472,7 @@ async def get_simulation_results(project_id: str, simulation_id: str) -> str:
         project_id: The ID of the project.
         simulation_id: The ID of the simulation.
     """
+    _audit("get_simulation_results")
     results = await client.get_simulation_results(project_id, simulation_id)
     if not results:
         return "No results found. The simulation may still be running."
@@ -351,7 +547,7 @@ async def get_simulation_results(project_id: str, simulation_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 7. get_simulation_url
+# 14. get_simulation_url
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -365,5 +561,58 @@ async def get_simulation_url(project_id: str, simulation_id: str) -> str:
         project_id: The ID of the project.
         simulation_id: The ID of the simulation.
     """
+    _audit("get_simulation_url")
     url = f"{BOSES_APP_URL}/projects/{project_id}/simulations/{simulation_id}"
     return f"Full results in Boses: {url}"
+
+
+# ---------------------------------------------------------------------------
+# 15. get_workspace_info
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+async def get_workspace_info() -> str:
+    """
+    Get a quick summary of the current Boses workspace.
+    Returns the number of projects, total simulations run, and briefings across all projects.
+    Use this for a high-level overview before diving into a specific project.
+    """
+    _audit("get_workspace_info")
+    projects = await client.list_projects()
+    if not projects:
+        return "Workspace is empty — no projects yet. Call create_project to get started."
+
+    total_simulations = 0
+    total_briefings = 0
+    total_persona_groups = 0
+
+    for p in projects:
+        pid = p["id"]
+        try:
+            sims = await client.list_simulations(pid)
+            total_simulations += len(sims)
+        except Exception:
+            pass
+        try:
+            briefs = await client.list_briefings(pid)
+            total_briefings += len(briefs)
+        except Exception:
+            pass
+        try:
+            groups = await client.list_persona_groups(pid)
+            total_persona_groups += len(groups)
+        except Exception:
+            pass
+
+    project_names = ", ".join(p["name"] for p in projects[:5])
+    if len(projects) > 5:
+        project_names += f" (and {len(projects) - 5} more)"
+
+    return (
+        f"**Workspace summary:**\n"
+        f"- Projects: {len(projects)} ({project_names})\n"
+        f"- Persona groups: {total_persona_groups}\n"
+        f"- Simulations run: {total_simulations}\n"
+        f"- Briefings uploaded: {total_briefings}\n"
+        f"\nCall list_projects to see project IDs, or list_simulations(project_id=...) to see past runs."
+    )

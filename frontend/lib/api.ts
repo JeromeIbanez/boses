@@ -343,6 +343,7 @@ export interface APIKey {
   is_active: boolean;
   created_at: string;
   last_used_at: string | null;
+  expires_at: string | null;
 }
 
 export interface APIKeyCreated extends APIKey {
@@ -352,10 +353,10 @@ export interface APIKeyCreated extends APIKey {
 export const listApiKeys = () =>
   request<APIKey[]>("/settings/api-keys");
 
-export const createApiKey = (name: string) =>
+export const createApiKey = (name: string, expires_at?: string | null) =>
   request<APIKeyCreated>("/settings/api-keys", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, expires_at: expires_at ?? null }),
   });
 
 export const revokeApiKey = (id: string) =>

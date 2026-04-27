@@ -25,8 +25,11 @@ def _raise_actionable(r: httpx.Response) -> None:
     if r.is_success:
         return
     if r.status_code == 401:
+        from mcp_server.context import get_api_key
+        key = get_api_key() or ""
+        prefix = key[:16] + "..." if len(key) > 16 else key
         raise RuntimeError(
-            "Invalid or missing API key. Go to Boses Settings → API Keys and check your key."
+            f"Invalid or expired API key ({prefix}). Go to Boses Settings → API Keys to check or revoke it."
         )
     if r.status_code == 403:
         raise RuntimeError(
@@ -78,6 +81,17 @@ async def list_projects() -> list[dict]:
     return await _get("/api/v1/projects")
 
 
+async def delete_project(project_id: str) -> None:
+    await _delete(f"/api/v1/projects/{project_id}")
+
+
+async def create_project(name: str, description: str = "") -> dict:
+    payload: dict = {"name": name}
+    if description:
+        payload["description"] = description
+    return await _post("/api/v1/projects", payload)
+
+
 # ---------------------------------------------------------------------------
 # Persona groups
 # ---------------------------------------------------------------------------
@@ -123,9 +137,36 @@ async def poll_persona_group_until_ready(
     raise TimeoutError(f"Persona group generation did not complete within {timeout_seconds}s")
 
 
+async def delete_persona_group(project_id: str, group_id: str) -> None:
+    await _delete(f"/api/v1/projects/{project_id}/persona-groups/{group_id}")
+
+
+# ---------------------------------------------------------------------------
+# Briefings
+# ---------------------------------------------------------------------------
+
+async def list_briefings(project_id: str) -> list[dict]:
+    return await _get(f"/api/v1/projects/{project_id}/briefings")
+
+
+async def create_briefing(project_id: str, title: str, content: str, description: str = "") -> dict:
+    payload: dict = {"title": title, "content": content}
+    if description:
+        payload["description"] = description
+    return await _post(f"/api/v1/projects/{project_id}/briefings/from-text", payload)
+
+
 # ---------------------------------------------------------------------------
 # Simulations
 # ---------------------------------------------------------------------------
+
+async def list_simulations(project_id: str) -> list[dict]:
+    return await _get(f"/api/v1/projects/{project_id}/simulations")
+
+
+async def abort_simulation(project_id: str, simulation_id: str) -> dict:
+    return await _post(f"/api/v1/projects/{project_id}/simulations/{simulation_id}/abort")
+
 
 async def create_simulation(project_id: str, payload: dict) -> dict:
     return await _post(f"/api/v1/projects/{project_id}/simulations", payload)

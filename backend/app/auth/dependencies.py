@@ -101,9 +101,18 @@ def get_current_user_from_api_key(
     if not api_key:
         raise credentials_exception
 
+    # Reject expired keys
+    if api_key.is_expired:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key has expired. Go to Boses Settings → API Keys to create a new one.",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+
     # Update last_used_at (best-effort, don't fail the request if this errors)
     try:
-        api_key.last_used_at = datetime.utcnow()
+        from datetime import timezone
+        api_key.last_used_at = datetime.now(timezone.utc)
         db.commit()
     except Exception:
         db.rollback()

@@ -135,6 +135,21 @@ def fake_api_key(company_id, user_id):
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
+def fake_company(company_id):
+    from datetime import datetime, timezone
+    c = MagicMock()
+    c.id = company_id
+    c.name = "Test Co"
+    c.slug = "test-co"
+    c.slack_webhook_url = None
+    c.plan = "free"
+    c.simulations_used = 0
+    c.billing_period_ends_at = None
+    c.created_at = datetime.now(timezone.utc)
+    return c
+
+
+@pytest.fixture
 def fake_project(project_id, company_id):
     project = MagicMock()
     project.id = uuid.UUID(project_id)
@@ -183,15 +198,22 @@ def fake_persona():
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def client(mock_db, current_user, fake_project):
+def client(mock_db, current_user, fake_project, fake_company):
     """TestClient with get_db, get_current_user, and project lookup overridden."""
     from fastapi.testclient import TestClient
     from app.main import app
     from app.database import get_db
     from app.auth.dependencies import get_current_user
+    from app.models.company import Company
 
-    # Pre-configure mock_db.get to return a fake project for any project lookup
-    mock_db.get.return_value = fake_project
+    # Route db.get() by model class so the billing quota gate and project
+    # lookups each get the right object type.
+    def _db_get(model_class, pk, **kw):
+        if model_class is Company:
+            return fake_company
+        return fake_project
+
+    mock_db.get.side_effect = _db_get
 
     app.dependency_overrides[get_db] = lambda: mock_db
     app.dependency_overrides[get_current_user] = lambda: current_user

@@ -9,6 +9,7 @@ Run locally:
   BOSES_API_URL=http://localhost:8000 uvicorn mcp_server.main:app --port 8001
 """
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from starlette.applications import Starlette
@@ -22,6 +23,19 @@ from mcp_server.config import BOSES_API_URL, MCP_PORT
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: [%(name)s] %(message)s")
 logger = logging.getLogger(__name__)
+
+# Sentry — only initialised when SENTRY_DSN is set (production / staging)
+_sentry_dsn = os.getenv("SENTRY_DSN")
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            traces_sample_rate=0.1,
+        )
+        logger.info("Sentry initialised for MCP server")
+    except ImportError:
+        logger.warning("sentry-sdk not installed — skipping Sentry init")
 
 logger.info(f"Boses MCP server starting — backend: {BOSES_API_URL}, port: {MCP_PORT}")
 

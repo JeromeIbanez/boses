@@ -96,6 +96,8 @@ services:
         value: https://api.temujintechnologies.com
       - key: BOSES_APP_URL
         value: https://app.temujintechnologies.com
+      - key: SENTRY_DSN
+        sync: false
     domains:
       - mcp.temujintechnologies.com
 
@@ -113,6 +115,8 @@ services:
         value: https://api-staging.temujintechnologies.com
       - key: BOSES_APP_URL
         value: https://staging.temujintechnologies.com
+      - key: SENTRY_DSN
+        sync: false
     domains:
       - mcp-staging.temujintechnologies.com
 

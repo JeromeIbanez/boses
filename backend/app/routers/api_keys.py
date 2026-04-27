@@ -43,6 +43,7 @@ def _display_prefix(raw_key: str) -> str:
 
 class APIKeyCreate(BaseModel):
     name: str
+    expires_at: Optional[datetime] = None  # ISO-8601 datetime; None means never expires
 
 
 class APIKeyCreatedResponse(BaseModel):
@@ -51,6 +52,7 @@ class APIKeyCreatedResponse(BaseModel):
     key_prefix: str
     key: str            # Full key — shown ONCE
     created_at: datetime
+    expires_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
@@ -62,6 +64,7 @@ class APIKeyResponse(BaseModel):
     is_active: bool
     created_at: datetime
     last_used_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
@@ -87,6 +90,7 @@ def create_api_key(
         name=body.name,
         key_prefix=prefix,
         key_hash=key_hash,
+        expires_at=body.expires_at,
     )
     db.add(api_key)
     db.commit()
@@ -98,6 +102,7 @@ def create_api_key(
         key_prefix=api_key.key_prefix,
         key=raw_key,
         created_at=api_key.created_at,
+        expires_at=api_key.expires_at,
     )
 
 

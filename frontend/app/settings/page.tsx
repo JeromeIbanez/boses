@@ -18,6 +18,7 @@ import { formatDate } from "@/lib/utils";
 function APIKeysSection() {
   const queryClient = useQueryClient();
   const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyExpiry, setNewKeyExpiry] = useState("");  // ISO date string or ""
   const [showForm, setShowForm] = useState(false);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -28,11 +29,13 @@ function APIKeysSection() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (name: string) => createApiKey(name),
+    mutationFn: ({ name, expires_at }: { name: string; expires_at?: string | null }) =>
+      createApiKey(name, expires_at),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
       setRevealedKey(data.key);
       setNewKeyName("");
+      setNewKeyExpiry("");
       setShowForm(false);
     },
   });
@@ -78,19 +81,34 @@ function APIKeysSection() {
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && newKeyName.trim()) createMutation.mutate(newKeyName.trim());
+                if (e.key === "Enter" && newKeyName.trim())
+                  createMutation.mutate({ name: newKeyName.trim(), expires_at: newKeyExpiry || null });
               }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+              Expiry date <span className="text-zinc-400 font-normal">(optional — leave blank for no expiry)</span>
+            </label>
+            <Input
+              type="date"
+              value={newKeyExpiry}
+              onChange={(e) => setNewKeyExpiry(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
             />
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="primary"
-              onClick={() => newKeyName.trim() && createMutation.mutate(newKeyName.trim())}
+              onClick={() =>
+                newKeyName.trim() &&
+                createMutation.mutate({ name: newKeyName.trim(), expires_at: newKeyExpiry || null })
+              }
               disabled={!newKeyName.trim() || createMutation.isPending}
             >
               {createMutation.isPending ? <Spinner /> : "Generate key"}
             </Button>
-            <Button variant="secondary" onClick={() => { setShowForm(false); setNewKeyName(""); }}>
+            <Button variant="secondary" onClick={() => { setShowForm(false); setNewKeyName(""); setNewKeyExpiry(""); }}>
               Cancel
             </Button>
           </div>
@@ -134,17 +152,36 @@ function APIKeysSection() {
         <p className="text-xs text-zinc-400 py-2">No API keys yet.</p>
       ) : (
         <div className="space-y-2">
-          {keys.map((key: APIKey) => (
+          {keys.map((key: APIKey) => {
+            const isExpired = key.expires_at ? new Date(key.expires_at) <= new Date() : false;
+            const expiringSoon = key.expires_at && !isExpired
+              ? (new Date(key.expires_at).getTime() - Date.now()) < 7 * 24 * 60 * 60 * 1000
+              : false;
+            return (
             <div key={key.id} className="flex items-center gap-3 py-2 border-b border-zinc-100 last:border-0">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-800 truncate">{key.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-zinc-800 truncate">{key.name}</p>
+                  {isExpired && (
+                    <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-100 text-red-600">Expired</span>
+                  )}
+                  {expiringSoon && (
+                    <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-600">Expiring soon</span>
+                  )}
+                </div>
                 <p className="text-xs text-zinc-400 font-mono">{key.key_prefix}…</p>
               </div>
               <div className="text-right shrink-0">
                 <p className="text-xs text-zinc-400">
                   {key.last_used_at ? `Last used ${formatDate(key.last_used_at)}` : "Never used"}
                 </p>
-                <p className="text-xs text-zinc-300">Created {formatDate(key.created_at)}</p>
+                {key.expires_at ? (
+                  <p className={`text-xs ${isExpired ? "text-red-400" : "text-zinc-300"}`}>
+                    {isExpired ? "Expired" : "Expires"} {formatDate(key.expires_at)}
+                  </p>
+                ) : (
+                  <p className="text-xs text-zinc-300">Created {formatDate(key.created_at)}</p>
+                )}
               </div>
               <button
                 onClick={() => revokeMutation.mutate(key.id)}
@@ -155,7 +192,8 @@ function APIKeysSection() {
                 <Trash2 size={13} />
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

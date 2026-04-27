@@ -70,7 +70,7 @@ def create_simulation(
     from app.models.company import Company
     from app.services.stripe_service import check_quota_or_402
     company = db.get(Company, current_user.company_id)
-    check_quota_or_402(company, db)
+    check_quota_or_402(company, db, user_email=current_user.email)
 
     # --- Type-specific validation ---
     if body.simulation_type == "concept_test":

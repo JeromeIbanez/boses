@@ -52,14 +52,23 @@ def get_stripe() -> _stripe:
 # Quota gate
 # ---------------------------------------------------------------------------
 
-def check_quota_or_402(company, db) -> None:
+UNLIMITED_DOMAIN = "temujintechnologies.com"
+
+
+def check_quota_or_402(company, db, user_email: str = "") -> None:
     """
     Raise HTTP 402 if the company has reached its simulation limit for the
     current billing period.  Otherwise increment simulations_used and commit.
 
     Pass the *already-loaded* Company ORM object so we avoid a redundant DB
     hit (the caller fetched it to build the simulation anyway).
+
+    Users with a @temujintechnologies.com email bypass the quota entirely.
     """
+    # Internal team — unlimited access, no counter increment
+    if user_email.lower().endswith(f"@{UNLIMITED_DOMAIN}"):
+        return
+
     limit = PLAN_LIMITS.get(company.plan, 0)
     if company.simulations_used >= limit:
         from fastapi import HTTPException

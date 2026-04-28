@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText, BarChart2, Share2, Check, X } from "lucide-react";
-import { getSimulation, getSimulationResults, abortSimulation, generateShareLink, revokeShareLink, getReliabilityCheck, getPersonas } from "@/lib/api";
+import { ArrowLeft, TrendingUp, MessageSquare, Lightbulb, ChevronDown, ChevronUp, Users, Video, FileText, BarChart2, Share2, Check, X, Star } from "lucide-react";
+import { getSimulation, getSimulationResults, abortSimulation, generateShareLink, revokeShareLink, getReliabilityCheck, getPersonas, getSimulationRating, rateSimulation } from "@/lib/api";
 import ConvergencePanel from "@/components/simulations/ConvergencePanel";
 import PredictionCommitmentPanel from "@/components/simulations/PredictionCommitmentPanel";
 import ReliabilityPanel from "@/components/simulations/ReliabilityPanel";
@@ -1012,6 +1012,87 @@ function ConjointReportView({ results }: { results: SimulationResult[] }) {
 }
 
 // ---------------------------------------------------------------------------
+// Rating widget
+// ---------------------------------------------------------------------------
+
+function RatingWidget({ projectId, simulationId }: { projectId: string; simulationId: string }) {
+  const queryClient = useQueryClient();
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const { data: existing } = useQuery({
+    queryKey: ["simulation-rating", simulationId],
+    queryFn: () => getSimulationRating(projectId, simulationId),
+    retry: false,
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: ({ rating, feedback }: { rating: number; feedback: string }) =>
+      rateSimulation(projectId, simulationId, rating, feedback || undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["simulation-rating", simulationId] });
+      setSubmitted(true);
+    },
+  });
+
+  const currentRating = existing?.rating ?? 0;
+
+  if (submitted || (existing && !hovered)) {
+    return (
+      <div className="mt-10 pt-8 border-t border-zinc-100 flex items-center gap-2 text-xs text-zinc-400">
+        <div className="flex gap-0.5">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <Star
+              key={s}
+              size={13}
+              className={s <= currentRating ? "fill-amber-400 text-amber-400" : "text-zinc-200"}
+            />
+          ))}
+        </div>
+        <span>{submitted ? "Thanks for your feedback!" : "You rated this simulation."}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-10 pt-8 border-t border-zinc-100">
+      <p className="text-xs font-medium text-zinc-500 mb-3">How useful were these results?</p>
+      <div className="flex gap-1 mb-4">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <button
+            key={s}
+            onMouseEnter={() => setHovered(s)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => {
+              if (!isPending) mutate({ rating: s, feedback });
+            }}
+            className="p-0.5 transition-transform hover:scale-110"
+            title={`${s} star${s > 1 ? "s" : ""}`}
+          >
+            <Star
+              size={22}
+              className={
+                s <= (hovered ?? currentRating)
+                  ? "fill-amber-400 text-amber-400"
+                  : "text-zinc-200"
+              }
+            />
+          </button>
+        ))}
+      </div>
+      <textarea
+        className="w-full max-w-md text-xs border border-zinc-200 rounded-lg p-2.5 text-zinc-700 placeholder:text-zinc-300 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-300"
+        rows={2}
+        placeholder="Optional feedback…"
+        value={feedback}
+        onChange={(e) => setFeedback(e.target.value)}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -1479,6 +1560,9 @@ export default function SimulationResultsPage() {
               />
             </div>
           )}
+
+          {/* Rating widget — shown on both tabs at the bottom */}
+          <RatingWidget projectId={projectId} simulationId={simulationId} />
         </>
       )}
     </div>

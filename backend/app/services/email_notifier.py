@@ -235,6 +235,8 @@ def maybe_notify_email(simulation_id: str, status: str) -> None:
             status_label = "completed" if status == "complete" else status
 
             for user in users:
+                if not getattr(user, "email_notifications", True):
+                    continue
                 _send_completion_email(
                     to_email=user.email,
                     project_name=project.name,

@@ -134,6 +134,12 @@ def send_invite(
     """Send a workspace invite email to a colleague."""
     _require_owner(current_user)
 
+    # --- Seat quota gate ---
+    from app.models.company import Company
+    from app.services.stripe_service import check_seat_quota_or_402
+    company = db.get(Company, current_user.company_id)
+    check_seat_quota_or_402(company, db, inviter_email=current_user.email)
+
     email_lower = body.email.lower()
 
     # Already a member?

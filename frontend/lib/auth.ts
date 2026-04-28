@@ -41,6 +41,9 @@ export interface Company {
   id: string;
   name: string;
   slug: string;
+  plan: string;
+  simulations_used: number;
+  billing_period_ends_at: string | null;
   created_at: string;
 }
 
@@ -50,6 +53,7 @@ export interface AuthUser {
   full_name: string | null;
   role: string;
   is_boses_staff: boolean;
+  email_notifications: boolean;
   company: Company;
   created_at: string;
 }

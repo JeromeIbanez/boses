@@ -37,6 +37,9 @@ class CompanyResponse(BaseModel):
     name: str
     slug: str
     slack_webhook_url: Optional[str] = None
+    plan: str = "free"
+    simulations_used: int = 0
+    billing_period_ends_at: Optional[datetime] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -48,6 +51,7 @@ class UserResponse(BaseModel):
     full_name: Optional[str]
     role: str
     is_boses_staff: bool
+    email_notifications: bool = True
     company: CompanyResponse
     created_at: datetime
 

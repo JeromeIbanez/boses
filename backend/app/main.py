@@ -157,7 +157,7 @@ def health():
 
 # Routers registered after models are defined
 from app.routers import projects, persona_groups, personas, briefings, simulations, library, auth, internal, settings as settings_router, share, admin_personas, admin, prediction_outcomes, api_keys, team  # noqa: E402
-from app.routers import simulation_idi, simulation_survey, simulation_conjoint, simulation_reliability  # noqa: E402
+from app.routers import simulation_idi, simulation_survey, simulation_conjoint, simulation_reliability, simulation_ratings, billing  # noqa: E402
 
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(projects.router, prefix="/api/v1")
@@ -178,6 +178,8 @@ app.include_router(share.router, prefix="/api/v1")
 app.include_router(admin_personas.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
 app.include_router(api_keys.router, prefix="/api/v1")
+app.include_router(simulation_ratings.router, prefix="/api/v1")
+app.include_router(billing.router, prefix="/api/v1")
 
 # Ensure uploads/avatars dirs exist before mounting — StaticFiles checks at import time
 os.makedirs(os.path.join(settings.UPLOAD_DIR, "avatars"), exist_ok=True)

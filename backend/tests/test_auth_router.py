@@ -39,6 +39,9 @@ def _fake_company():
     c.name = "Test Co"
     c.slug = "test-co"
     c.slack_webhook_url = None
+    c.plan = "free"
+    c.simulations_used = 0
+    c.billing_period_ends_at = None
     c.created_at = datetime.now(timezone.utc)
     return c
 

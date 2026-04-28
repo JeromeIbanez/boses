@@ -15,6 +15,19 @@ import type {
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
+export class QuotaExceededError extends Error {
+  code = "quota_exceeded";
+  plan: string;
+  limit: number;
+  used: number;
+  constructor(detail: { plan: string; limit: number; used: number; message: string }) {
+    super(detail.message ?? "Simulation limit reached.");
+    this.plan = detail.plan;
+    this.limit = detail.limit;
+    this.used = detail.used;
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     credentials: "include",
@@ -22,8 +35,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || "Request failed");
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    if (res.status === 402 && body?.detail?.error === "quota_exceeded") {
+      throw new QuotaExceededError(body.detail);
+    }
+    throw new Error(
+      typeof body.detail === "string" ? body.detail : body.detail?.message ?? "Request failed"
+    );
   }
   if (res.status === 204) return undefined as T;
   return res.json();
@@ -247,7 +265,13 @@ export const getConvergence = (projectId: string, personaGroupId: string, briefi
 
 // Settings
 export const getCompanySettings = () => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company");
-export const updateCompanySettings = (body: { slack_webhook_url?: string | null }) => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company", { method: "PATCH", body: JSON.stringify(body) });
+export const updateCompanySettings = (body: { name?: string; slack_webhook_url?: string | null }) => request<{ id: string; name: string; slug: string; slack_webhook_url: string | null; created_at: string }>("/settings/company", { method: "PATCH", body: JSON.stringify(body) });
+export const updateNotificationPrefs = (email_notifications: boolean) => request<void>("/settings/notifications", { method: "PATCH", body: JSON.stringify({ email_notifications }) });
+
+// Simulation Ratings
+export interface SimulationRating { id: string; rating: number; feedback: string | null; created_at: string; }
+export const getSimulationRating = (projectId: string, simulationId: string) => request<SimulationRating>(`/projects/${projectId}/simulations/${simulationId}/rating`);
+export const rateSimulation = (projectId: string, simulationId: string, rating: number, feedback?: string) => request<SimulationRating>(`/projects/${projectId}/simulations/${simulationId}/rating`, { method: "POST", body: JSON.stringify({ rating, feedback: feedback ?? null }) });
 
 
 // Admin — Boses-curated personas (staff only)
@@ -412,3 +436,25 @@ export const deleteAccount = (password: string) =>
     method: "DELETE",
     body: JSON.stringify({ password }),
   });
+
+// Billing
+export interface BillingStatus {
+  plan: string;
+  simulations_used: number;
+  plan_limit: number;
+  billing_period_ends_at: string | null;
+  stripe_customer_id: string | null;
+}
+
+export const getBillingStatus = () =>
+  request<BillingStatus>("/billing/status");
+
+export const createCheckoutSession = (plan: string) =>
+  request<{ url: string }>("/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ plan }),
+  });
+
+export const createPortalSession = () =>
+  request<{ url: string }>("/billing/portal", { method: "POST" });
+

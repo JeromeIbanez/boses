@@ -21,6 +21,8 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_boses_staff: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    email_notifications: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
     password_reset_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     password_reset_token_expiry: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

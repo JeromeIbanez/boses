@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, AlertCircle, Copy, Check, Trash2, Plus, Key, Users, Mail, X, Lock, Bell, ArrowRight } from "lucide-react";
-import { getCompanySettings, updateCompanySettings, updateNotificationPrefs, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember, changePassword, deleteAccount } from "@/lib/api";
+import { getCompanySettings, updateCompanySettings, updateNotificationPrefs, listApiKeys, createApiKey, revokeApiKey, getTeam, inviteMember, cancelInvite, removeMember, changePassword, deleteAccount, getBillingStatus } from "@/lib/api";
 import type { APIKey, TeamMember, PendingInvite } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import PageHeader from "@/components/layout/PageHeader";
@@ -13,6 +13,70 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
 import { formatDate } from "@/lib/utils";
+
+// ---------------------------------------------------------------------------
+// Billing preview card (inline status on settings page)
+// ---------------------------------------------------------------------------
+
+const PLAN_LABELS: Record<string, string> = {
+  free: "Free", starter: "Starter", pro: "Pro", agency: "Agency", enterprise: "Enterprise",
+};
+const PLAN_BADGE_CLASS: Record<string, string> = {
+  free: "bg-gray-100 text-gray-700",
+  starter: "bg-blue-100 text-blue-700",
+  pro: "bg-purple-100 text-purple-700",
+  agency: "bg-amber-100 text-amber-700",
+  enterprise: "bg-green-100 text-green-700",
+};
+
+function BillingPreviewCard() {
+  const { data: status, isLoading } = useQuery({
+    queryKey: ["billing-status"],
+    queryFn: getBillingStatus,
+  });
+
+  const plan = status?.plan ?? "free";
+  const used = status?.simulations_used ?? 0;
+  const limit = status?.plan_limit ?? 3;
+  const pct = Math.min((used / Math.max(limit, 1)) * 100, 100);
+
+  return (
+    <section id="billing" className="bg-white border border-zinc-200 rounded-xl p-6">
+      <h2 className="text-sm font-semibold text-zinc-900 mb-4">Billing</h2>
+
+      {isLoading ? (
+        <div className="h-14 animate-pulse rounded-lg bg-zinc-100 mb-4" />
+      ) : (
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-zinc-500">Current plan</span>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${PLAN_BADGE_CLASS[plan] ?? "bg-gray-100 text-gray-700"}`}>
+              {PLAN_LABELS[plan] ?? plan}
+            </span>
+          </div>
+          <div className="space-y-1.5 max-w-sm">
+            <div className="flex justify-between text-xs">
+              <span className="text-zinc-600">{used} / {limit} simulations used this period</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+              <div
+                className={`h-full rounded-full transition-all ${pct >= 90 ? "bg-red-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Link
+        href="/settings/billing"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors"
+      >
+        Manage billing <ArrowRight size={12} />
+      </Link>
+    </section>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Team sub-component
@@ -52,7 +116,7 @@ function TeamSection({ currentUserRole }: { currentUserRole: string }) {
     ({ owner: "Owner", admin: "Admin", member: "Member" }[role] ?? role);
 
   return (
-    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+    <section id="team" className="bg-white border border-zinc-200 rounded-xl p-6">
       <div className="flex items-start gap-3 mb-5">
         <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
           <Users size={15} className="text-zinc-500" />
@@ -203,7 +267,7 @@ function ChangePasswordSection() {
   };
 
   return (
-    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+    <section id="password" className="bg-white border border-zinc-200 rounded-xl p-6">
       <div className="flex items-start gap-3 mb-5">
         <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
           <Lock size={15} className="text-zinc-500" />
@@ -290,7 +354,7 @@ function APIKeysSection() {
   };
 
   return (
-    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+    <section id="api-keys" className="bg-white border border-zinc-200 rounded-xl p-6">
       <div className="flex items-start gap-3 mb-5">
         <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
           <Key size={15} className="text-zinc-500" />
@@ -472,7 +536,7 @@ function DangerZone() {
   };
 
   return (
-    <section className="bg-white border border-red-100 rounded-xl p-6">
+    <section id="danger-zone" className="bg-white border border-red-100 rounded-xl p-6">
       <h2 className="text-sm font-semibold text-red-600 mb-1">Danger zone</h2>
       <p className="text-xs text-zinc-500 mb-4">
         Permanently delete your account. This cannot be undone.
@@ -553,7 +617,7 @@ function WorkspaceSection({ currentUserRole }: { currentUserRole: string }) {
   if (isLoading) return null;
 
   return (
-    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+    <section id="workspace" className="bg-white border border-zinc-200 rounded-xl p-6">
       <h2 className="text-sm font-semibold text-zinc-900 mb-4">Workspace</h2>
       <div className="space-y-4 max-w-sm">
         <div>
@@ -631,7 +695,7 @@ function NotificationsSection() {
   };
 
   return (
-    <section className="bg-white border border-zinc-200 rounded-xl p-6">
+    <section id="notifications" className="bg-white border border-zinc-200 rounded-xl p-6">
       <div className="flex items-start gap-3 mb-5">
         <div className="w-8 h-8 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
           <Bell size={15} className="text-zinc-500" />
@@ -681,7 +745,7 @@ export default function SettingsPage() {
   const { user } = useAuth();
 
   return (
-    <div className="px-8 py-8 max-w-2xl">
+    <div>
       <PageHeader title="Settings" description="Manage your workspace configuration." />
 
       <div className="mt-8 space-y-8">
@@ -700,29 +764,8 @@ export default function SettingsPage() {
         {/* API Keys */}
         <APIKeysSection />
 
-        {/* Billing link */}
-        <section className="bg-white border border-zinc-200 rounded-xl p-6">
-          <h2 className="text-sm font-semibold text-zinc-900 mb-1">Billing</h2>
-          <p className="text-xs text-zinc-500 mb-4">Manage your plan, usage, and payment details.</p>
-          <Link
-            href="/settings/billing"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors"
-          >
-            Manage billing <ArrowRight size={12} />
-          </Link>
-        </section>
-
-        {/* Integrations link */}
-        <section className="bg-white border border-zinc-200 rounded-xl p-6">
-          <h2 className="text-sm font-semibold text-zinc-900 mb-1">Integrations</h2>
-          <p className="text-xs text-zinc-500 mb-4">Connect Boses to Slack and other tools.</p>
-          <Link
-            href="/integrations"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors"
-          >
-            Manage integrations <ArrowRight size={12} />
-          </Link>
-        </section>
+        {/* Billing — inline plan status card */}
+        <BillingPreviewCard />
 
         {/* Danger zone */}
         <DangerZone />

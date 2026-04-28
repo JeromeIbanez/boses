@@ -171,7 +171,7 @@ export default function BillingPage() {
     : null;
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-4 space-y-10">
+    <div className="space-y-8">
       {/* Toast */}
       {toast && (
         <div
